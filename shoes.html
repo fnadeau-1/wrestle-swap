@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wrestling Shoes - Search Results | Wrestle Swap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        /* Header */
+        .top-bar {
+            background-color: #f7f7f7;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 8px 0;
+            font-size: 12px;
+        }
+
+        .top-bar-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .top-bar a {
+            color: #000;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .main-header {
+            background-color: #fff;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #c41e3a;
+            text-decoration: none;
+        }
+
+        .search-container {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box {
+            flex: 1;
+            display: flex;
+            border: 2px solid #3665f3;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .search-btn {
+            background-color: #3665f3;
+            color: white;
+            border: none;
+            padding: 0 24px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            background-color: #fff;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e5;
+            font-size: 13px;
+        }
+
+        .breadcrumb-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .breadcrumb a {
+            color: #3665f3;
+            text-decoration: none;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1280px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 4px;
+            height: fit-content;
+        }
+
+        .filter-section {
+            margin-bottom: 24px;
+        }
+
+        .filter-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .filter-option {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .filter-option input {
+            margin-right: 8px;
+        }
+
+        .filter-option label {
+            cursor: pointer;
+        }
+
+        .price-inputs {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .price-inputs input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .apply-btn {
+            background-color: #3665f3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        /* Results Area */
+        .results-area {
+            flex: 1;
+        }
+
+        .results-header {
+            background: #fff;
+            padding: 16px 20px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .results-count {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .sort-by {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sort-by select {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .view-options {
+            display: flex;
+            gap: 8px;
+        }
+
+        .view-btn {
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .view-btn.active {
+            background: #e5e5e5;
+        }
+
+        /* Product Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .product-item {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+
+        .product-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .product-img {
+            width: 100%;
+            height: 200px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .product-details {
+            padding: 12px;
+        }
+
+        .product-name {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+            height: 40px;
+            overflow: hidden;
+            line-height: 1.4;
+        }
+
+        .product-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .product-shipping {
+            font-size: 12px;
+            color: #707070;
+        }
+
+        .product-condition {
+            font-size: 12px;
+            color: #707070;
+            margin-top: 4px;
+        }
+
+        /* Pagination */
+        .pagination {
+            background: #fff;
+            padding: 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .page-btn.active {
+            background: #3665f3;
+            color: white;
+            border-color: #3665f3;
+        }
+
+        .page-btn:hover:not(.active) {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-content">
+            <div>
+                <a href="#">Hi! Sign in or register</a>
+                <a href="#">Daily Deals</a>
+                <a href="#">Help & Contact</a>
+            </div>
+            <div>
+                <a href="#">Ship to</a>
+                <a href="#">Sell</a>
+                <a href="#">Watchlist</a>
+                <a href="#">My Account</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <a href="#" class="logo">Wrestle Swap</a>
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" class="search-input" value="wrestling shoes" placeholder="Search for wrestling gear...">
+                </div>
+                <button class="search-btn">Search</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <div class="breadcrumb-content">
+           <a href="index.html" class="top-bar-btn" style="text-decoration: none; display: inline-block;">Home</a> > <a href="all.html">All Categories</a> > <strong>Wrestling Shoes</strong>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Sidebar Filters -->
+        <aside class="sidebar">
+            <div class="filter-section">
+                <div class="filter-title">Category</div>
+                <div class="filter-option">
+                    <input type="checkbox" id="shoes" checked>
+                    <label for="shoes">Wrestling Shoes</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="singlets">
+                    <label for="singlets">Singlets</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="warmups">
+                    <label for="warmups">Warm-ups</label>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Condition</div>
+                <div class="filter-option">
+                    <input type="checkbox" id="new">
+                    <label for="new">New</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="used">
+                    <label for="used">Used</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="refurb">
+                    <label for="refurb">Like New</label>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Price</div>
+                <div class="price-inputs">
+                    <input type="text" placeholder="Min">
+                    <input type="text" placeholder="Max">
+                </div>
+                <button class="apply-btn">Apply</button>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Brand</div>
+                <div class="filter-option">
+                    <input type="checkbox" id="asics">
+                    <label for="asics">ASICS</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="adidas">
+                    <label for="adidas">Adidas</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="nike">
+                    <label for="nike">Nike</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="rudis">
+                    <label for="rudis">Rudis</label>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Size</div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size8">
+                    <label for="size8">8</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size9">
+                    <label for="size9">9</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size10">
+                    <label for="size10">10</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size11">
+                    <label for="size11">11</label>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Results Area -->
+        <main class="results-area">
+            <!-- Results Header -->
+            <div class="results-header">
+                <div class="results-count">
+                    <strong>1,247 results</strong> for wrestling shoes
+                </div>
+                <div class="sort-by">
+                    <span>Sort:</span>
+                    <select>
+                        <option>Best Match</option>
+                        <option>Price: Low to High</option>
+                        <option>Price: High to Low</option>
+                        <option>Newest</option>
+                        <option>Ending Soonest</option>
+                    </select>
+                </div>
+                <div class="view-options">
+                    <button class="view-btn active">Grid</button>
+                    <button class="view-btn">List</button>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="products-grid">
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">ASICS Matflex 6 Wrestling Shoes - Black/Silver</div>
+                        <div class="product-price">$49.99</div>
+                        <div class="product-shipping">Free shipping</div>
+                        <div class="product-condition">Used - Excellent</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">Adidas HVC 2 Youth Wrestling Shoes - Red</div>
+                        <div class="product-price">$35.00</div>
+                        <div class="product-shipping">+$5.99 shipping</div>
+                        <div class="product-condition">Used - Good</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">Nike Inflict 3 Wrestling Shoes - Size 10</div>
+                        <div class="product-price">$89.99</div>
+                        <div class="product-shipping">Free shipping</div>
+                        <div class="product-condition">New with box</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">ASICS Aggressor 4 - Blue/White - Size 9.5</div>
+                        <div class="product-price">$72.50</div>
+                        <div class="product-shipping">Free shipping</div>
+                        <div class="product-condition">Used - Like New</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">Rudis KS Elite Wrestling Shoes - Gray</div>
+                        <div class="product-price">$95.00</div>
+                        <div class="product-shipping">Free shipping</div>
+                        <div class="product-condition">New without box</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">Adidas Combat Speed 5 - Size 11</div>
+                        <div class="product-price">$55.00</div>
+                        <div class="product-shipping">+$7.99 shipping</div>
+                        <div class="product-condition">Used - Very Good</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">ASICS Snapdown 3 Youth Wrestling Shoes</div>
+                        <div class="product-price">$42.00</div>
+                        <div class="product-shipping">Free shipping</div>
+                        <div class="product-condition">Used - Good</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">Nike Freek Wrestling Shoes - Limited Edition</div>
+                        <div class="product-price">$125.00</div>
+                        <div class="product-shipping">Free shipping</div>
+                        <div class="product-condition">New with tags</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">Adidas Mat Wizard 4 - Carbon Fiber</div>
+                        <div class="product-price">$110.00</div>
+                        <div class="product-shipping">Free shipping</div>
+                        <div class="product-condition">New</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">ASICS JB Elite IV - Size 8.5 - Black/Gold</div>
+                        <div class="product-price">$98.00</div>
+                        <div class="product-shipping">Free shipping</div>
+                        <div class="product-condition">Used - Excellent</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">Youth Wrestling Shoes Bundle - Size 7</div>
+                        <div class="product-price">$30.00</div>
+                        <div class="product-shipping">+$8.99 shipping</div>
+                        <div class="product-condition">Used - Fair</div>
+                    </div>
+                </div>
+
+                <div class="product-item">
+                    <div class="product-img">👟</div>
+                    <div class="product-details">
+                        <div class="product-name">Rudis Apex Wrestling Shoes - Navy/Orange</div>
+                        <div class="product-price">$85.00</div>
+                        <div class="product-shipping">Free shipping</div>
+                        <div class="product-condition">Used - Like New</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <button class="page-btn">Previous</button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn">4</button>
+                <button class="page-btn">5</button>
+                <button class="page-btn">Next</button>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

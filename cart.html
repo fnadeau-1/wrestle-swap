@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart | Wrestle Swap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        /* Header */
+        .top-bar {
+            background-color: #f7f7f7;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 8px 0;
+            font-size: 12px;
+        }
+
+        .top-bar-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .top-bar a {
+            color: #000;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .top-bar-btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #000;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .top-bar-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .main-header {
+            background-color: #fff;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #c41e3a;
+            text-decoration: none;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1280px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .cart-count {
+            font-size: 16px;
+            color: #707070;
+            margin-bottom: 30px;
+        }
+
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        /* Cart Items */
+        .cart-items {
+            background: #fff;
+            border-radius: 8px;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .cart-item {
+            padding: 25px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            gap: 20px;
+            position: relative;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-image {
+            width: 120px;
+            height: 120px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            flex-shrink: 0;
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .item-title:hover {
+            color: #3665f3;
+        }
+
+        .item-info {
+            font-size: 13px;
+            color: #707070;
+            margin-bottom: 5px;
+        }
+
+        .item-seller {
+            font-size: 13px;
+            color: #707070;
+            margin-top: 10px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 12px;
+        }
+
+        .action-link {
+            font-size: 13px;
+            color: #3665f3;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .action-link:hover {
+            text-decoration: underline;
+        }
+
+        .remove-link {
+            color: #e53238;
+        }
+
+        .item-price-section {
+            text-align: right;
+        }
+
+        .item-price {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .item-shipping {
+            font-size: 13px;
+            color: #707070;
+            margin-bottom: 15px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .qty-btn {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qty-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .qty-display {
+            width: 40px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Summary Box */
+        .summary-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .summary-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .summary-label {
+            color: #707070;
+        }
+
+        .summary-value {
+            color: #333;
+            font-weight: bold;
+        }
+
+        .summary-divider {
+            border-top: 1px solid #e5e5e5;
+            margin: 20px 0;
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: #3665f3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .checkout-btn:hover {
+            background-color: #2348c5;
+        }
+
+        .continue-shopping {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .continue-shopping a {
+            color: #3665f3;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .continue-shopping a:hover {
+            text-decoration: underline;
+        }
+
+        .promo-code {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .promo-input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .promo-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .apply-btn {
+            padding: 10px 20px;
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .apply-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Empty Cart */
+        .empty-cart {
+            background: #fff;
+            padding: 60px 40px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .empty-text {
+            font-size: 16px;
+            color: #707070;
+            margin-bottom: 25px;
+        }
+
+        .browse-btn {
+            padding: 12px 32px;
+            background-color: #3665f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .browse-btn:hover {
+            background-color: #2348c5;
+        }
+
+        @media (max-width: 968px) {
+            .cart-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .cart-item {
+                flex-direction: column;
+            }
+
+            .item-image {
+                width: 100%;
+                height: 200px;
+            }
+
+            .item-price-section {
+                text-align: left;
+            }
+
+            .quantity-controls {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-content">
+            <div>
+                <a href="index.html">Home</a>
+                <a href="profile.html">Profile</a>
+                <a href="help.html">Help & Contact</a>
+            </div>
+            <div>
+                <a href="sell.html">Sell</a>
+                <a href="watchlist.html">Watchlist</a>
+                <a href="swaps.html">My Swaps</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <a href="index.html" class="logo">Wrestle Swap</a>
+        </div>
+        <div class="s">
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1 class="page-title">Shopping Cart</h1>
+        <p class="cart-count" id="cart-count">3 items</p>
+
+        <div class="cart-layout" id="cart-layout">
+            <!-- Cart Items -->
+            <div class="cart-items" id="cart-items">
+                <div class="cart-item">
+                    <div class="item-image">👟</div>
+                    <div class="item-details">
+                        <div class="item-title">ASICS Matflex 6 Wrestling Shoes - Black/Silver</div>
+                        <div class="item-info">Size: 10 | Condition: Used - Excellent</div>
+                        <div class="item-seller">Sold by: wrestlingpro23</div>
+                        <div class="item-actions">
+                            <a href="#" class="action-link" onclick="saveForLater(this); return false;">Save for later</a>
+                            <a href="#" class="action-link remove-link" onclick="removeItem(this); return false;">Remove</a>
+                        </div>
+                    </div>
+                    <div class="item-price-section">
+                        <div class="item-price">$49.99</div>
+                        <div class="item-shipping">Free shipping</div>
+                        <div class="quantity-controls">
+                            <button class="qty-btn" onclick="updateQty(this, -1)">−</button>
+                            <div class="qty-display">1</div>
+                            <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cart-item">
+                    <div class="item-image">🤼</div>
+                    <div class="item-details">
+                        <div class="item-title">Adidas Wrestling Singlet - Red/Blue - Youth Large</div>
+                        <div class="item-info">Size: Youth Large | Condition: New with tags</div>
+                        <div class="item-seller">Sold by: matgear4u</div>
+                        <div class="item-actions">
+                            <a href="#" class="action-link" onclick="saveForLater(this); return false;">Save for later</a>
+                            <a href="#" class="action-link remove-link" onclick="removeItem(this); return false;">Remove</a>
+                        </div>
+                    </div>
+                    <div class="item-price-section">
+                        <div class="item-price">$35.00</div>
+                        <div class="item-shipping">+$5.99 shipping</div>
+                        <div class="quantity-controls">
+                            <button class="qty-btn" onclick="updateQty(this, -1)">−</button>
+                            <div class="qty-display">1</div>
+                            <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cart-item">
+                    <div class="item-image">🎽</div>
+                    <div class="item-details">
+                        <div class="item-title">Wrestling Headgear - Cliff Keen Signature</div>
+                        <div class="item-info">Color: Black | Condition: Used - Good</div>
+                        <div class="item-seller">Sold by: teamgear88</div>
+                        <div class="item-actions">
+                            <a href="#" class="action-link" onclick="saveForLater(this); return false;">Save for later</a>
+                            <a href="#" class="action-link remove-link" onclick="removeItem(this); return false;">Remove</a>
+                        </div>
+                    </div>
+                    <div class="item-price-section">
+                        <div class="item-price">$25.00</div>
+                        <div class="item-shipping">Free shipping</div>
+                        <div class="quantity-controls">
+                            <button class="qty-btn" onclick="updateQty(this, -1)">−</button>
+                            <div class="qty-display">2</div>
+                            <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Box -->
+            <div class="summary-box">
+                <div class="summary-title">Order Summary</div>
+                
+                <div class="summary-row">
+                    <span class="summary-label">Items (3):</span>
+                    <span class="summary-value" id="subtotal">$134.99</span>
+                </div>
+                
+                <div class="summary-row">
+                    <span class="summary-label">Shipping:</span>
+                    <span class="summary-value" id="shipping">Calculated at checkout</span>
+                </div>
+                
+                <div class="summary-row">
+                    <span class="summary-label">Tax (estimated):</span>
+                    <span class="summary-value" id="tax">Calculated at checkout</span>
+                </div>
+
+                <div class="summary-divider"></div>
+
+                <div class="summary-total">
+                    <span>Total:</span>
+                    <span id="total">$152.22</span>
+                </div>
+
+                <button class="checkout-btn" onclick="window.location.href='payment.html'">Proceed to Checkout</button>
+
+                <div class="continue-shopping">
+                    <a href="search.html">← Continue Shopping</a>
+                </div>
+
+                <div class="promo-code">
+                    <div class="summary-row" style="margin-bottom: 10px;">
+                        <span class="summary-label">Have a promo code?</span>
+                    </div>
+                    <div class="promo-input-group">
+                        <input type="text" class="promo-input" placeholder="Enter code" id="promo-input">
+                        <button class="apply-btn" onclick="applyPromo()">Apply</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty Cart (hidden by default) -->
+        <div class="empty-cart" id="empty-cart" style="display: none;">
+            <div class="empty-icon">🛒</div>
+            <h2 class="empty-title">Your cart is empty</h2>
+            <p class="empty-text">Add some wrestling gear to get started!</p>
+            <button class="browse-btn" onclick="window.location.href='index.html'">Browse Items</button>
+        </div>
+    </div>
+
+    <script>
+        // Update quantity
+        function updateQty(button, change) {
+            const qtyDisplay = button.parentElement.querySelector('.qty-display');
+            let currentQty = parseInt(qtyDisplay.textContent);
+            let newQty = currentQty + change;
+            
+            if (newQty < 1) newQty = 1;
+            if (newQty > 10) newQty = 10;
+            
+            qtyDisplay.textContent = newQty;
+            updateTotals();
+        }
+
+        // Remove item from cart
+        function removeItem(link) {
+            if (confirm('Remove this item from your cart?')) {
+                const cartItem = link.closest('.cart-item');
+                cartItem.remove();
+                updateTotals();
+                checkEmptyCart();
+            }
+        }
+
+        // Save for later
+        function saveForLater(link) {
+            alert('Item saved to your watchlist! (This is a demo)');
+            removeItem(link);
+        }
+
+// Update totals
+        function updateTotals() {
+            const items = document.querySelectorAll('.cart-item');
+            let subtotal = 0;
+            let itemCount = 0;
+            
+            items.forEach(item => {
+                const priceText = item.querySelector('.item-price').textContent;
+                const price = parseFloat(priceText.replace('$', ''));
+                const qty = parseInt(item.querySelector('.qty-display').textContent);
+                subtotal += price * qty;
+                itemCount += qty;
+            });
+            
+            const total = subtotal;
+            
+            document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+            document.getElementById('shipping').textContent = 'Calculated at checkout';
+            document.getElementById('tax').textContent = 'Calculated at checkout';
+            document.getElementById('total').textContent = '$' + total.toFixed(2);
+            document.getElementById('cart-count').textContent = itemCount + ' item' + (itemCount !== 1 ? 's' : '');
+        }
+
+        // Check if cart is empty
+        function checkEmptyCart() {
+            const items = document.querySelectorAll('.cart-item');
+            const cartLayout = document.getElementById('cart-layout');
+            const emptyCart = document.getElementById('empty-cart');
+            const cartCount = document.getElementById('cart-count');
+            
+            if (items.length === 0) {
+                cartLayout.style.display = 'none';
+                emptyCart.style.display = 'block';
+                cartCount.style.display = 'none';
+            }
+        }
+
+        // Apply promo code
+        function applyPromo() {
+            const promoInput = document.getElementById('promo-input');
+            const code = promoInput.value.toUpperCase();
+            
+            if (code === 'WRESTLE10') {
+                alert('Promo code applied! 10% discount added.');
+                promoInput.value = '';
+            } else if (code === '') {
+                alert('Please enter a promo code.');
+            } else {
+                alert('Invalid promo code. Try "WRESTLE10" for a demo discount!');
+            }
+        }
+
+        // Checkout
+        function checkout() {
+            alert('Proceeding to checkout! (This is a demo)');
+        }
+
+        // Initialize totals on page load
+        updateTotals();
+    </script>
+        }
+    </script>
+</body>
+</html>

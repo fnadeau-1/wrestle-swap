@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your Order | Wrestle Swap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-header {
+            background-color: #fff;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #c41e3a;
+            text-decoration: none;
+        }
+
+        .back-btn {
+            padding: 8px 16px;
+            background: #3665f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background: #2348c5;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .tracking-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .tracking-icon {
+            text-align: center;
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .tracking-title {
+            text-align: center;
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .tracking-subtitle {
+            text-align: center;
+            font-size: 16px;
+            color: #707070;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #3665f3;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .carriers-section {
+            margin-top: 30px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .carrier-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .carrier-btn {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .carrier-btn:hover {
+            border-color: #3665f3;
+            background: #f5f9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(54, 101, 243, 0.2);
+        }
+
+        .carrier-icon {
+            font-size: 40px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .carrier-info {
+            flex: 1;
+        }
+
+        .carrier-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .carrier-description {
+            font-size: 13px;
+            color: #707070;
+        }
+
+        .arrow {
+            font-size: 24px;
+            color: #3665f3;
+        }
+
+        .divider {
+            margin: 30px 0;
+            border: none;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .help-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .help-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .help-text {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .contact-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #3665f3;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .contact-btn:hover {
+            background: #2348c5;
+        }
+
+        @media (max-width: 768px) {
+            .tracking-card {
+                padding: 30px 20px;
+            }
+
+            .tracking-title {
+                font-size: 24px;
+            }
+
+            .carrier-btn {
+                padding: 15px;
+            }
+
+            .carrier-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <a href="index.html" class="logo">Wrestle Swap</a>
+            <a href="index.html" class="back-btn">← Back to Home</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="tracking-card">
+            <div class="tracking-icon">📦</div>
+            <h1 class="tracking-title">Track Your Order</h1>
+            <p class="tracking-subtitle">Select your shipping carrier to track your package</p>
+
+            <div class="info-box">
+                <p><strong>💡 Tip:</strong> You can find your tracking number in your order confirmation email or on your seller's profile page.</p>
+            </div>
+
+            <!-- Carriers Section -->
+            <div class="carriers-section">
+                <h2 class="section-title">Choose Your Carrier</h2>
+                
+                <div class="carrier-grid">
+                    <!-- USPS -->
+                    <a href="https://tools.usps.com/go/TrackConfirmAction" target="_blank" class="carrier-btn">
+                        <div class="carrier-icon">🇺🇸</div>
+                        <div class="carrier-info">
+                            <div class="carrier-name">USPS</div>
+                            <div class="carrier-description">United States Postal Service</div>
+                        </div>
+                        <div class="arrow">→</div>
+                    </a>
+
+                    <!-- UPS -->
+                    <a href="https://www.ups.com/track?loc=en_US" target="_blank" class="carrier-btn">
+                        <div class="carrier-icon">📦</div>
+                        <div class="carrier-info">
+                            <div class="carrier-name">UPS</div>
+                            <div class="carrier-description">United Parcel Service</div>
+                        </div>
+                        <div class="arrow">→</div>
+                    </a>
+
+                    <!-- FedEx -->
+                    <a href="https://www.fedex.com/fedextrack/" target="_blank" class="carrier-btn">
+                        <div class="carrier-icon">✈️</div>
+                        <div class="carrier-info">
+                            <div class="carrier-name">FedEx</div>
+                            <div class="carrier-description">Federal Express</div>
+                        </div>
+                        <div class="arrow">→</div>
+                    </a>
+
+                    <!-- DHL -->
+                    <a href="https://www.dhl.com/us-en/home/tracking.html" target="_blank" class="carrier-btn">
+                        <div class="carrier-icon">🌍</div>
+                        <div class="carrier-info">
+                            <div class="carrier-name">DHL</div>
+                            <div class="carrier-description">DHL Express</div>
+                        </div>
+                        <div class="arrow">→</div>
+                    </a>
+
+                    <!-- Amazon Logistics -->
+                    <a href="https://track.amazon.com/" target="_blank" class="carrier-btn">
+                        <div class="carrier-icon">📮</div>
+                        <div class="carrier-info">
+                            <div class="carrier-name">Amazon Logistics</div>
+                            <div class="carrier-description">Amazon Delivery Service</div>
+                        </div>
+                        <div class="arrow">→</div>
+                    </a>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <!-- Help Section -->
+            <div class="help-section">
+                <div class="help-title">Need Help?</div>
+                <p class="help-text">
+                    If you can't find your tracking number or have questions about your order, please contact the seller directly through our messaging system or reach out to our support team.
+                </p>
+                <a href="chat.html" class="contact-btn">📧 Contact Seller</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "wrestle-swap-functions",
+  "version": "1.0.0",
+  "description": "Serverless functions for Wrestle Swap",
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}

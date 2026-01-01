@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Swaps | Wrestle Swap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        /* Header */
+        .top-bar {
+            background-color: #f7f7f7;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 8px 0;
+            font-size: 12px;
+        }
+
+        .top-bar-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .top-bar a {
+            color: #000;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .top-bar-btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #000;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .top-bar-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .main-header {
+            background-color: #fff;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #c41e3a;
+            text-decoration: none;
+        }
+
+        .search-container {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box {
+            flex: 1;
+            display: flex;
+            border: 2px solid #3665f3;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .search-btn {
+            background-color: #3665f3;
+            color: white;
+            border: none;
+            padding: 0 24px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1280px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            font-size: 16px;
+            color: #707070;
+        }
+
+        .watchlist-controls {
+            background: #fff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-count {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .sort-filter {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .sort-filter label {
+            font-size: 14px;
+            color: #707070;
+        }
+
+        .sort-filter select {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .clear-all-btn {
+            padding: 8px 16px;
+            border: 1px solid #e53238;
+            background: white;
+            color: #e53238;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .clear-all-btn:hover {
+            background: #fee;
+        }
+
+        /* Watchlist Items */
+        .watchlist-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .watchlist-item {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            transition: box-shadow 0.2s;
+            position: relative;
+        }
+
+        .watchlist-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .item-image {
+            width: 150px;
+            height: 150px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            flex-shrink: 0;
+        }
+
+        .item-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .item-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .item-title:hover {
+            color: #3665f3;
+        }
+
+        .item-condition {
+            font-size: 13px;
+            color: #707070;
+            margin-bottom: 8px;
+        }
+
+        .item-price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .item-shipping {
+            font-size: 13px;
+            color: #707070;
+            margin-bottom: 12px;
+        }
+
+        .item-seller {
+            font-size: 13px;
+            color: #707070;
+            margin-bottom: 12px;
+        }
+
+        .item-time {
+            font-size: 13px;
+            color: #e53238;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .buy-btn {
+            background-color: #3665f3;
+            color: white;
+        }
+
+        .buy-btn:hover {
+            background-color: #2348c5;
+        }
+
+        .message-btn {
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+
+        .message-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #707070;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .remove-btn:hover {
+            color: #e53238;
+        }
+
+        /* Empty State */
+        .empty-state {
+            background: #fff;
+            padding: 60px 40px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .empty-text {
+            font-size: 16px;
+            color: #707070;
+            margin-bottom: 25px;
+        }
+
+        .browse-btn {
+            padding: 12px 32px;
+            background-color: #3665f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .browse-btn:hover {
+            background-color: #2348c5;
+        }
+
+        @media (max-width: 768px) {
+            .watchlist-item {
+                flex-direction: column;
+            }
+
+            .item-image {
+                width: 100%;
+                height: 200px;
+            }
+
+            .watchlist-controls {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+
+            .sort-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-content">
+            <div>
+                <a href="profile.html">Profile</a>
+                <a href="help.html">Help & Contact</a>
+            </div>
+            <div>
+                <a href="sell.html">Sell</a>
+                <a href="watchlist.html">Watchlist</a>
+                <a href="track.html">Track Packages</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <a href="index.html" class="logo">Wrestle Swap</a>
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="Search for wrestling gear...">
+                </div>
+                <button class="search-btn">Search</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">My Swaps</h1>
+            <p class="page-subtitle">Keep track of items you're interested in</p>
+        </div>
+
+        <!-- Watchlist Controls -->
+        <div class="watchlist-controls">
+            <div class="item-count" id="item-count">
+                <strong>5 items</strong> in your watchlist
+            </div>
+            <div class="sort-filter">
+                <label>Sort by:</label>
+                <select id="sort-select" onchange="sortWatchlist()">
+                    <option value="Bought">Bought</option>
+                    <option value="Sold">Sold</option>
+                </select>
+                <button class="clear-all-btn" onclick="clearWatchlist()">Clear All</button>
+            </div>
+        </div>
+
+        <!-- Watchlist Items -->
+        <div class="watchlist-grid" id="watchlist-container"></div>
+
+        <!-- Empty State (hidden by default) -->
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <div class="empty-icon">👁️</div>
+            <h2 class="empty-title">Your watchlist is empty</h2>
+            <p class="empty-text">Start adding items you're interested in to keep track of them here</p>
+            <button class="browse-btn" onclick="window.location.href='index.html'">Browse Items</button>
+        </div>
+    </div>
+
+    <script>
+        // Watchlist data array
+        let watchlistItems = [
+            {
+                id: 1,
+                title: "ASICS Matflex 6 Wrestling Shoes - Black/Silver - Size 10",
+                condition: "Used - Excellent condition",
+                price: 49.99,
+                shipping: "Free shipping",
+                seller: "wrestlingpro23",
+                rating: 98.5,
+                timeLeft: "2 days 5 hours",
+                endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+                dateAdded: new Date('2024-01-20'),
+                emoji: "👟"
+            },
+            {
+                id: 2,
+                title: "Adidas Wrestling Singlet - Red/Blue - Youth Large",
+                condition: "New with tags",
+                price: 35.00,
+                shipping: "+$5.99 shipping",
+                seller: "matgear4u",
+                rating: 100,
+                timeLeft: "5 hours",
+                endTime: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
+                dateAdded: new Date('2024-01-25'),
+                emoji: "🤼"
+            },
+            {
+                id: 3,
+                title: "Nike Team Warm-up Jacket & Pants Set - Adult Medium",
+                condition: "Used - Like new",
+                price: 65.00,
+                shipping: "Free shipping",
+                seller: "coachsmith",
+                rating: 95.2,
+                timeLeft: "1 day 12 hours",
+                endTime: new Date(Date.now() + 1.5 * 24 * 60 * 60 * 1000), // 1.5 days from now
+                dateAdded: new Date('2024-01-22'),
+                emoji: "🧥"
+            },
+            {
+                id: 4,
+                title: "Rudis KS Elite Wrestling Shoes - Gray - Size 9.5",
+                condition: "New without box",
+                price: 95.00,
+                shipping: "Free shipping",
+                seller: "wrestlegearstore",
+                rating: 99.8,
+                timeLeft: "3 days",
+                endTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+                dateAdded: new Date('2024-01-18'),
+                emoji: "👟"
+            },
+            {
+                id: 5,
+                title: "Wrestling Headgear & Knee Pads Bundle - Cliff Keen",
+                condition: "Used - Good condition",
+                price: 35.00,
+                shipping: "+$6.99 shipping",
+                seller: "teamgear88",
+                rating: 97.1,
+                timeLeft: "6 days 8 hours",
+                endTime: new Date(Date.now() + 6.3 * 24 * 60 * 60 * 1000), // 6.3 days from now
+                dateAdded: new Date('2024-01-15'),
+                emoji: "🎽"
+            }
+        ];
+
+        // Function to render watchlist items
+        function renderWatchlist() {
+            const container = document.getElementById('watchlist-container');
+            
+            if (watchlistItems.length === 0) {
+                checkEmptyState();
+                return;
+            }
+            
+            container.innerHTML = watchlistItems.map(item => `
+                <div class="watchlist-item" data-id="${item.id}">
+                    <button class="remove-btn" onclick="removeItem(${item.id})">✕</button>
+                    <div class="item-image">${item.emoji}</div>
+                    <div class="item-details">
+                        <div class="item-title">${item.title}</div>
+                        <div class="item-condition">${item.condition}</div>
+                        <div class="item-price">$${item.price.toFixed(2)}</div>
+                        <div class="item-shipping">${item.shipping}</div>
+                        <div class="item-seller">Seller: ${item.seller} (${item.rating}% positive)</div>
+                        <div class="item-time">Ends in ${item.timeLeft}</div>
+                        <div class="item-actions">
+                            <button class="action-btn buy-btn" onclick="buyItem(${item.id})">Buy It Now</button>
+                            <button class="action-btn message-btn" onclick="messageItem(${item.id})">Message Seller</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            updateItemCount();
+        }
+
+        // Function to sort watchlist
+        function sortWatchlist() {
+            const sortType = document.getElementById('sort-select').value;
+            
+            switch(sortType) {
+                case 'recent':
+                    watchlistItems.sort((a, b) => b.dateAdded - a.dateAdded);
+                    break;
+                case 'price-low':
+                    watchlistItems.sort((a, b) => a.price - b.price);
+                    break;
+                case 'price-high':
+                    watchlistItems.sort((a, b) => b.price - a.price);
+                    break;
+                case 'ending':
+                    watchlistItems.sort((a, b) => a.endTime - b.endTime);
+                    break;
+                case 'title':
+                    watchlistItems.sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+            }
+            
+            renderWatchlist();
+        }
+
+        // Remove individual item
+        function removeItem(id) {
+            if (confirm('Remove this item from your watchlist?')) {
+                watchlistItems = watchlistItems.filter(item => item.id !== id);
+                renderWatchlist();
+                checkEmptyState();
+            }
+        }
+
+        // Clear all items
+        function clearWatchlist() {
+            if (confirm('Are you sure you want to clear your entire watchlist?')) {
+                watchlistItems = [];
+                renderWatchlist();
+                checkEmptyState();
+            }
+        }
+
+        // Update item count
+        function updateItemCount() {
+            const count = watchlistItems.length;
+            const countElement = document.getElementById('item-count');
+            countElement.innerHTML = `<strong>${count} ${count === 1 ? 'item' : 'items'}</strong> in your watchlist`;
+        }
+
+        // Check if watchlist is empty and show empty state
+        function checkEmptyState() {
+            const emptyState = document.getElementById('empty-state');
+            const controls = document.querySelector('.watchlist-controls');
+            const container = document.getElementById('watchlist-container');
+            
+            if (watchlistItems.length === 0) {
+                emptyState.style.display = 'block';
+                controls.style.display = 'none';
+                container.style.display = 'none';
+            } else {
+                emptyState.style.display = 'none';
+                controls.style.display = 'flex';
+                container.style.display = 'grid';
+            }
+        }
+
+        // Buy item handler
+        function buyItem(id) {
+            alert('Purchase feature coming soon! (This is a demo)');
+        }
+
+        // Message seller handler
+        function messageItem(id) {
+            alert('Messaging feature coming soon! (This is a demo)');
+        }
+
+        // Initial render
+        renderWatchlist();
+    </script>
+</body>
+</html>
