@@ -1,7 +1,7 @@
 const {onRequest} = require('firebase-functions/v2/https');
 const {defineSecret} = require('firebase-functions/params');
 
-const stripeSecret = defineSecret('STRIPE_SECRET_KEY');
+const stripeSecret = defineSecret('STRIPE_SKEY');
 
 exports.createPaymentIntent = onRequest(
   {
