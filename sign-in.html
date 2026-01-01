@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In or Register | Wrestle Swap</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            overflow: hidden;
+            min-height: 600px;
+        }
+
+        .logo-section {
+            flex: 1;
+            background: linear-gradient(135deg, #c41e3a 0%, #8b1528 100%);
+            color: white;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .logo-large {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .logo-tagline {
+            font-size: 18px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .forms-section {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 0;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            font-size: 18px;
+            font-weight: bold;
+            color: #707070;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #3665f3;
+            border-bottom-color: #3665f3;
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        .form-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3665f3;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 14px;
+            color: #707070;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            font-size: 13px;
+            color: #707070;
+            cursor: pointer;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .forgot-password a {
+            font-size: 13px;
+            color: #3665f3;
+            text-decoration: none;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .recaptcha-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            background-color: #3665f3;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .submit-btn:hover {
+            background-color: #2348c5;
+        }
+
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+            color: #707070;
+            font-size: 13px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e5e5;
+        }
+
+        .divider span {
+            padding: 0 15px;
+        }
+
+        .social-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .social-btn {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .social-btn:hover {
+            background: #f7f7f7;
+            border-color: #999;
+        }
+
+        .error-message {
+            color: #e53238;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .auth-container {
+                flex-direction: column;
+            }
+
+            .logo-section {
+                padding: 40px 20px;
+            }
+
+            .forms-section {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Logo Section -->
+        <div class="logo-section">
+            <div class="logo-large">Wrestle Swap</div>
+            <div class="logo-tagline">
+                Buy and sell quality wrestling gear<br>
+                Join our community of wrestlers today
+            </div>
+        </div>
+
+        <!-- Forms Section -->
+        <div class="forms-section">
+            <!-- Tab Buttons -->
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('signin')">Sign In</button>
+                <button class="tab-btn" onclick="switchTab('register')">Register</button>
+            </div>
+
+            <!-- Success Message -->
+            <div class="success-message" id="success-message"></div>
+
+            <!-- Sign In Form -->
+            <div class="form-container active" id="signin-form">
+                <h2 class="form-title">Welcome Back!</h2>
+                
+                <form onsubmit="handleSignIn(event)">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="signin-email" required>
+                        <div class="error-message" id="signin-email-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="password-container">
+                            <input type="password" class="form-input" id="signin-password" required>
+                            <span class="toggle-password" onclick="togglePassword('signin-password')">👁️</span>
+                        </div>
+                        <div class="error-message" id="signin-password-error"></div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="remember-me">
+                        <label for="remember-me">Remember me</label>
+                    </div>
+
+                    <div class="forgot-password">
+                        <a href="forgot.html">Forgot password?</a>
+                    </div>
+
+                    <!-- reCAPTCHA -->
+                    <div class="recaptcha-container">
+                        <div class="g-recaptcha" data-sitekey="6LeqLx0sAAAAAMj_mDw1C5KmH4n9G-IyOl3qeYdK"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Sign In</button>
+                </form>
+
+                <div class="divider">
+                    <span>OR</span>
+                </div>
+
+                <div class="social-buttons">
+                    <button class="social-btn" onclick="googleLogin()">
+                        <span>🔵</span> Continue with Google
+                    </button>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div class="form-container" id="register-form">
+                <h2 class="form-title">Create Account</h2>
+
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="register-name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="register-email" required>
+                        <div class="error-message" id="register-email-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-input" id="register-username" required>
+                        <div class="error-message" id="register-username-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="password-container">
+                            <input type="password" class="form-input" id="register-password" required>
+                            <span class="toggle-password" onclick="togglePassword('register-password')">👁️</span>
+                        </div>
+                        <div class="error-message" id="register-password-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <div class="password-container">
+                            <input type="password" class="form-input" id="register-confirm-password" required>
+                            <span class="toggle-password" onclick="togglePassword('register-confirm-password')">👁️</span>
+                        </div>
+                        <div class="error-message" id="register-confirm-error"></div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="agree-terms" required>
+                        <label for="agree-terms">I agree to the Terms of Service and Privacy Policy</label>
+                    </div>
+
+                    <!-- reCAPTCHA -->
+                    <div class="recaptcha-container">
+                        <div class="g-recaptcha" data-sitekey="6LeqLx0sAAAAAMj_mDw1C5KmH4n9G-IyOl3qeYdK"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Create Account</button>
+                </form>
+
+                <div class="divider">
+                    <span>OR</span>
+                </div>
+
+                <div class="social-buttons">
+                    <button class="social-btn" onclick="googleRegister()">
+                        <span>🔵</span> Sign up with Google
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
+            authDomain: "wrestleswap.firebaseapp.com",
+            projectId: "wrestleswap",
+            storageBucket: "wrestleswap.firebasestorage.app",
+            messagingSenderId: "857051782398",
+            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
+            measurementId: "G-B411WXLF3J"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Make auth and functions available globally
+        window.firebaseAuth = auth;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.signInWithPopup = signInWithPopup;
+        window.GoogleAuthProvider = GoogleAuthProvider;
+
+        console.log("Firebase initialized successfully!");
+    </script>
+
+    <!-- Main JavaScript -->
+    <script>
+        // Switch between Sign In and Register tabs
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const forms = document.querySelectorAll('.form-container');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            forms.forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'signin') {
+                tabs[0].classList.add('active');
+                document.getElementById('signin-form').classList.add('active');
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('register-form').classList.add('active');
+            }
+            
+            document.getElementById('success-message').style.display = 'none';
+        }
+
+        // Toggle password visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // Verify reCAPTCHA
+        function verifyRecaptcha() {
+            const response = grecaptcha.getResponse();
+            if (response.length === 0) {
+                alert('Please complete the reCAPTCHA verification');
+                return false;
+            }
+            return true;
+        }
+
+        // Google Login for Sign In
+        function googleLogin() {
+            // Verify reCAPTCHA first
+            if (!verifyRecaptcha()) {
+                return;
+            }
+            
+            const provider = new window.GoogleAuthProvider();
+            
+            window.signInWithPopup(window.firebaseAuth, provider)
+                .then((result) => {
+                    const user = result.user;
+                    alert('Sign in successful! Welcome back to Wrestle Swap!');
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    alert('Error: ' + error.message);
+                    console.error(error);
+                    grecaptcha.reset(); // Reset reCAPTCHA on error
+                });
+        }
+
+        // Google Register for Registration
+        function googleRegister() {
+            // Verify reCAPTCHA first
+            if (!verifyRecaptcha()) {
+                return;
+            }
+            
+            const provider = new window.GoogleAuthProvider();
+            
+            window.signInWithPopup(window.firebaseAuth, provider)
+                .then((result) => {
+                    const user = result.user;
+                    alert('Account created successfully! Welcome to Wrestle Swap!');
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    alert('Error: ' + error.message);
+                    console.error(error);
+                    grecaptcha.reset(); // Reset reCAPTCHA on error
+                });
+        }
+
+        // Handle Sign In
+        function handleSignIn(event) {
+            event.preventDefault();
+            
+            // Verify reCAPTCHA
+            if (!verifyRecaptcha()) {
+                return;
+            }
+            
+            const email = document.getElementById('signin-email').value;
+            const password = document.getElementById('signin-password').value;
+            
+            window.signInWithEmailAndPassword(window.firebaseAuth, email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    alert('Sign in successful! Welcome back to Wrestle Swap!');
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    alert('Error: ' + error.message);
+                    grecaptcha.reset(); // Reset reCAPTCHA on error
+                });
+        }
+
+        // Handle Registration
+        function handleRegister(event) {
+            event.preventDefault();
+            
+            // Verify reCAPTCHA
+            if (!verifyRecaptcha()) {
+                return;
+            }
+            
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            
+            document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+            
+            if (password !== confirmPassword) {
+                const errorEl = document.getElementById('register-confirm-error');
+                errorEl.textContent = 'Passwords do not match';
+                errorEl.style.display = 'block';
+                grecaptcha.reset();
+                return;
+            }
+            
+            if (password.length < 6) {
+                const errorEl = document.getElementById('register-password-error');
+                errorEl.textContent = 'Password must be at least 6 characters';
+                errorEl.style.display = 'block';
+                grecaptcha.reset();
+                return;
+            }
+            
+            window.createUserWithEmailAndPassword(window.firebaseAuth, email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    alert('Account created successfully! Welcome to Wrestle Swap!');
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    alert('Error: ' + error.message);
+                    grecaptcha.reset(); // Reset reCAPTCHA on error
+                });
+        }
+    </script>
+</body>
+</html>

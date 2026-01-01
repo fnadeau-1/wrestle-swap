@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results | Wrestle Swap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        /* Header */
+        .top-bar {
+            background-color: #f7f7f7;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 8px 0;
+            font-size: 12px;
+        }
+
+        .top-bar-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .top-bar a {
+            color: #000;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .main-header {
+            background-color: #fff;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #c41e3a;
+            text-decoration: none;
+        }
+
+        .search-container {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box {
+            flex: 1;
+            display: flex;
+            border: 2px solid #3665f3;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .search-btn {
+            background-color: #3665f3;
+            color: white;
+            border: none;
+            padding: 0 24px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            background-color: #fff;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e5;
+            font-size: 13px;
+        }
+
+        .breadcrumb-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .breadcrumb a {
+            color: #3665f3;
+            text-decoration: none;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1280px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 4px;
+            height: fit-content;
+        }
+
+        .filter-section {
+            margin-bottom: 24px;
+        }
+
+        .filter-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .filter-option {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .filter-option input {
+            margin-right: 8px;
+        }
+
+        .filter-option label {
+            cursor: pointer;
+        }
+
+        .price-inputs {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .price-inputs input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .apply-btn {
+            background-color: #3665f3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        /* Results Area */
+        .results-area {
+            flex: 1;
+        }
+
+        .results-header {
+            background: #fff;
+            padding: 16px 20px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .results-count {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .sort-by {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sort-by select {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* Product Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .product-item {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+
+        .product-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .product-img {
+            width: 100%;
+            height: 200px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .product-details {
+            padding: 12px;
+        }
+
+        .product-name {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+            height: 40px;
+            overflow: hidden;
+            line-height: 1.4;
+        }
+
+        .product-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .product-shipping {
+            font-size: 12px;
+            color: #707070;
+        }
+
+        .product-condition {
+            font-size: 12px;
+            color: #707070;
+            margin-top: 4px;
+        }
+
+        /* No Results */
+        .no-results {
+            background: #fff;
+            padding: 60px 40px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .no-results-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .no-results-title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .no-results-text {
+            font-size: 16px;
+            color: #707070;
+            margin-bottom: 20px;
+        }
+
+        .no-results-suggestions {
+            text-align: left;
+            max-width: 400px;
+            margin: 0 auto;
+            color: #707070;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-content">
+            <div>
+                <a href="sign-in.html">Hi! Sign in or register</a>
+                <a href="help.html">Help & Contact</a>
+            </div>
+            <div>
+                <a href="sell.html">Sell</a>
+                <a href="watchlist.html">Watchlist</a>
+                <a href="swaps.html">My Swaps</a>
+                <a href="cart.html">View Cart</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <a href="index.html" class="logo">Wrestle Swap</a>
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="search-input" placeholder="Search for wrestling gear...">
+                </div>
+                <button class="search-btn" onclick="performSearch()">Search</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <div class="breadcrumb-content">
+            <a href="index.html">Home</a> > <a href="search.html">All Categories</a> > <strong id="search-query-breadcrumb">Search Results</strong>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Sidebar Filters -->
+        <aside class="sidebar">
+            <div class="filter-section">
+                <div class="filter-title">Category</div>
+                <div class="filter-option">
+                    <input type="checkbox" id="shoes" onchange="filterProducts(); toggleSizeFilter()">
+                    <label for="shoes">Wrestling Shoes</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="singlets" onchange="filterProducts()">
+                    <label for="singlets">Singlets</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="warmups" onchange="filterProducts()">
+                    <label for="warmups">Warm-ups</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="shirts" onchange="filterProducts()">
+                    <label for="shirts">Shirts</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="bottoms" onchange="filterProducts()">
+                    <label for="bottoms">Shorts/Pants</label>
+                </div>
+            </div>
+
+            <!-- Shoe Size Filter -->
+            <div class="filter-section" id="size-filter" style="display: none;">
+                <div class="filter-title">Shoe Size</div>
+                    <div class="filter-option">
+                    <input type="checkbox" id="size-5" onchange="filterProducts()">
+                    <label for="size-5">5</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size-5.5" onchange="filterProducts()">
+                    <label for="size-5.5">5.5</label>
+                </div>
+                    <div class="filter-option">
+                    <input type="checkbox" id="size-6" onchange="filterProducts()">
+                    <label for="size-6">6</label>
+                </div>
+                    <div class="filter-option">
+                    <input type="checkbox" id="size-6.5" onchange="filterProducts()">
+                    <label for="size-6.5">6.5</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size-7" onchange="filterProducts()">
+                    <label for="size-7">7</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size-7.5" onchange="filterProducts()">
+                    <label for="size-7.5">7.5</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size-8" onchange="filterProducts()">
+                    <label for="size-8">8</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size-9" onchange="filterProducts()">
+                    <label for="size-9">9</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size-9.5" onchange="filterProducts()">
+                    <label for="size-9.5">9.5</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size-10" onchange="filterProducts()">
+                    <label for="size-10">10</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size-10.5" onchange="filterProducts()">
+                    <label for="size-10.5">10.5</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size-11" onchange="filterProducts()">
+                    <label for="size-11">11</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="size-12" onchange="filterProducts()">
+                    <label for="size-12">12</label>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Condition</div>
+                <div class="filter-option">
+                    <input type="checkbox" id="new" onchange="filterProducts()">
+                    <label for="new">New</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="likenew" onchange="filterProducts()">
+                    <label for="likenew">Used - Like New</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="used" onchange="filterProducts()">
+                    <label for="used">Used - Good</label>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Price</div>
+                <div class="price-inputs">
+                    <input type="number" placeholder="Min" id="price-min">
+                    <input type="number" placeholder="Max" id="price-max">
+                </div>
+                <button class="apply-btn" onclick="filterProducts()">Apply</button>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Brand</div>
+                <div class="filter-option">
+                    <input type="checkbox" id="asics" onchange="filterProducts()">
+                    <label for="asics">ASICS</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="adidas" onchange="filterProducts()">
+                    <label for="adidas">Adidas</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="nike" onchange="filterProducts()">
+                    <label for="nike">Nike</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="rudis" onchange="filterProducts()">
+                    <label for="rudis">Rudis</label>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Results Area -->
+        <main class="results-area">
+            <!-- Results Header -->
+            <div class="results-header">
+                <div class="results-count" id="results-count">
+                    <strong>0 results</strong> for "<span id="search-query-display"></span>"
+                </div>
+                <div class="sort-by">
+                    <span>Sort:</span>
+                    <select onchange="sortProducts(this.value)">
+                        <option value="best">Best Match</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                        <option value="newest">Newest</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="products-grid" id="products-container"></div>
+
+            <!-- No Results -->
+            <div class="no-results" id="no-results" style="display: none;">
+                <div class="no-results-icon">🔍</div>
+                <h2 class="no-results-title">No results found</h2>
+                <p class="no-results-text">We couldn't find any items matching "<span id="no-results-query"></span>"</p>
+                <div class="no-results-suggestions">
+                    <strong>Try:</strong><br>
+                    • Checking your spelling<br>
+                    • Using fewer or different keywords<br>
+                    • Browsing our categories<br>
+                    • Searching for brands like ASICS, Adidas, Nike
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Sample product database
+        const allProducts = [
+            { id: 1, name: 'ASICS Matflex 6 Wrestling Shoes - Size 10', price: 49.99, category: 'shoes', brand: 'asics', condition: 'used', icon: '👟', shipping: 'Free shipping' },
+            { id: 2, name: 'Adidas HVC 2 Youth Wrestling Shoes - Size 7', price: 35.00, category: 'shoes', brand: 'adidas', condition: 'used', icon: '👟', shipping: '+$5.99 shipping' },
+            { id: 3, name: 'Nike Inflict 3 Wrestling Shoes - Size 10', price: 89.99, category: 'shoes', brand: 'nike', condition: 'new', icon: '👟', shipping: 'Free shipping' },
+            { id: 4, name: 'ASICS Aggressor 4 - Blue/White - Size 9.5', price: 72.50, category: 'shoes', brand: 'asics', condition: 'likenew', icon: '👟', shipping: 'Free shipping' },
+            { id: 5, name: 'Rudis KS Elite Wrestling Shoes - Size 11', price: 95.00, category: 'shoes', brand: 'rudis', condition: 'new', icon: '👟', shipping: 'Free shipping' },
+            { id: 6, name: 'Adidas Combat Speed 5 - Size 11', price: 55.00, category: 'shoes', brand: 'adidas', condition: 'used', icon: '👟', shipping: '+$7.99 shipping' },
+            { id: 7, name: 'Adidas Wrestling Singlet - Red/Blue - Youth Large', price: 29.99, category: 'singlets', brand: 'adidas', condition: 'new', icon: '🤼', shipping: 'Free shipping' },
+            { id: 8, name: 'ASICS Solid Modified Singlet - Black', price: 45.00, category: 'singlets', brand: 'asics', condition: 'used', icon: '🤼', shipping: 'Free shipping' },
+            { id: 9, name: 'Nike Grappler Elite Wrestling Singlet', price: 52.00, category: 'singlets', brand: 'nike', condition: 'likenew', icon: '🤼', shipping: '+$5.99 shipping' },
+            { id: 10, name: 'Nike Team Warm-up Jacket & Pants Set', price: 65.00, category: 'warmups', brand: 'nike', condition: 'likenew', icon: '🧥', shipping: 'Free shipping' },
+            { id: 11, name: 'Adidas Team Warm-up Suit - Navy', price: 48.00, category: 'warmups', brand: 'adidas', condition: 'used', icon: '🧥', shipping: 'Free shipping' },
+            { id: 12, name: 'Wrestling Compression Shirt - Long Sleeve', price: 18.99, category: 'shirts', brand: 'other', condition: 'new', icon: '👕', shipping: '+$4.99 shipping' },
+            { id: 13, name: 'Under Armour Wrestling Shorts - Black', price: 22.50, category: 'bottoms', brand: 'other', condition: 'used', icon: '🩳', shipping: 'Free shipping' }
+        ];
+
+        let currentProducts = [...allProducts];
+        let searchQuery = '';
+
+        // Get search query from URL
+        function getSearchQuery() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('q') || '';
+        }
+
+        // Initialize page
+        function initializePage() {
+            searchQuery = getSearchQuery();
+            document.getElementById('search-input').value = searchQuery;
+            document.getElementById('search-query-display').textContent = searchQuery;
+            document.getElementById('search-query-breadcrumb').textContent = searchQuery ? `"${searchQuery}"` : 'All Items';
+            document.getElementById('no-results-query').textContent = searchQuery;
+            
+            filterProducts();
+        }
+
+        // Perform new search
+        function performSearch() {
+            const query = document.getElementById('search-input').value;
+            if (query.trim()) {
+                window.location.href = 'search.html?q=' + encodeURIComponent(query);
+            }
+        }
+
+        // Toggle size filter visibility
+        function toggleSizeFilter() {
+            const shoesChecked = document.getElementById('shoes')?.checked;
+            const sizeFilter = document.getElementById('size-filter');
+            
+            if (shoesChecked) {
+                sizeFilter.style.display = 'block';
+            } else {
+                sizeFilter.style.display = 'none';
+            }
+        }
+
+        // Enter key search
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+            initializePage();
+        });
+
+        // Filter products
+        function filterProducts() {
+            let filtered = [...allProducts];
+
+            // Filter by search query
+            if (searchQuery) {
+                filtered = filtered.filter(p => 
+                    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+            }
+
+            // Filter by category
+            const selectedCategories = [];
+            ['shoes', 'singlets', 'warmups', 'shirts', 'bottoms'].forEach(cat => {
+                if (document.getElementById(cat)?.checked) {
+                    selectedCategories.push(cat);
+                }
+            });
+            if (selectedCategories.length > 0) {
+                filtered = filtered.filter(p => selectedCategories.includes(p.category));
+            }
+
+            // Filter by shoe size
+            const selectedSizes = [];
+            ['size-7', 'size-8', 'size-9', 'size-9.5', 'size-10', 'size-10.5', 'size-11', 'size-12'].forEach(sizeId => {
+                if (document.getElementById(sizeId)?.checked) {
+                    const size = sizeId.replace('size-', '');
+                    selectedSizes.push(size);
+                }
+            });
+
+            if (selectedSizes.length > 0) {
+                filtered = filtered.filter(p => {
+                    const sizeMatch = p.name.match(/(?:Size|size)\s*(\d+(?:\.\d+)?)/);
+                    if (sizeMatch) {
+                        return selectedSizes.includes(sizeMatch[1]);
+                    }
+                    return false;
+                });
+            }
+
+            // Filter by condition
+            const selectedConditions = [];
+            ['new', 'used', 'likenew'].forEach(cond => {
+                if (document.getElementById(cond)?.checked) {
+                    selectedConditions.push(cond);
+                }
+            });
+            if (selectedConditions.length > 0) {
+                filtered = filtered.filter(p => selectedConditions.includes(p.condition));
+            }
+
+            // Filter by brand
+            const selectedBrands = [];
+            ['asics', 'adidas', 'nike', 'rudis'].forEach(brand => {
+                if (document.getElementById(brand)?.checked) {
+                    selectedBrands.push(brand);
+                }
+            });
+            if (selectedBrands.length > 0) {
+                filtered = filtered.filter(p => selectedBrands.includes(p.brand));
+            }
+
+            // Filter by price
+            const minPrice = parseFloat(document.getElementById('price-min')?.value) || 0;
+            const maxPrice = parseFloat(document.getElementById('price-max')?.value) || Infinity;
+            filtered = filtered.filter(p => p.price >= minPrice && p.price <= maxPrice);
+
+            currentProducts = filtered;
+            displayProducts();
+        }
+
+        // Sort products
+        function sortProducts(sortType) {
+            switch(sortType) {
+                case 'price-low':
+                    currentProducts.sort((a, b) => a.price - b.price);
+                    break;
+                case 'price-high':
+                    currentProducts.sort((a, b) => b.price - a.price);
+                    break;
+                case 'newest':
+                    currentProducts.reverse();
+                    break;
+                default:
+                    break;
+            }
+            displayProducts();
+        }
+
+        // Display products
+        function displayProducts() {
+            const container = document.getElementById('products-container');
+            const noResults = document.getElementById('no-results');
+            const resultsCount = document.getElementById('results-count');
+
+            if (currentProducts.length === 0) {
+                container.style.display = 'none';
+                noResults.style.display = 'block';
+                resultsCount.innerHTML = `<strong>0 results</strong> for "${searchQuery}"`;
+            } else {
+                container.style.display = 'grid';
+                noResults.style.display = 'none';
+                resultsCount.innerHTML = `<strong>${currentProducts.length} result${currentProducts.length !== 1 ? 's' : ''}</strong> for "${searchQuery}"`;
+
+                container.innerHTML = currentProducts.map(product => `
+                    <div class="product-item" onclick="window.location.href='product-detail.html?id=${product.id}'">
+                        <div class="product-img">${product.icon}</div>
+                        <div class="product-details">
+                            <div class="product-name">${product.name}</div>
+                            <div class="product-price">$${product.price.toFixed(2)}</div>
+                            <div class="product-shipping">${product.shipping}</div>
+                            <div class="product-condition">${formatCondition(product.condition)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Format condition text
+        function formatCondition(condition) {
+            const conditions = {
+                'new': 'New',
+                'used': 'Used',
+                'likenew': 'Like New'
+            };
+            return conditions[condition] || condition;
+        }
+    </script>
+</body>
+</html>

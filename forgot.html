@@ -1,0 +1,37 @@
+<input type="email" id="resetEmail" placeholder="Enter your email">
+<button onclick="resetPassword()">Reset Password</button>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
+            authDomain: "wrestleswap.firebaseapp.com",
+            projectId: "wrestleswap",
+            storageBucket: "wrestleswap.firebasestorage.app",
+            messagingSenderId: "857051782398",
+            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
+            measurementId: "G-B411WXLF3J"
+        };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  window.resetPassword = function () {
+    const email = document.getElementById("resetEmail").value;
+
+    if (!email) {
+      alert("Please enter an email.");
+      return;
+    }
+
+    sendPasswordResetEmail(auth, email)
+      .then(() => {
+        alert("Password reset email sent! Check your inbox.");
+      })
+      .catch((error) => {
+        alert(error.message);
+      });
+  }
+</script>

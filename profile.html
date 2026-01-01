@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile | Wrestle Swap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding-bottom: 50px;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #c41e3a 0%, #8b1528 100%);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .profile-header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+
+        .profile-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #c41e3a;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .profile-username {
+            font-size: 18px;
+            color: #707070;
+            margin-bottom: 15px;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #c41e3a;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #707070;
+        }
+
+        .rating-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stars {
+            color: #ffc107;
+            font-size: 24px;
+        }
+
+        .rating-text {
+            font-size: 18px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .rating-count {
+            font-size: 14px;
+            color: #707070;
+        }
+
+        .profile-bio {
+            font-size: 16px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .profile-badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge.verified {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge.trusted {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .badge.member-since {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #3665f3;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2348c5;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #3665f3;
+            border: 2px solid #3665f3;
+        }
+
+        .btn-secondary:hover {
+            background: #f0f0f0;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .item-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .item-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        .item-details {
+            padding: 15px;
+        }
+
+        .item-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .item-price {
+            font-size: 20px;
+            font-weight: bold;
+            color: #c41e3a;
+            margin-bottom: 8px;
+        }
+
+        .item-condition {
+            font-size: 13px;
+            color: #707070;
+            padding: 4px 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .review-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .reviewer-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reviewer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #c41e3a;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .reviewer-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .review-date {
+            font-size: 13px;
+            color: #707070;
+        }
+
+        .review-stars {
+            color: #ffc107;
+            font-size: 16px;
+        }
+
+        .review-text {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .profile-stats {
+                justify-content: center;
+            }
+
+            .items-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="index.html" class="logo">Wrestle Swap</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="search.html">Marketplace</a>
+            <a href="settings.html">Settings</a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <img src="https://via.placeholder.com/150" alt="Profile Picture" class="profile-image" id="profile-image">
+            
+            <div class="profile-info">
+                <h1 class="profile-name" id="profile-name">Loading...</h1>
+                <p class="profile-username" id="profile-username">@loading</p>
+                
+                <div class="profile-stats">
+                    <div class="stat">
+                        <div class="stat-number" id="items-sold">47</div>
+                        <div class="stat-label">Items Sold</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="active-listings">12</div>
+                        <div class="stat-label">Active Listings</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="total-reviews">38</div>
+                        <div class="stat-label">Reviews</div>
+                    </div>
+                </div>
+
+                <div class="rating-container">
+                    <div class="stars">★★★★★</div>
+                    <span class="rating-text">4.8</span>
+                    <span class="rating-count">(38 reviews)</span>
+                </div>
+
+                <p class="profile-bio" id="profile-bio">
+                    Passionate wrestler and gear enthusiast. Selling quality wrestling equipment at fair prices. Fast shipping and excellent customer service guaranteed!
+                </p>
+
+                <div class="profile-badges">
+                    <span class="badge verified">✓ Verified Seller</span>
+                    <span class="badge trusted">🛡️ Trusted Trader</span>
+                    <span class="badge member-since">📅 Member since Jan 2023</span>
+                </div>
+
+                <div class="action-buttons" id="action-buttons">
+                    <!-- Buttons will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Currently Selling Section -->
+        <div class="section">
+            <h2 class="section-title">🛍️ Currently Selling</h2>
+            <div class="items-grid" id="selling-items">
+                <!-- Item 1 -->
+                <div class="item-card">
+                    <img src="https://via.placeholder.com/250x200" alt="Wrestling Singlet" class="item-image">
+                    <div class="item-details">
+                        <div class="item-name">Adidas Wrestling Singlet</div>
+                        <div class="item-price">$45.00</div>
+                        <span class="item-condition">Like New</span>
+                    </div>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="item-card">
+                    <img src="https://via.placeholder.com/250x200" alt="Wrestling Shoes" class="item-image">
+                    <div class="item-details">
+                        <div class="item-name">Nike Inflict 3 Wrestling Shoes</div>
+                        <div class="item-price">$80.00</div>
+                        <span class="item-condition">Used - Good</span>
+                    </div>
+                </div>
+
+                <!-- Item 3 -->
+                <div class="item-card">
+                    <img src="https://via.placeholder.com/250x200" alt="Headgear" class="item-image">
+                    <div class="item-details">
+                        <div class="item-name">Cliff Keen Headgear</div>
+                        <div class="item-price">$25.00</div>
+                        <span class="item-condition">Like New</span>
+                    </div>
+                </div>
+
+                <!-- Item 4 -->
+                <div class="item-card">
+                    <img src="https://via.placeholder.com/250x200" alt="Wrestling Mat" class="item-image">
+                    <div class="item-details">
+                        <div class="item-name">Practice Wrestling Mat</div>
+                        <div class="item-price">$150.00</div>
+                        <span class="item-condition">Used - Good</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="section">
+            <h2 class="section-title">⭐ Reviews</h2>
+            <div class="reviews-list">
+                <!-- Review 1 -->
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar">M</div>
+                            <div>
+                                <div class="reviewer-name">Mike Johnson</div>
+                                <div class="review-date">2 days ago</div>
+                            </div>
+                        </div>
+                        <div class="review-stars">★★★★★</div>
+                    </div>
+                    <p class="review-text">
+                        Excellent seller! The singlet arrived exactly as described. Fast shipping and great communication. Would definitely buy from again!
+                    </p>
+                </div>
+
+                <!-- Review 2 -->
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar">S</div>
+                            <div>
+                                <div class="reviewer-name">Sarah Martinez</div>
+                                <div class="review-date">1 week ago</div>
+                            </div>
+                        </div>
+                        <div class="review-stars">★★★★★</div>
+                    </div>
+                    <p class="review-text">
+                        Great experience! The wrestling shoes were in perfect condition and shipped super fast. Highly recommend this seller!
+                    </p>
+                </div>
+
+                <!-- Review 3 -->
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar">D</div>
+                            <div>
+                                <div class="reviewer-name">David Lee</div>
+                                <div class="review-date">2 weeks ago</div>
+                            </div>
+                        </div>
+                        <div class="review-stars">★★★★☆</div>
+                    </div>
+                    <p class="review-text">
+                        Good product and fair price. Shipping took a bit longer than expected, but overall satisfied with the purchase.
+                    </p>
+                </div>
+
+                <!-- Review 4 -->
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar">A</div>
+                            <div>
+                                <div class="reviewer-name">Alex Rodriguez</div>
+                                <div class="review-date">3 weeks ago</div>
+                            </div>
+                        </div>
+                        <div class="review-stars">★★★★★</div>
+                    </div>
+                    <p class="review-text">
+                        Top-notch seller! Very professional and the headgear was exactly what I needed. Will buy again for sure!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
+            authDomain: "wrestleswap.firebaseapp.com",
+            projectId: "wrestleswap",
+            storageBucket: "wrestleswap.firebasestorage.app",
+            messagingSenderId: "857051782398",
+            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
+            measurementId: "G-B411WXLF3J"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Get userId from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user');
+
+        // Check current user
+        onAuthStateChanged(auth, (currentUser) => {
+            if (!currentUser) {
+                // Redirect to sign in if not logged in
+                window.location.href = 'sign-in.html';
+                return;
+            }
+
+            // Check if viewing own profile or someone else's
+            if (!userId || userId === currentUser.uid) {
+                // Viewing own profile
+                loadOwnProfile(currentUser);
+            } else {
+                // Viewing someone else's profile
+                loadOtherProfile(userId, currentUser);
+            }
+        });
+
+        function loadOwnProfile(user) {
+            // Update profile with current user data
+            document.getElementById('profile-name').textContent = user.displayName || 'User';
+            document.getElementById('profile-username').textContent = '@' + (user.email.split('@')[0]);
+            
+            if (user.photoURL) {
+                document.getElementById('profile-image').src = user.photoURL;
+            }
+
+            // Show Edit Profile button
+            const actionButtons = document.getElementById('action-buttons');
+            actionButtons.innerHTML = `
+                <button class="btn btn-primary" onclick="editProfile()">Edit Profile</button>
+                <button class="btn btn-secondary" onclick="window.location.href='add-listing.html'">Add New Listing</button>
+            `;
+        }
+
+        function loadOtherProfile(userId, currentUser) {
+            // In a real app, you would fetch this user's data from Firestore
+            // For now, we'll use placeholder data
+            
+            document.getElementById('profile-name').textContent = 'John Wrestler';
+            document.getElementById('profile-username').textContent = '@johnwrestler';
+            
+            // Show Contact Seller and Report buttons
+            const actionButtons = document.getElementById('action-buttons');
+            actionButtons.innerHTML = `
+                <button class="btn btn-primary" onclick="contactSeller()">📧 Contact Seller</button>
+                <button class="btn btn-secondary" onclick="reportUser()">⚠️ Report User</button>
+            `;
+        }
+
+        // Make functions available globally
+        window.editProfile = function() {
+            alert('Edit profile feature coming soon! This will allow you to update your bio, profile picture, and other information.');
+        };
+
+        window.contactSeller = function() {
+            alert('Contact seller feature coming soon! You will be able to send messages to this seller.');
+        };
+
+        window.reportUser = function() {
+            if (confirm('Are you sure you want to report this user?')) {
+                alert('Thank you for your report. Our team will review this user.');
+            }
+        };
+    </script>
+</body>
+</html>

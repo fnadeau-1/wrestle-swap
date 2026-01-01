@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings | Wrestle Swap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        /* Header */
+        .top-bar {
+            background-color: #f7f7f7;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 8px 0;
+            font-size: 12px;
+        }
+
+        .top-bar-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .top-bar a {
+            color: #000;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .main-header {
+            background-color: #fff;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #c41e3a;
+            text-decoration: none;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .page-subtitle {
+            font-size: 16px;
+            color: #707070;
+            margin-bottom: 30px;
+        }
+
+        /* Settings Sections */
+        .settings-section {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 14px;
+            color: #707070;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #3665f3;
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .toggle-row:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-info {
+            flex: 1;
+        }
+
+        .toggle-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .toggle-description {
+            font-size: 13px;
+            color: #707070;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #3665f3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #3665f3;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2348c5;
+        }
+
+        .btn-secondary {
+            background-color: #e5e5e5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+
+        .btn-danger {
+            background-color: #e53238;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c41e24;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: #707070;
+            margin-top: 5px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-content">
+            <div>
+                <a href="sign-in.html" id="auth-link">Hi! Sign in or register</a>
+                <a href="help.html">Help & Contact</a>
+            </div>
+            <div>
+                <a href="sell.html">Sell</a>
+                <a href="watchlist.html">Watchlist</a>
+                <a href="cart.html">Cart</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <a href="index.html" class="logo">Wrestle Swap</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1 class="page-title">Account Settings</h1>
+        <p class="page-subtitle">Manage your account preferences and information</p>
+
+        <!-- Account Information -->
+        <div class="settings-section">
+            <h2 class="section-title">Account Information</h2>
+            <div class="info-row">
+                <span class="info-label">Email Address</span>
+                <span class="info-value" id="user-email">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Member Since</span>
+                <span class="info-value" id="member-since">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Account Status</span>
+                <span class="info-value" style="color: #28a745;">✓ Active</span>
+            </div>
+        </div>
+
+        <!-- Profile Settings -->
+        <div class="settings-section">
+            <h2 class="section-title">Profile Settings</h2>
+            <div class="success-message" id="profile-success">Profile updated successfully!</div>
+            <div class="error-message" id="profile-error"></div>
+
+            <form id="profile-form">
+                <div class="form-group">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" class="form-input" id="display-name" placeholder="Enter your display name">
+                    <p class="helper-text">This name will be shown to other users</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Location (City, State)</label>
+                    <input type="text" class="form-input" id="location" placeholder="e.g., Vestal, NY">
+                    <p class="helper-text">Helps buyers know where items ship from</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Bio</label>
+                    <textarea class="form-textarea" id="bio" placeholder="Tell others about yourself..."></textarea>
+                    <p class="helper-text">Optional - Share your wrestling background or interests</p>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">Save Profile</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Change Password -->
+        <div class="settings-section">
+            <h2 class="section-title">Change Password</h2>
+            <div class="success-message" id="password-success">Password changed successfully!</div>
+            <div class="error-message" id="password-error"></div>
+
+            <form id="password-form">
+                <div class="form-group">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" class="form-input" id="current-password" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input type="password" class="form-input" id="new-password" required>
+                    <p class="helper-text">Must be at least 6 characters</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" class="form-input" id="confirm-password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Change Password</button>
+            </form>
+        </div>
+
+        <!-- Privacy Settings -->
+        <div class="settings-section">
+            <h2 class="section-title">Privacy Settings</h2>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-title">Show Profile to Public</div>
+                    <div class="toggle-description">Allow others to view your public profile</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="public-profile" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-title">Show Location</div>
+                    <div class="toggle-description">Display your location on listings</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="show-location" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-title">Allow Messages</div>
+                    <div class="toggle-description">Let other users send you messages</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="allow-messages" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Notification Settings -->
+        <div class="settings-section">
+            <h2 class="section-title">Notification Settings</h2>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-title">Email Notifications</div>
+                    <div class="toggle-description">Receive updates about your listings and purchases</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="email-notifications" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-title">Marketing Emails</div>
+                    <div class="toggle-description">Receive promotional offers and news</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="marketing-emails">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-title">Price Drop Alerts</div>
+                    <div class="toggle-description">Get notified when items on your watchlist drop in price</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="price-alerts" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="settings-section">
+            <h2 class="section-title">Account Actions</h2>
+            <div class="button-group">
+                <button class="btn btn-secondary" onclick="signOutUser()">Sign Out</button>
+                <button class="btn btn-danger" onclick="deleteAccount()">Delete Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
+            authDomain: "wrestleswap.firebaseapp.com",
+            projectId: "wrestleswap",
+            storageBucket: "wrestleswap.firebasestorage.app",
+            messagingSenderId: "857051782398",
+            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
+            measurementId: "G-B411WXLF3J"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+
+        // Check authentication and load user data
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                alert('Please sign in to access settings');
+                window.location.href = 'sign-in.html';
+                return;
+            }
+
+            currentUser = user;
+
+            // Display account info
+            document.getElementById('user-email').textContent = user.email;
+            
+            // Format member since date
+            const memberSince = new Date(user.metadata.creationTime);
+            document.getElementById('member-since').textContent = memberSince.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+
+            // Load profile data from Firestore
+            try {
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    document.getElementById('display-name').value = userData.displayName || '';
+                    document.getElementById('location').value = userData.location || '';
+                    document.getElementById('bio').value = userData.bio || '';
+                }
+            } catch (error) {
+                console.log('No existing profile data');
+            }
+        });
+
+        // Save profile
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const displayName = document.getElementById('display-name').value;
+            const location = document.getElementById('location').value;
+            const bio = document.getElementById('bio').value;
+
+            try {
+                await setDoc(doc(db, 'users', currentUser.uid), {
+                    displayName: displayName,
+                    location: location,
+                    bio: bio,
+                    email: currentUser.email,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+
+                // Show success
+                const successMsg = document.getElementById('profile-success');
+                successMsg.style.display = 'block';
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 3000);
+
+            } catch (error) {
+                const errorMsg = document.getElementById('profile-error');
+                errorMsg.textContent = 'Error updating profile: ' + error.message;
+                errorMsg.style.display = 'block';
+            }
+        });
+
+        // Change password
+        document.getElementById('password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            // Validate
+            if (newPassword.length < 6) {
+                const errorMsg = document.getElementById('password-error');
+                errorMsg.textContent = 'New password must be at least 6 characters';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                const errorMsg = document.getElementById('password-error');
+                errorMsg.textContent = 'New passwords do not match';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            try {
+                // Re-authenticate user
+                const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+                await reauthenticateWithCredential(currentUser, credential);
+
+                // Update password
+                await updatePassword(currentUser, newPassword);
+
+                // Show success
+                const successMsg = document.getElementById('password-success');
+                successMsg.style.display = 'block';
+                document.getElementById('password-form').reset();
+                
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 3000);
+
+            } catch (error) {
+                const errorMsg = document.getElementById('password-error');
+                if (error.code === 'auth/wrong-password') {
+                    errorMsg.textContent = 'Current password is incorrect';
+                } else {
+                    errorMsg.textContent = 'Error: ' + error.message;
+                }
+                errorMsg.style.display = 'block';
+            }
+        });
+
+        // Make functions global
+        window.signOutUser = async function() {
+            if (confirm('Are you sure you want to sign out?')) {
+                try {
+                    await signOut(auth);
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    alert('Error signing out: ' + error.message);
+                }
+            }
+        };
+
+        window.deleteAccount = async function() {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                if (confirm('This will permanently delete all your data. Are you absolutely sure?')) {
+                    try {
+                        await deleteUser(currentUser);
+                        alert('Account deleted successfully');
+                        window.location.href = 'index.html';
+                    } catch (error) {
+                        if (error.code === 'auth/requires-recent-login') {
+                            alert('For security, please sign out and sign back in, then try deleting your account again.');
+                        } else {
+                            alert('Error deleting account: ' + error.message);
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+</body>
+</html>
