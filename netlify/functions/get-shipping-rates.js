@@ -60,7 +60,7 @@ exports.handler = async (event, context) => {
     }
 
     // Your Shippo API key (stored in Netlify environment variables)
-    const SHIPPO_API_KEY = process.env.SHIPPO_API_KEY;
+    const SHIPPO_API_KEY = process.env.SHIPPO_TEST_KEY;
     
     if (!SHIPPO_API_KEY) {
       console.log('ERROR: No API key configured');
