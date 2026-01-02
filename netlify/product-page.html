@@ -252,7 +252,7 @@
         window.firebaseServerTimestamp = serverTimestamp;
     </script>
     <script>
-        // ✅ FIXED: Added sellerAddress for C2C shipping
+        // ✅ PRODUCT DATA - Properly defined with sellerAddress
         const product = { 
             id: 'asics-matflex-6', 
             name: 'ASICS Matflex 6 Wrestling Shoes - Black/Silver', 
@@ -261,14 +261,17 @@
             condition: 'Used - Excellent', 
             seller: 'wrestlingpro23', 
             sellerId: 'user123',
-            // 👇 THIS IS CRITICAL FOR C2C SHIPPING!
             sellerAddress: {
                 name: 'wrestlingpro23',
-                city: senderAddress.city,
-                state: senderAddress.state,
-                zip: senderAddress.zip
+                city: 'Vestal',
+                state: 'NY',
+                zip: '13850'
             }
         };
+
+        // DEBUG: Log product on page load
+        console.log('✅ Product loaded:', product);
+        console.log('✅ Seller address:', product.sellerAddress);
 
         window.addEventListener('DOMContentLoaded', function() { updateCartCount(); updateWatchlistCount(); checkWatchlistStatus(); });
         function changeImage(index) { document.querySelectorAll('.thumbnail').forEach(thumb => { thumb.classList.remove('active'); }); document.querySelectorAll('.thumbnail')[index].classList.add('active'); }
@@ -284,21 +287,27 @@
         function buyNow() { const cart = getCart(); const existingItem = cart.find(item => item.id === product.id); if (!existingItem) { cart.push({ ...product, quantity: 1, addedAt: new Date().toISOString() }); saveCart(cart); } showToast('Proceeding to checkout...', 'success'); setTimeout(() => { showToast('Checkout page would open here', 'success'); }, 1000); }
         function toggleWatchlist() { const watchlist = getWatchlist(); const existingIndex = watchlist.findIndex(item => item.id === product.id); if (existingIndex > -1) { watchlist.splice(existingIndex, 1); document.getElementById('watchlist-btn').classList.remove('in-watchlist'); document.getElementById('heart-icon').textContent = '♡'; document.getElementById('watchlist-text').textContent = 'Add to Watchlist'; showToast('Removed from watchlist'); } else { watchlist.push({ ...product, addedAt: new Date().toISOString() }); document.getElementById('watchlist-btn').classList.add('in-watchlist'); document.getElementById('heart-icon').textContent = '♥'; document.getElementById('watchlist-text').textContent = 'In Watchlist'; showToast('Added to watchlist!'); } saveWatchlist(watchlist); }
 
-        // ✅ FIXED: C2C Shipping Calculator
+        // ✅ SHIPPING CALCULATOR
         async function calculateShipping() {
             const zipInput = document.getElementById('shipping-zip');
             const resultsDiv = document.getElementById('shipping-results');
             const zipCode = zipInput.value.trim();
             
+            // Validate ZIP
             if (!zipCode || zipCode.length !== 5 || !/^\d{5}$/.test(zipCode)) {
                 resultsDiv.innerHTML = '<div class="shipping-error">Please enter a valid 5-digit ZIP code</div>';
                 return;
             }
             
-            resultsDiv.innerHTML = '<div class="shipping-loading">⏳ Calculating shipping rates from seller...</div>';
+            resultsDiv.innerHTML = '<div class="shipping-loading">⏳ Calculating shipping rates...</div>';
+            
+            // DEBUG: Log what we're sending
+            console.log('🚀 Sending to API:', {
+                zipCode: zipCode,
+                senderAddress: product.sellerAddress
+            });
             
             try {
-                // ✅ NOW SENDING SELLER ADDRESS!
                 const response = await fetch('/.netlify/functions/get-shipping-rates', {
                     method: 'POST',
                     headers: {
@@ -306,26 +315,29 @@
                     },
                     body: JSON.stringify({ 
                         zipCode: zipCode,
-                        senderAddress: product.sellerAddress  // 👈 THIS WAS MISSING!
+                        senderAddress: product.sellerAddress
                     })
                 });
                 
+                console.log('📡 Response status:', response.status);
+                
                 if (!response.ok) {
                     const errorData = await response.json();
+                    console.error('❌ Error from API:', errorData);
                     throw new Error(errorData.error || 'Failed to get rates');
                 }
                 
                 const rates = await response.json();
-                console.log('Received rates from', product.sellerAddress.city, ':', rates);
+                console.log('✅ Received rates:', rates);
                 
                 if (rates && rates.length > 0) {
                     displayShippingRates(rates);
                 } else {
-                    resultsDiv.innerHTML = '<div class="shipping-error">No shipping rates available for this location</div>';
+                    resultsDiv.innerHTML = '<div class="shipping-error">No shipping rates available</div>';
                 }
                 
             } catch (error) {
-                console.error('Shipping error:', error);
+                console.error('❌ Shipping error:', error);
                 resultsDiv.innerHTML = `<div class="shipping-error">Unable to calculate shipping: ${error.message}</div>`;
             }
         }
@@ -333,7 +345,6 @@
         function displayShippingRates(rates) {
             const resultsDiv = document.getElementById('shipping-results');
             
-            // Sort rates by price and limit to top 5
             const sortedRates = rates
                 .filter(r => r.amount && r.provider) 
                 .sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount))
