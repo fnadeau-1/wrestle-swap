@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | Wrestle Swap</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        .top-bar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 12px 0;
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #c41e3a;
+            text-decoration: none;
+        }
+
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #28a745;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 30px;
+        }
+
+        .checkout-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3665f3;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .required {
+            color: #e53238;
+        }
+
+        /* Order Summary */
+        .order-summary {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .summary-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        .order-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .item-image {
+            width: 80px;
+            height: 80px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-name {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .item-condition {
+            font-size: 12px;
+            color: #707070;
+            margin-bottom: 5px;
+        }
+
+        .item-price {
+            font-size: 16px;
+            font-weight: bold;
+            color: #c41e3a;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .summary-row.total {
+            font-size: 18px;
+            font-weight: bold;
+            padding-top: 15px;
+            border-top: 2px solid #e5e5e5;
+            margin-top: 15px;
+        }
+
+        /* Stripe Card Element */
+        #card-element {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+        }
+
+        #card-errors {
+            color: #e53238;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        /* Buttons */
+        .pay-button {
+            width: 100%;
+            padding: 16px;
+            background: #3665f3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        .pay-button:hover {
+            background: #2348c5;
+        }
+
+        .pay-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .back-to-cart {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #3665f3;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-to-cart:hover {
+            text-decoration: underline;
+        }
+
+        .security-badges {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .badge {
+            font-size: 12px;
+            color: #707070;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        @media (max-width: 968px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .order-summary {
+                position: static;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="top-bar">
+        <div class="header-content">
+            <a href="index.html" class="logo">Wrestle Swap</a>
+            <div class="secure-badge">
+                🔒 Secure Checkout
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Checkout Form -->
+        <div class="checkout-section">
+            <h1 class="section-title">Checkout</h1>
+
+            <form id="payment-form">
+                <!-- Shipping Information -->
+                <h3 style="font-size: 18px; margin-bottom: 15px;">Shipping Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="first-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="last-name" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email <span class="required">*</span></label>
+                    <input type="email" class="form-input" id="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Phone Number <span class="required">*</span></label>
+                    <input type="tel" class="form-input" id="phone" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Address <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="address" placeholder="Street address" required>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" class="form-input" id="address2" placeholder="Apartment, suite, etc. (optional)">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">City <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="city" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">State <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="state" placeholder="New York" required>
+                        <p style="font-size: 12px; color: #707070; margin-top: 5px;">No shipping to Hawaii or Alaska.</p>
+                    </div>
+                </div>
+                
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">ZIP Code <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="zip" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Country <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="country" value="United States" readonly required>
+                        <p style="font-size: 12px; color: #707070; margin-top: 5px;">Only shipping within the United States.</p>
+                    </div>
+                </div>
+                <!-- Payment Information -->
+                <h3 style="font-size: 18px; margin: 30px 0 15px 0;">Payment Information</h3>
+                
+                <div class="form-group">
+                    <label class="form-label">Card Information <span class="required">*</span></label>
+                    <div id="card-element"></div>
+                    <div id="card-errors" role="alert"></div>
+                </div>
+
+                <button type="submit" class="pay-button" id="submit-button">
+                    Complete Purchase
+                </button>
+
+                <a href="cart.html" class="back-to-cart">← Back to Cart</a>
+            </form>
+
+            <div class="security-badges">
+                <div class="badge">🔒 SSL Encrypted</div>
+                <div class="badge">💳 Stripe Secure</div>
+                <div class="badge">✅ PCI Compliant</div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="order-summary">
+            <h2 class="summary-title">Order Summary</h2>
+
+            <div class="order-item">
+                <div class="item-image">👟</div>
+                <div class="item-details">
+                    <div class="item-name">ASICS Matflex 6 Wrestling Shoes - Size 10</div>
+                    <div class="item-condition">Used - Excellent Condition</div>
+                    <div class="item-price">$49.99</div>
+                </div>
+            </div>
+
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span>$49.99</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Shipping</span>
+                <span>FREE</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Tax</span>
+                <span>$4.00</span>
+            </div>
+
+            <div class="summary-row total">
+                <span>Total</span>
+                <span>$53.99</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Stripe
+        const stripe = Stripe('pk_test_51SVkt7GuAs8IZaZv5J9AezLqjENqgpK1MWVMze9O7fUY5h8ZUAmvC2uHavTLzKloXToKxvFDtGeJ9jE3umH9Uvxp00168b1lMz'); 
+        const elements = stripe.elements();
+
+        // Create card element
+        const cardElement = elements.create('card', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#333',
+                    '::placeholder': {
+                        color: '#aab7c4'
+                    }
+                }
+            }
+        });
+
+        cardElement.mount('#card-element');
+
+        // Handle real-time validation errors
+        cardElement.on('change', function(event) {
+            const displayError = document.getElementById('card-errors');
+            if (event.error) {
+                displayError.textContent = event.error.message;
+            } else {
+                displayError.textContent = '';
+            }
+        });
+
+        // Handle form submission
+        const form = document.getElementById('payment-form');
+        const submitButton = document.getElementById('submit-button');
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            // Disable submit button to prevent multiple submissions
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+
+            try {
+                console.log('Step 1: Creating Payment Intent...');
+                
+                // Step 1: Create Payment Intent on your backend
+                const response = await fetch('https://createpaymentintent-kebvkf67ma-uc.a.run.app', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: 5399, // $53.99 in cents
+                        currency: 'usd'
+                    })
+                });
+
+                console.log('Response status:', response.status);
+
+                // Check if the response is OK
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error response:', errorText);
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('Backend response:', data);
+                
+                // Check if we got an error from backend
+                if (data.error) {
+                    console.error('Backend returned error:', data.error);
+                    throw new Error(data.error);
+                }
+                
+                // Check if clientSecret exists
+                if (!data.clientSecret) {
+                    console.error('No clientSecret in response. Full response:', data);
+                    throw new Error('No client secret received from server');
+                }
+
+                console.log('Client secret received, length:', data.clientSecret.length);
+                console.log('Step 2: Confirming payment with Stripe...');
+
+                // Step 2: Confirm the payment
+                const result = await stripe.confirmCardPayment(data.clientSecret, {
+                    payment_method: {
+                        card: cardElement,
+                        billing_details: {
+                            name: document.getElementById('first-name').value + ' ' + document.getElementById('last-name').value,
+                            email: document.getElementById('email').value,
+                            phone: document.getElementById('phone').value,
+                            address: {
+                                line1: document.getElementById('address').value,
+                                line2: document.getElementById('address2').value,
+                                city: document.getElementById('city').value,
+                                state: document.getElementById('state').value,
+                                postal_code: document.getElementById('zip').value,
+                                country: 'US'
+                            }
+                        }
+                    }
+                });
+
+                console.log('Stripe confirmation result:', result);
+
+                if (result.error) {
+                    // Show error to customer
+                    console.error('Payment error:', result.error);
+                    const errorElement = document.getElementById('card-errors');
+                    errorElement.textContent = result.error.message;
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Complete Purchase';
+                } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+                    // Payment successful!
+                    console.log('Payment succeeded!', result.paymentIntent);
+                    alert('Payment successful! Order ID: ' + result.paymentIntent.id);
+                    // Redirect to confirmation page
+                    window.location.href = 'order-confirmation.html?id=' + result.paymentIntent.id;
+                } else {
+                    console.log('Unexpected payment status:', result.paymentIntent?.status);
+                    throw new Error('Unexpected payment status: ' + (result.paymentIntent?.status || 'unknown'));
+                }
+            } catch (err) {
+                console.error('Full error details:', err);
+                alert('Payment failed: ' + err.message);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Complete Purchase';
+            }
+        });
+    </script>
+</body>
+</html>
