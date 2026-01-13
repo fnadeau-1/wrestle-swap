@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, ShoppingBag, Package } from 'lucide-react';
+import { Send, User, ShoppingBag, Package, X } from 'lucide-react';
 
 export default function MessagingSystem() {
   // State for managing conversations and messages
@@ -10,11 +10,28 @@ export default function MessagingSystem() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [userType, setUserType] = useState('buyer'); // 'buyer' or 'seller'
+  const [showNewConvoModal, setShowNewConvoModal] = useState(false);
+  const [recipientUsername, setRecipientUsername] = useState('');
+  const [productName, setProductName] = useState('');
+  const [currentUsername, setCurrentUsername] = useState('CurrentUser'); // This should come from your auth system
   const messagesEndRef = useRef(null);
 
   // Load data from storage when component mounts
   useEffect(() => {
     loadStoredData();
+    
+    // Check URL parameters for pre-filled conversation
+    const urlParams = new URLSearchParams(window.location.search);
+    const recipient = urlParams.get('recipient');
+    const product = urlParams.get('product');
+    
+    if (recipient) {
+      setRecipientUsername(recipient);
+      if (product) {
+        setProductName(product);
+      }
+      setShowNewConvoModal(true);
+    }
   }, []);
 
   // Auto-scroll to bottom when new messages arrive
@@ -72,18 +89,38 @@ export default function MessagingSystem() {
     }
   };
 
-  // Function to start a new conversation
+  // Function to start a new conversation with validation
   const startNewConversation = async () => {
-    const otherUserType = userType === 'buyer' ? 'seller' : 'buyer';
+    if (!recipientUsername.trim()) {
+      alert('Please enter a recipient username');
+      return;
+    }
+
+    // Check if conversation with this user already exists
+    const existingConvo = conversations.find(
+      convo => 
+        (convo.buyerName === recipientUsername || convo.sellerName === recipientUsername) &&
+        (convo.productName === productName || !productName)
+    );
+
+    if (existingConvo) {
+      setActiveConversation(existingConvo);
+      loadMessages(existingConvo.id);
+      setShowNewConvoModal(false);
+      setRecipientUsername('');
+      setProductName('');
+      return;
+    }
+
     const conversationId = `conv_${Date.now()}`;
     
     const newConvo = {
       id: conversationId,
-      buyerName: userType === 'buyer' ? 'You' : `Buyer ${conversations.length + 1}`,
-      sellerName: userType === 'seller' ? 'You' : `Seller ${conversations.length + 1}`,
+      buyerName: userType === 'buyer' ? currentUsername : recipientUsername,
+      sellerName: userType === 'seller' ? currentUsername : recipientUsername,
       lastMessage: 'New conversation',
       lastMessageTime: Date.now(),
-      productName: `Product ${conversations.length + 1}`
+      productName: productName || 'General Inquiry'
     };
 
     const updatedConvos = [...conversations, newConvo];
@@ -98,6 +135,9 @@ export default function MessagingSystem() {
 
     setActiveConversation(newConvo);
     setMessages([]);
+    setShowNewConvoModal(false);
+    setRecipientUsername('');
+    setProductName('');
   };
 
   // Function to send a message
@@ -203,7 +243,7 @@ export default function MessagingSystem() {
           </div>
 
           <button
-            onClick={startNewConversation}
+            onClick={() => setShowNewConvoModal(true)}
             className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
           >
             + New Conversation
@@ -334,6 +374,63 @@ export default function MessagingSystem() {
           </div>
         )}
       </div>
+
+      {/* New Conversation Modal */}
+      {showNewConvoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">New Conversation</h2>
+              <button
+                onClick={() => {
+                  setShowNewConvoModal(false);
+                  setRecipientUsername('');
+                  setProductName('');
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Recipient Username *
+                </label>
+                <input
+                  type="text"
+                  value={recipientUsername}
+                  onChange={(e) => setRecipientUsername(e.target.value)}
+                  placeholder="Enter username"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Product Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  placeholder="Enter product name"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <button
+                onClick={startNewConversation}
+                className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition font-medium"
+              >
+                Start Conversation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

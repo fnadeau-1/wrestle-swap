@@ -370,17 +370,33 @@
         function selectShippingRate(rateId, price) { selectedShippingRate = { id: rateId, price: price }; document.querySelectorAll('.shipping-rate').forEach(el => { el.classList.remove('selected'); }); event.currentTarget.classList.add('selected'); updatePriceWithShipping(price); showToast(`Shipping option selected: $${price.toFixed(2)}`); }
         function updatePriceWithShipping(shippingCost) { const priceElement = document.querySelector('.price'); const originalPrice = product.price; const totalPrice = originalPrice + shippingCost; priceElement.innerHTML = `$${originalPrice.toFixed(2)}<span style="font-size: 14px; color: #707070; font-weight: normal; display: block; margin-top: 5px;">+ $${shippingCost.toFixed(2)} shipping = $${totalPrice.toFixed(2)} total</span>`; }
 
-        async function contactSeller() {
-            const user = window.getCurrentUser();
-            if (!user) { showToast('Please sign in to message sellers', 'error'); setTimeout(() => { window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.href); }, 1500); return; }
-            try {
-                const conversationId = [user.uid, product.sellerId].sort().join('_');
-                const db = window.firebaseDb;
-                const conversationRef = window.firebaseDoc(db, 'conversations', conversationId);
-                await window.firebaseSetDoc(conversationRef, { participants: [user.uid, product.sellerId], participantNames: { [user.uid]: user.displayName || user.email?.split('@')[0] || 'Anonymous', [product.sellerId]: product.seller }, lastMessage: '', lastMessageTime: window.firebaseServerTimestamp(), productId: product.id, productName: product.name }, { merge: true });
-                window.location.href = `messages.html?conversation=${conversationId}&seller=${encodeURIComponent(product.seller)}&sellerId=${product.sellerId}`;
-            } catch (error) { console.error('Error opening conversation:', error); showToast('Failed to open conversation. Please try again.', 'error'); }
-        }
+        // REPLACE your current contactSeller() function in productdetail.html with this:
+
+async function contactSeller() {
+    const user = window.getCurrentUser();
+    
+    // Check if user is signed in
+    if (!user) { 
+        showToast('Please sign in to message sellers', 'error'); 
+        setTimeout(() => { 
+            window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.href); 
+        }, 1500); 
+        return; 
+    }
+    
+    // Redirect to Next.js messaging system with pre-filled info
+    const messagesUrl = new URL('http://localhost:3000/messages', window.location.origin);
+    messagesUrl.searchParams.set('recipient', product.seller); // seller username
+    messagesUrl.searchParams.set('product', product.name);     // product name
+    
+    // For production, change to your deployed URL:
+    // const messagesUrl = new URL('https://wrestleswap.web.app/messages', window.location.origin);
+    
+    showToast('Opening message with seller...', 'success');
+    setTimeout(() => {
+        window.location.href = messagesUrl.toString();
+    }, 500);
+}
     </script>
 </body>
 </html>
