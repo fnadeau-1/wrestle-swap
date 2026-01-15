@@ -434,24 +434,34 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Shipping <span class="required">*</span></label>
-                    <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="free-shipping" name="shipping" value="free">
-                            <label for="free-shipping">Free Shipping</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="calculated-shipping" name="shipping" value="calculated" checked>
-                            <label for="calculated-shipping">Buyer Pays Shipping</label>
-                    </div>
-                </div>  
-                        <p class="helper-text">Shipping can be paid by buyer or shipper</p>
-                    </div>
+                    <label class="form-label">Quantity in Stock <span class="required">*</span></label>
+                    <input type="number" class="form-input" id="stock" placeholder="1" min="1" value="1" required>
+                    <p class="helper-text">How many of this item do you have available?</p>
                 </div>
-                    <div class="form-group">
-                        <label class="form-label">Ships From (Zip Code)</label>
-                        <input type="text" class="form-input" id="zip-code" placeholder="e.g., 12345">
+
+                <div class="form-group">
+                    <label class="form-label">Shipping Method <span class="required">*</span></label>
+                    <select class="form-select" id="shipping-method" required>
+                        <option value="standard">Standard Shipping</option>
+                        <option value="express">Express Shipping</option>
+                        <option value="overnight">Overnight Shipping</option>
+                        <option value="local">Local Pickup</option>
+                        <option value="free">Free Shipping</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Shipping Cost</label>
+                    <div class="price-input-group">
+                        <span class="price-symbol">$</span>
+                        <input type="number" class="form-input price-input" id="shipping-cost" placeholder="0.00" step="0.01" min="0" value="0">
                     </div>
+                    <p class="helper-text">Leave as $0 for free shipping or local pickup</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Ships From (Zip Code)</label>
+                    <input type="text" class="form-input" id="zip-code" placeholder="e.g., 12345">
                 </div>
             </div>
 
@@ -487,11 +497,14 @@
         const storage = getStorage(app);
         const auth = getAuth(app);
 
+        let currentUser = null;
+
         onAuthStateChanged(auth, (user) => {
             if (!user) {
                 alert('Please sign in to list items');
                 window.location.href = 'sign-in.html';
             } else {
+                currentUser = user;
                 console.log('User logged in:', user.email);
             }
         });
@@ -504,6 +517,7 @@
         window.storageRef = ref;
         window.uploadBytes = uploadBytes;
         window.getDownloadURL = getDownloadURL;
+        window.getCurrentUser = () => currentUser;
 
         console.log("Firebase initialized!");
     </script>
@@ -582,10 +596,17 @@
                 return;
             }
 
+            const currentUser = window.getCurrentUser();
+            if (!currentUser) {
+                alert('You must be signed in to list items');
+                return;
+            }
+
             const loading = document.getElementById('loading');
             loading.classList.add('active');
 
             try {
+                // Upload images to Firebase Storage
                 const imageUrls = [];
                 for (let i = 0; i < selectedFiles.length; i++) {
                     const file = selectedFiles[i];
@@ -597,7 +618,9 @@
                     imageUrls.push(downloadURL);
                 }
 
+                // Prepare product data - UPDATED FIELD NAMES TO MATCH LISTINGS MANAGER
                 const productData = {
+                    // Original fields
                     category: document.getElementById('category').value,
                     title: document.getElementById('title').value,
                     description: document.getElementById('description').value,
@@ -606,18 +629,30 @@
                     condition: document.getElementById('condition').value,
                     gender: document.getElementById('gender').value || 'N/A',
                     price: parseFloat(document.getElementById('price').value),
-                    shipping: document.querySelector('input[name="shipping"]:checked').value,
-                    shippingCost: parseFloat(document.getElementById('shipping-cost').value) || 0,
-                    zipCode: document.getElementById('zip-code').value || '',
                     images: imageUrls,
+                    zipCode: document.getElementById('zip-code').value || '',
+                    
+                    // NEW FIELDS FOR LISTINGS MANAGER
+                    stock: parseInt(document.getElementById('stock').value) || 1,
+                    shippingMethod: document.getElementById('shipping-method').value,
+                    shippingCost: parseFloat(document.getElementById('shipping-cost').value) || 0,
+                    active: true,  // New listings are active by default
+                    views: 0,      // Initialize view counter
+                    userId: currentUser.uid,  // Track who created it
+                    
+                    // Timestamps
                     createdAt: window.serverTimestamp(),
+                    updatedAt: window.serverTimestamp(),
+                    
+                    // Keep legacy field for backwards compatibility
                     status: 'active'
                 };
 
+                // Save to Firestore 'products' collection
                 const docRef = await window.addDoc(window.collection(window.firestoreDB, 'products'), productData);
                 
                 loading.classList.remove('active');
-                alert('Item listed successfully!');
+                alert('Item listed successfully! You can manage it in your listings.');
                 window.location.href = 'index.html';
                 
             } catch (error) {

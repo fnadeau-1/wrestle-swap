@@ -240,6 +240,13 @@
             align-items: center;
             justify-content: center;
             font-size: 48px;
+            object-fit: cover;
+        }
+
+        .product-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .product-details {
@@ -271,6 +278,28 @@
             font-size: 12px;
             color: #707070;
             margin-top: 4px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            background: #fff;
+            border-radius: 8px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3665f3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         /* No Results */
@@ -387,7 +416,7 @@
             <!-- Shoe Size Filter -->
             <div class="filter-section" id="size-filter" style="display: none;">
                 <div class="filter-title">Shoe Size</div>
-                    <div class="filter-option">
+                <div class="filter-option">
                     <input type="checkbox" id="size-5" onchange="filterProducts()">
                     <label for="size-5">5</label>
                 </div>
@@ -395,11 +424,11 @@
                     <input type="checkbox" id="size-5.5" onchange="filterProducts()">
                     <label for="size-5.5">5.5</label>
                 </div>
-                    <div class="filter-option">
+                <div class="filter-option">
                     <input type="checkbox" id="size-6" onchange="filterProducts()">
                     <label for="size-6">6</label>
                 </div>
-                    <div class="filter-option">
+                <div class="filter-option">
                     <input type="checkbox" id="size-6.5" onchange="filterProducts()">
                     <label for="size-6.5">6.5</label>
                 </div>
@@ -452,8 +481,8 @@
                     <label for="likenew">Used - Like New</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="used" onchange="filterProducts()">
-                    <label for="used">Used - Good</label>
+                    <input type="checkbox" id="good" onchange="filterProducts()">
+                    <label for="good">Used - Good</label>
                 </div>
             </div>
 
@@ -489,10 +518,16 @@
 
         <!-- Results Area -->
         <main class="results-area">
+            <!-- Loading State -->
+            <div class="loading" id="loading-state">
+                <div class="loading-spinner"></div>
+                <p style="margin-top: 20px; color: #707070;">Loading products...</p>
+            </div>
+
             <!-- Results Header -->
-            <div class="results-header">
+            <div class="results-header" id="results-header" style="display: none;">
                 <div class="results-count" id="results-count">
-                    <strong>0 results</strong> for "<span id="search-query-display"></span>"
+                    <strong>0 results</strong>
                 </div>
                 <div class="sort-by">
                     <span>Sort:</span>
@@ -524,25 +559,37 @@
         </main>
     </div>
 
-    <script>
-        // Sample product database
-        const allProducts = [
-            { id: 1, name: 'ASICS Matflex 6 Wrestling Shoes - Size 10', price: 49.99, category: 'shoes', brand: 'asics', condition: 'used', icon: '👟', shipping: 'Free shipping' },
-            { id: 2, name: 'Adidas HVC 2 Youth Wrestling Shoes - Size 7', price: 35.00, category: 'shoes', brand: 'adidas', condition: 'used', icon: '👟', shipping: '+$5.99 shipping' },
-            { id: 3, name: 'Nike Inflict 3 Wrestling Shoes - Size 10', price: 89.99, category: 'shoes', brand: 'nike', condition: 'new', icon: '👟', shipping: 'Free shipping' },
-            { id: 4, name: 'ASICS Aggressor 4 - Blue/White - Size 9.5', price: 72.50, category: 'shoes', brand: 'asics', condition: 'likenew', icon: '👟', shipping: 'Free shipping' },
-            { id: 5, name: 'Rudis KS Elite Wrestling Shoes - Size 11', price: 95.00, category: 'shoes', brand: 'rudis', condition: 'new', icon: '👟', shipping: 'Free shipping' },
-            { id: 6, name: 'Adidas Combat Speed 5 - Size 11', price: 55.00, category: 'shoes', brand: 'adidas', condition: 'used', icon: '👟', shipping: '+$7.99 shipping' },
-            { id: 7, name: 'Adidas Wrestling Singlet - Red/Blue - Youth Large', price: 29.99, category: 'singlets', brand: 'adidas', condition: 'new', icon: '🤼', shipping: 'Free shipping' },
-            { id: 8, name: 'ASICS Solid Modified Singlet - Black', price: 45.00, category: 'singlets', brand: 'asics', condition: 'used', icon: '🤼', shipping: 'Free shipping' },
-            { id: 9, name: 'Nike Grappler Elite Wrestling Singlet', price: 52.00, category: 'singlets', brand: 'nike', condition: 'likenew', icon: '🤼', shipping: '+$5.99 shipping' },
-            { id: 10, name: 'Nike Team Warm-up Jacket & Pants Set', price: 65.00, category: 'warmups', brand: 'nike', condition: 'likenew', icon: '🧥', shipping: 'Free shipping' },
-            { id: 11, name: 'Adidas Team Warm-up Suit - Navy', price: 48.00, category: 'warmups', brand: 'adidas', condition: 'used', icon: '🧥', shipping: 'Free shipping' },
-            { id: 12, name: 'Wrestling Compression Shirt - Long Sleeve', price: 18.99, category: 'shirts', brand: 'other', condition: 'new', icon: '👕', shipping: '+$4.99 shipping' },
-            { id: 13, name: 'Under Armour Wrestling Shorts - Black', price: 22.50, category: 'bottoms', brand: 'other', condition: 'used', icon: '🩳', shipping: 'Free shipping' }
-        ];
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        let currentProducts = [...allProducts];
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
+            authDomain: "wrestleswap.firebaseapp.com",
+            projectId: "wrestleswap",
+            storageBucket: "wrestleswap.firebasestorage.app",
+            messagingSenderId: "857051782398",
+            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
+            measurementId: "G-B411WXLF3J"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Make available globally
+        window.firestoreDB = db;
+        window.getDocs = getDocs;
+        window.collection = collection;
+        window.query = query;
+        window.where = where;
+
+        console.log('Firebase initialized for search page');
+    </script>
+
+    <script>
+        let allProducts = [];
+        let currentProducts = [];
         let searchQuery = '';
 
         // Get search query from URL
@@ -551,15 +598,85 @@
             return urlParams.get('q') || '';
         }
 
+        // Load products from Firestore
+        async function loadProductsFromFirestore() {
+            try {
+                console.log('Loading products from Firestore...');
+                
+                // Get only active products
+                const q = window.query(
+                    window.collection(window.firestoreDB, 'products'),
+                    window.where('active', '==', true)
+                );
+                
+                const querySnapshot = await window.getDocs(q);
+                
+                allProducts = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    console.log('Product loaded:', data.title, 'Active:', data.active);
+                    
+                    allProducts.push({
+                        id: doc.id,
+                        name: data.title,
+                        price: data.price,
+                        category: data.category,
+                        brand: (data.brand || 'other').toLowerCase(),
+                        condition: data.condition,
+                        size: data.size,
+                        shipping: getShippingDisplay(data),
+                        icon: getCategoryIcon(data.category),
+                        images: data.images || []
+                    });
+                });
+                
+                console.log(`Loaded ${allProducts.length} products from Firestore`);
+                currentProducts = [...allProducts];
+                
+                // Hide loading, show content
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('results-header').style.display = 'flex';
+                
+                filterProducts();
+                
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('loading-state').innerHTML = 
+                    '<p style="color: #dc2626;">Error loading products. Please refresh the page.</p>';
+            }
+        }
+
+        function getShippingDisplay(product) {
+            if (product.shippingMethod === 'free') {
+                return 'Free shipping';
+            } else {
+                const cost = product.shippingCost || 0;
+                return `+$${cost.toFixed(2)} shipping`;
+            }
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'shoes': '👟',
+                'singlets': '🤼',
+                'warmups': '🧥',
+                'shirts': '👕',
+                'bottoms': '🩳',
+                'accessories': '🎒',
+                'other': '📦'
+            };
+            return icons[category] || '📦';
+        }
+
         // Initialize page
         function initializePage() {
             searchQuery = getSearchQuery();
             document.getElementById('search-input').value = searchQuery;
-            document.getElementById('search-query-display').textContent = searchQuery;
             document.getElementById('search-query-breadcrumb').textContent = searchQuery ? `"${searchQuery}"` : 'All Items';
             document.getElementById('no-results-query').textContent = searchQuery;
             
-            filterProducts();
+            // Load products from Firestore
+            loadProductsFromFirestore();
         }
 
         // Perform new search
@@ -616,7 +733,7 @@
 
             // Filter by shoe size
             const selectedSizes = [];
-            ['size-7', 'size-8', 'size-9', 'size-9.5', 'size-10', 'size-10.5', 'size-11', 'size-12'].forEach(sizeId => {
+            ['size-5', 'size-5.5', 'size-6', 'size-6.5', 'size-7', 'size-7.5', 'size-8', 'size-9', 'size-9.5', 'size-10', 'size-10.5', 'size-11', 'size-12'].forEach(sizeId => {
                 if (document.getElementById(sizeId)?.checked) {
                     const size = sizeId.replace('size-', '');
                     selectedSizes.push(size);
@@ -625,17 +742,15 @@
 
             if (selectedSizes.length > 0) {
                 filtered = filtered.filter(p => {
-                    const sizeMatch = p.name.match(/(?:Size|size)\s*(\d+(?:\.\d+)?)/);
-                    if (sizeMatch) {
-                        return selectedSizes.includes(sizeMatch[1]);
-                    }
-                    return false;
+                    if (!p.size) return false;
+                    const productSize = p.size.toString().toLowerCase();
+                    return selectedSizes.some(s => productSize.includes(s));
                 });
             }
 
             // Filter by condition
             const selectedConditions = [];
-            ['new', 'used', 'likenew'].forEach(cond => {
+            ['new', 'likenew', 'good'].forEach(cond => {
                 if (document.getElementById(cond)?.checked) {
                     selectedConditions.push(cond);
                 }
@@ -691,23 +806,30 @@
             if (currentProducts.length === 0) {
                 container.style.display = 'none';
                 noResults.style.display = 'block';
-                resultsCount.innerHTML = `<strong>0 results</strong> for "${searchQuery}"`;
+                resultsCount.innerHTML = `<strong>0 results</strong>`;
             } else {
                 container.style.display = 'grid';
                 noResults.style.display = 'none';
-                resultsCount.innerHTML = `<strong>${currentProducts.length} result${currentProducts.length !== 1 ? 's' : ''}</strong> for "${searchQuery}"`;
+                resultsCount.innerHTML = `<strong>${currentProducts.length} result${currentProducts.length !== 1 ? 's' : ''}</strong>`;
 
-                container.innerHTML = currentProducts.map(product => `
-                    <div class="product-item" onclick="window.location.href='product-detail.html?id=${product.id}'">
-                        <div class="product-img">${product.icon}</div>
-                        <div class="product-details">
-                            <div class="product-name">${product.name}</div>
-                            <div class="product-price">$${product.price.toFixed(2)}</div>
-                            <div class="product-shipping">${product.shipping}</div>
-                            <div class="product-condition">${formatCondition(product.condition)}</div>
+                container.innerHTML = currentProducts.map(product => {
+                    // Use first image if available, otherwise show icon
+                    const imageDisplay = product.images && product.images.length > 0
+                        ? `<img src="${product.images[0]}" alt="${product.name}">`
+                        : product.icon;
+                    
+                    return `
+                        <div class="product-item" onclick="window.location.href='productdetail.html?id=${product.id}'">
+                            <div class="product-img">${imageDisplay}</div>
+                            <div class="product-details">
+                                <div class="product-name">${product.name}</div>
+                                <div class="product-price">$${product.price.toFixed(2)}</div>
+                                <div class="product-shipping">${product.shipping}</div>
+                                <div class="product-condition">${formatCondition(product.condition)}</div>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             }
         }
 
@@ -715,8 +837,9 @@
         function formatCondition(condition) {
             const conditions = {
                 'new': 'New',
-                'used': 'Used',
-                'likenew': 'Like New'
+                'good': 'Used - Good',
+                'likenew': 'Like New',
+                'fair': 'Fair'
             };
             return conditions[condition] || condition;
         }
