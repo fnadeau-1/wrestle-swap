@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASICS Matflex 6 Wrestling Shoes | Wrestle Swap</title>
+    <title>Product Details | Wrestle Swap</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background-color: #f7f7f7; }
@@ -19,10 +19,35 @@
         .container { max-width: 1280px; margin: 30px auto; padding: 0 20px; }
         .product-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; background: #fff; padding: 30px; border-radius: 8px; }
         .image-gallery { display: flex; flex-direction: column; gap: 15px; }
-        .main-image-container { width: 100%; height: 500px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #e5e5e5; }
-        .main-image { font-size: 200px; cursor: zoom-in; }
+        .main-image-container { 
+            width: 100%; 
+            height: 500px; 
+            background: #f0f0f0; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+            border: 1px solid #e5e5e5; 
+        }
+
+        .main-image { 
+            max-width: 100%; 
+            max-height: 100%; 
+            object-fit: contain; 
+        }
+
+        .main-image img { 
+            max-width: 100%; 
+            max-height: 100%; 
+            object-fit: contain; 
+            display: block;
+        }
+        .main-image.emoji { font-size: 200px; cursor: zoom-in; }
         .thumbnail-container { display: flex; gap: 10px; overflow-x: auto; }
-        .thumbnail { width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 32px; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; }
+        .thumbnail { width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; overflow: hidden; }
+        .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+        .thumbnail.emoji { font-size: 32px; }
         .thumbnail.active { border-color: #3665f3; }
         .thumbnail:hover { border-color: #3665f3; }
         .product-info { display: flex; flex-direction: column; }
@@ -51,15 +76,11 @@
         .details-grid { display: grid; grid-template-columns: 150px 1fr; gap: 12px; font-size: 14px; }
         .detail-label { color: #707070; }
         .detail-value { color: #333; font-weight: 500; }
-        .description { line-height: 1.6; color: #333; margin-top: 15px; }
+        .description { line-height: 1.6; color: #333; margin-top: 15px; white-space: pre-wrap; }
         .seller-section { background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 25px; }
         .seller-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .seller-name { font-size: 16px; font-weight: bold; color: #333; }
         .seller-rating { font-size: 14px; color: #28a745; }
-        .seller-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
-        .stat { text-align: center; }
-        .stat-value { font-size: 20px; font-weight: bold; color: #333; }
-        .stat-label { font-size: 12px; color: #707070; }
         .contact-seller-btn { width: 100%; padding: 12px; background: #fff; border: 2px solid #3665f3; color: #3665f3; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .contact-seller-btn:hover { background: #e3f2fd; }
         .related-section { margin-top: 60px; }
@@ -67,7 +88,9 @@
         .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
         .related-item { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; cursor: pointer; transition: box-shadow 0.2s; }
         .related-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .related-image { width: 100%; height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 60px; }
+        .related-image { width: 100%; height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
+        .related-image img { width: 100%; height: 100%; object-fit: cover; }
+        .related-image.emoji { font-size: 60px; }
         .related-info { padding: 15px; }
         .related-name { font-size: 14px; color: #333; margin-bottom: 8px; height: 40px; overflow: hidden; }
         .related-price { font-size: 18px; font-weight: bold; color: #333; }
@@ -87,6 +110,8 @@
         .shipping-rate-price { font-size: 18px; font-weight: bold; color: #3665f3; }
         .shipping-loading { text-align: center; padding: 20px; color: #707070; }
         .shipping-error { padding: 12px; background: #fee; border: 1px solid #fcc; border-radius: 4px; color: #c00; font-size: 13px; }
+        .loading { text-align: center; padding: 50px; font-size: 20px; color: #707070; }
+        .error-message { text-align: center; padding: 50px; font-size: 18px; color: #c00; }
         @media (max-width: 968px) { .product-layout { grid-template-columns: 1fr; } .main-image-container { height: 400px; } .toast { bottom: 20px; right: 20px; left: 20px; max-width: none; } }
     </style>
 </head>
@@ -112,39 +137,52 @@
     <div class="breadcrumb">
         <div class="breadcrumb-content">
             <a href="index.html">Home</a> > 
-            <a href="search.html?q=shoe">Wrestling Shoes</a> > 
-            <strong>ASICS Matflex 6</strong>
+            <a href="search.html">Products</a> > 
+            <strong id="breadcrumb-title">Loading...</strong>
         </div>
     </div>
-    <div class="container">
+    
+    <!-- Loading state -->
+    <div id="loading" class="container">
+        <div class="loading">⏳ Loading product details...</div>
+    </div>
+    
+    <!-- Error state -->
+    <div id="error" class="container" style="display: none;">
+        <div class="error-message">
+            ❌ Product not found
+            <br><br>
+            <a href="index.html" style="color: #3665f3;">Return to Home</a>
+        </div>
+    </div>
+    
+    <!-- Main product content -->
+    <div id="product-content" class="container" style="display: none;">
         <div class="product-layout">
             <div class="image-gallery">
                 <div class="main-image-container">
-                    <div class="main-image" id="main-image">👟</div>
+                    <div id="main-image" class="main-image emoji">👟</div>
                 </div>
-                <div class="thumbnail-container">
-                    <div class="thumbnail active" onclick="changeImage(0)">👟</div>
-                    <div class="thumbnail" onclick="changeImage(1)">👟</div>
-                    <div class="thumbnail" onclick="changeImage(2)">👟</div>
-                    <div class="thumbnail" onclick="changeImage(3)">👟</div>
+                <div class="thumbnail-container" id="thumbnail-container">
+                    <!-- Thumbnails generated by JavaScript -->
                 </div>
             </div>
             <div class="product-info">
-                <h1 class="product-title">ASICS Matflex 6 Wrestling Shoes - Black/Silver</h1>
-                <div class="product-condition">Condition: Used - Excellent</div>
+                <h1 class="product-title" id="product-title">Loading...</h1>
+                <div class="product-condition" id="product-condition"></div>
                 <div class="product-rating">
-                    <span class="stars">★★★★★</span>
-                    <a href="#" class="rating-count">(24 reviews)</a>
+                    <span class="stars" id="product-stars">★★★★★</span>
+                    <a href="#" class="rating-count" id="product-reviews">(0 reviews)</a>
                 </div>
                 <div class="divider"></div>
                 <div class="price-section">
-                    <div class="price">$49.99</div>
+                    <div class="price" id="product-price">$0.00</div>
                     <div class="shipping">✓ Free Shipping</div>
                 </div>
                 <div class="option-section">
                     <div class="option-label">📍 Item Location:</div>
-                    <div style="font-size: 15px; color: #333; margin-top: 5px;"><strong>Vestal, NY 13850</strong></div>
-                    <div style="font-size: 13px; color: #707070; margin-top: 5px;">Ships from New York</div>
+                    <div style="font-size: 15px; color: #333; margin-top: 5px;"><strong id="product-location">Loading...</strong></div>
+                    <div style="font-size: 13px; color: #707070; margin-top: 5px;" id="product-location-state">Ships from...</div>
                 </div>
                 <div class="option-section" style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
                     <div class="option-label">📦 Calculate Shipping Cost</div>
@@ -162,30 +200,17 @@
                 </div>
                 <div class="details-section">
                     <div class="details-title">Product Details</div>
-                    <div class="details-grid">
-                        <div class="detail-label">Brand:</div><div class="detail-value">ASICS</div>
-                        <div class="detail-label">Model:</div><div class="detail-value">Matflex 6</div>
-                        <div class="detail-label">Color:</div><div class="detail-value">Black/Silver</div>
-                        <div class="detail-label">Size:</div><div class="detail-value">10 (US Men's)</div>
-                        <div class="detail-label">Condition:</div><div class="detail-value">Used - Excellent</div>
-                        <div class="detail-label">Material:</div><div class="detail-value">Synthetic Leather</div>
+                    <div class="details-grid" id="product-details">
+                        <!-- Details populated by JavaScript -->
                     </div>
-                    <div class="description">
-                        <strong>Description:</strong><br><br>
-                        These ASICS Matflex 6 wrestling shoes are in excellent used condition with minimal wear. Perfect for wrestlers of all levels. Features include breathable mesh panels, excellent grip, and lightweight construction. Only worn for one season. No major scuffs or damage. Comes from a smoke-free home.
-                        <br><br>
-                        Great for practice and competition. Don't miss this deal on quality wrestling shoes!
+                    <div class="description" id="product-description">
+                        <!-- Description populated by JavaScript -->
                     </div>
                 </div>
                 <div class="seller-section">
                     <div class="seller-header">
-                        <div class="seller-name">Sold by: wrestlingpro23</div>
-                        <div class="seller-rating">⭐ 98.5% positive</div>
-                    </div>
-                    <div class="seller-stats">
-                        <div class="stat"><div class="stat-value">156</div><div class="stat-label">Items Sold</div></div>
-                        <div class="stat"><div class="stat-value">4.9</div><div class="stat-label">Rating</div></div>
-                        <div class="stat"><div class="stat-value">2 days</div><div class="stat-label">Avg Ship Time</div></div>
+                        <div class="seller-name" id="seller-name">Sold by: Loading...</div>
+                        <div class="seller-rating" id="seller-rating">⭐ New seller</div>
                     </div>
                     <button class="contact-seller-btn" onclick="contactSeller()">Contact Seller</button>
                 </div>
@@ -193,42 +218,18 @@
         </div>
         <div class="related-section">
             <h2 class="section-title">Similar Items You May Like</h2>
-            <div class="related-grid">
-                <div class="related-item" onclick="window.location.reload()">
-                    <div class="related-image">👟</div>
-                    <div class="related-info">
-                        <div class="related-name">Adidas HVC 2 Wrestling Shoes - Size 10</div>
-                        <div class="related-price">$45.00</div>
-                    </div>
-                </div>
-                <div class="related-item" onclick="window.location.reload()">
-                    <div class="related-image">👟</div>
-                    <div class="related-info">
-                        <div class="related-name">Nike Inflict 3 Wrestling Shoes - Black</div>
-                        <div class="related-price">$89.99</div>
-                    </div>
-                </div>
-                <div class="related-item" onclick="window.location.reload()">
-                    <div class="related-image">👟</div>
-                    <div class="related-info">
-                        <div class="related-name">ASICS Aggressor 4 - Blue/White</div>
-                        <div class="related-price">$72.50</div>
-                    </div>
-                </div>
-                <div class="related-item" onclick="window.location.reload()">
-                    <div class="related-image">👟</div>
-                    <div class="related-info">
-                        <div class="related-name">Rudis KS Elite Wrestling Shoes</div>
-                        <div class="related-price">$95.00</div>
-                    </div>
-                </div>
+            <div class="related-grid" id="related-products">
+                <!-- Related products generated by JavaScript -->
             </div>
         </div>
     </div>
+    
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, query, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
             authDomain: "wrestleswap.firebaseapp.com",
@@ -238,38 +239,369 @@
             appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
             measurementId: "G-B411WXLF3J"
         };
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        
         let currentUser = null;
-        onAuthStateChanged(auth, (user) => { if (user) { currentUser = user; } });
+        onAuthStateChanged(auth, (user) => { 
+            if (user) { 
+                currentUser = user; 
+            } 
+        });
+        
+        // Make Firebase available globally
         window.firebaseAuth = auth;
         window.firebaseDb = db;
         window.getCurrentUser = () => currentUser;
-        window.firebaseDoc = doc;
-        window.firebaseSetDoc = setDoc;
-        window.firebaseServerTimestamp = serverTimestamp;
+        window.getDoc = getDoc;
+        window.doc = doc;
+        window.collection = collection;
+        window.query = query;
+        window.limit = limit;
+        window.getDocs = getDocs;
     </script>
+    
     <script>
-        const product = { id: 'asics-matflex-6', name: 'ASICS Matflex 6 Wrestling Shoes - Black/Silver', price: 49.99, image: '👟', condition: 'Used - Excellent', seller: 'wrestlingpro23', sellerId: 'user123' };
-        window.addEventListener('DOMContentLoaded', function() { updateCartCount(); updateWatchlistCount(); checkWatchlistStatus(); });
-        function changeImage(index) { document.querySelectorAll('.thumbnail').forEach(thumb => { thumb.classList.remove('active'); }); document.querySelectorAll('.thumbnail')[index].classList.add('active'); }
-        function getCart() { const cart = localStorage.getItem('wrestleSwapCart'); return cart ? JSON.parse(cart) : []; }
-        function saveCart(cart) { localStorage.setItem('wrestleSwapCart', JSON.stringify(cart)); updateCartCount(); }
-        function getWatchlist() { const watchlist = localStorage.getItem('wrestleSwapWatchlist'); return watchlist ? JSON.parse(watchlist) : []; }
-        function saveWatchlist(watchlist) { localStorage.setItem('wrestleSwapWatchlist', JSON.stringify(watchlist)); updateWatchlistCount(); }
-        function updateCartCount() { const cart = getCart(); const badge = document.getElementById('cart-count'); if (cart.length > 0) { badge.textContent = cart.length; badge.style.display = 'inline-block'; } else { badge.style.display = 'none'; } }
-        function updateWatchlistCount() { const watchlist = getWatchlist(); const badge = document.getElementById('watchlist-count'); if (watchlist.length > 0) { badge.textContent = watchlist.length; badge.style.display = 'inline-block'; } else { badge.style.display = 'none'; } }
-        function checkWatchlistStatus() { const watchlist = getWatchlist(); const isInWatchlist = watchlist.some(item => item.id === product.id); if (isInWatchlist) { document.getElementById('watchlist-btn').classList.add('in-watchlist'); document.getElementById('heart-icon').textContent = '♥'; document.getElementById('watchlist-text').textContent = 'In Watchlist'; } }
-        function showToast(message, type = 'success') { const existingToast = document.querySelector('.toast'); if (existingToast) { existingToast.remove(); } const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.innerHTML = `<span style="font-size: 20px;">${type === 'success' ? '✓' : '✕'}</span><span>${message}</span>`; document.body.appendChild(toast); setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 300); }, 3000); }
-        function addToCart() { const cart = getCart(); const existingItem = cart.find(item => item.id === product.id); if (existingItem) { existingItem.quantity += 1; showToast('Quantity updated in cart!'); } else { cart.push({ ...product, quantity: 1, addedAt: new Date().toISOString() }); showToast('Added to cart successfully!'); } saveCart(cart); }
-        function buyNow() { const cart = getCart(); const existingItem = cart.find(item => item.id === product.id); if (!existingItem) { cart.push({ ...product, quantity: 1, addedAt: new Date().toISOString() }); saveCart(cart); } showToast('Proceeding to checkout...', 'success'); setTimeout(() => { showToast('Checkout page would open here', 'success'); }, 1000); }
-        function toggleWatchlist() { const watchlist = getWatchlist(); const existingIndex = watchlist.findIndex(item => item.id === product.id); if (existingIndex > -1) { watchlist.splice(existingIndex, 1); document.getElementById('watchlist-btn').classList.remove('in-watchlist'); document.getElementById('heart-icon').textContent = '♡'; document.getElementById('watchlist-text').textContent = 'Add to Watchlist'; showToast('Removed from watchlist'); } else { watchlist.push({ ...product, addedAt: new Date().toISOString() }); document.getElementById('watchlist-btn').classList.add('in-watchlist'); document.getElementById('heart-icon').textContent = '♥'; document.getElementById('watchlist-text').textContent = 'In Watchlist'; showToast('Added to watchlist!'); } saveWatchlist(watchlist); }
-
-        // FIXED SHIPPING CALCULATOR - Uses ShipEngine (No Cloud Function!)
-        // UPDATED calculateShipping() for your product-page.html
-// Replace your current calculateShipping() function with this:
-
+        // ============================================
+        // GLOBAL VARIABLES
+        // ============================================
+        
+        let currentProduct = null;
+        let selectedShippingRate = null;
+        
+        // ============================================
+        // GET PRODUCT ID FROM URL
+        // ============================================
+        
+        function getProductIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+        
+        // ============================================
+        // LOAD PRODUCT FROM FIRESTORE
+        // ============================================
+        
+        async function loadProductData() {
+            const productId = getProductIdFromURL();
+            
+            if (!productId) {
+                showError();
+                return;
+            }
+            
+            try {
+                // Get product from Firestore
+                const productRef = window.doc(window.firebaseDb, 'products', productId);
+                const productSnap = await window.getDoc(productRef);
+                
+                if (!productSnap.exists()) {
+                    showError();
+                    return;
+                }
+                
+                // Get product data
+                const product = {
+                    id: productSnap.id,
+                    ...productSnap.data()
+                };
+                
+                currentProduct = product;
+                displayProduct(product);
+                loadRelatedProducts(product);
+                checkWatchlistStatus();
+                
+            } catch (error) {
+                console.error('Error loading product:', error);
+                showError();
+            }
+        }
+        
+        // ============================================
+        // DISPLAY PRODUCT
+        // ============================================
+        
+        function displayProduct(product) {
+            document.title = `${product.name || 'Product'} | Wrestle Swap`;
+            document.getElementById('breadcrumb-title').textContent = product.name || 'Product';
+            document.getElementById('product-title').textContent = product.name || 'Product Name';
+            document.getElementById('product-condition').textContent = product.condition ? `Condition: ${product.condition}` : '';
+            document.getElementById('product-price').textContent = `$${(product.price || 0).toFixed(2)}`;
+            
+            // Location
+            if (product.location) {
+                document.getElementById('product-location').textContent = product.location;
+                document.getElementById('product-location-state').textContent = product.locationState || 'Ships from seller';
+            }
+            
+            // Rating (default to 5 stars if not specified)
+            const stars = product.rating || 5;
+            const reviewCount = product.reviewCount || 0;
+            const starsHtml = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+            document.getElementById('product-stars').textContent = starsHtml;
+            document.getElementById('product-reviews').textContent = `(${reviewCount} reviews)`;
+            
+            // Images
+            const mainImageEl = document.getElementById('main-image');
+            const thumbnailContainer = document.getElementById('thumbnail-container');
+            thumbnailContainer.innerHTML = '';
+            
+            if (product.images && product.images.length > 0) {
+                // Has images
+                const firstImage = product.images[0];
+                if (isImageURL(firstImage)) {
+                    mainImageEl.className = 'main-image';
+                    mainImageEl.innerHTML = `<img src="${firstImage}" alt="${product.name}">`;
+                } else {
+                    mainImageEl.className = 'main-image emoji';
+                    mainImageEl.textContent = firstImage;
+                }
+                
+                // Thumbnails
+                product.images.forEach((img, index) => {
+                    const thumb = document.createElement('div');
+                    thumb.className = 'thumbnail' + (index === 0 ? ' active' : '');
+                    
+                    if (isImageURL(img)) {
+                        thumb.innerHTML = `<img src="${img}" alt="Product image ${index + 1}">`;
+                    } else {
+                        thumb.className += ' emoji';
+                        thumb.textContent = img;
+                    }
+                    
+                    thumb.onclick = () => changeImage(index);
+                    thumbnailContainer.appendChild(thumb);
+                });
+            } else if (product.image) {
+                // Single image
+                if (isImageURL(product.image)) {
+                    mainImageEl.className = 'main-image';
+                    mainImageEl.innerHTML = `<img src="${product.image}" alt="${product.name}">`;
+                } else {
+                    mainImageEl.className = 'main-image emoji';
+                    mainImageEl.textContent = product.image;
+                }
+            }
+            
+            // Product details
+            let detailsHtml = '';
+            if (product.brand) detailsHtml += `<div class="detail-label">Brand:</div><div class="detail-value">${product.brand}</div>`;
+            if (product.model) detailsHtml += `<div class="detail-label">Model:</div><div class="detail-value">${product.model}</div>`;
+            if (product.color) detailsHtml += `<div class="detail-label">Color:</div><div class="detail-value">${product.color}</div>`;
+            if (product.size) detailsHtml += `<div class="detail-label">Size:</div><div class="detail-value">${product.size}</div>`;
+            if (product.condition) detailsHtml += `<div class="detail-label">Condition:</div><div class="detail-value">${product.condition}</div>`;
+            if (product.category) detailsHtml += `<div class="detail-label">Category:</div><div class="detail-value">${product.category}</div>`;
+            
+            document.getElementById('product-details').innerHTML = detailsHtml;
+            
+            // Description
+            const description = product.description || 'No description available.';
+            document.getElementById('product-description').innerHTML = `<strong>Description:</strong><br><br>${description}`;
+            
+            // Seller info
+            const sellerName = product.sellerUsername || product.sellerId || 'Seller';
+            document.getElementById('seller-name').textContent = `Sold by: ${sellerName}`;
+            
+            // Show content, hide loading
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('product-content').style.display = 'block';
+        }
+        
+        function isImageURL(str) {
+            return str && (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:image'));
+        }
+        
+        function showError() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+        }
+        
+        // ============================================
+        // LOAD RELATED PRODUCTS FROM FIRESTORE
+        // ============================================
+        
+        async function loadRelatedProducts(currentProduct) {
+            const relatedContainer = document.getElementById('related-products');
+            
+            try {
+                // Get 4 random products from same category
+                const productsRef = window.collection(window.firebaseDb, 'products');
+                let q = window.query(productsRef, window.limit(5));
+                
+                const querySnapshot = await window.getDocs(q);
+                const products = [];
+                
+                querySnapshot.forEach((doc) => {
+                    if (doc.id !== currentProduct.id) {
+                        products.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    }
+                });
+                
+                // Display up to 4
+                const related = products.slice(0, 4);
+                
+                relatedContainer.innerHTML = '';
+                related.forEach(product => {
+                    const item = document.createElement('div');
+                    item.className = 'related-item';
+                    item.onclick = () => window.location.href = `productdetail.html?id=${product.id}`;
+                    
+                    const imageHtml = product.image 
+                        ? (isImageURL(product.image) 
+                            ? `<img src="${product.image}" alt="${product.name}">` 
+                            : product.image)
+                        : '📦';
+                    
+                    const imageClass = isImageURL(product.image) ? '' : 'emoji';
+                    
+                    item.innerHTML = `
+                        <div class="related-image ${imageClass}">${imageHtml}</div>
+                        <div class="related-info">
+                            <div class="related-name">${product.name || 'Product'}</div>
+                            <div class="related-price">$${(product.price || 0).toFixed(2)}</div>
+                        </div>
+                    `;
+                    relatedContainer.appendChild(item);
+                });
+                
+            } catch (error) {
+                console.error('Error loading related products:', error);
+            }
+        }
+        
+        // ============================================
+        // IMAGE GALLERY
+        // ============================================
+        
+        function changeImage(index) {
+            if (!currentProduct || !currentProduct.images) return;
+            
+            const mainImageEl = document.getElementById('main-image');
+            const img = currentProduct.images[index];
+            
+            if (isImageURL(img)) {
+                mainImageEl.className = 'main-image';
+                mainImageEl.innerHTML = `<img src="${img}" alt="${currentProduct.name}">`;
+            } else {
+                mainImageEl.className = 'main-image emoji';
+                mainImageEl.textContent = img;
+            }
+            
+            document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === index);
+            });
+        }
+        
+        // ============================================
+        // CART & WATCHLIST
+        // ============================================
+        
+        function getCart() {
+            const cart = localStorage.getItem('wrestleSwapCart');
+            return cart ? JSON.parse(cart) : [];
+        }
+        
+        function saveCart(cart) {
+            localStorage.setItem('wrestleSwapCart', JSON.stringify(cart));
+            updateCartCount();
+        }
+        
+        function getWatchlist() {
+            const watchlist = localStorage.getItem('wrestleSwapWatchlist');
+            return watchlist ? JSON.parse(watchlist) : [];
+        }
+        
+        function saveWatchlist(watchlist) {
+            localStorage.setItem('wrestleSwapWatchlist', JSON.stringify(watchlist));
+            updateWatchlistCount();
+        }
+        
+        function updateCartCount() {
+            const cart = getCart();
+            const badge = document.getElementById('cart-count');
+            if (cart.length > 0) {
+                badge.textContent = cart.length;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        function updateWatchlistCount() {
+            const watchlist = getWatchlist();
+            const badge = document.getElementById('watchlist-count');
+            if (watchlist.length > 0) {
+                badge.textContent = watchlist.length;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        function checkWatchlistStatus() {
+            if (!currentProduct) return;
+            const watchlist = getWatchlist();
+            const isInWatchlist = watchlist.some(item => item.id === currentProduct.id);
+            if (isInWatchlist) {
+                document.getElementById('watchlist-btn').classList.add('in-watchlist');
+                document.getElementById('heart-icon').textContent = '♥';
+                document.getElementById('watchlist-text').textContent = 'In Watchlist';
+            }
+        }
+        
+        function showToast(message, type = 'success') {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) existingToast.remove();
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span style="font-size: 20px;">${type === 'success' ? '✓' : '✕'}</span><span>${message}</span>`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function buyNow() {
+            if (!currentProduct) return;
+            const cart = getCart();
+            const existingItem = cart.find(item => item.id === currentProduct.id);
+            if (!existingItem) {
+                cart.push({ ...currentProduct, quantity: 1, addedAt: new Date().toISOString() });
+                saveCart(cart);
+            }
+            showToast('Proceeding to checkout...', 'success');
+        }
+        
+        function toggleWatchlist() {
+            if (!currentProduct) return;
+            const watchlist = getWatchlist();
+            const existingIndex = watchlist.findIndex(item => item.id === currentProduct.id);
+            if (existingIndex > -1) {
+                watchlist.splice(existingIndex, 1);
+                document.getElementById('watchlist-btn').classList.remove('in-watchlist');
+                document.getElementById('heart-icon').textContent = '♡';
+                document.getElementById('watchlist-text').textContent = 'Add to Watchlist';
+                showToast('Removed from watchlist');
+            } else {
+                watchlist.push({ ...currentProduct, addedAt: new Date().toISOString() });
+                document.getElementById('watchlist-btn').classList.add('in-watchlist');
+                document.getElementById('heart-icon').textContent = '♥';
+                document.getElementById('watchlist-text').textContent = 'In Watchlist';
+                showToast('Added to watchlist!');
+            }
+            saveWatchlist(watchlist);
+        }
+        
+        // ============================================
+        // SHIPPING CALCULATOR
+        // ============================================
+        
         async function calculateShipping() {
             const zipInput = document.getElementById('shipping-zip');
             const resultsDiv = document.getElementById('shipping-results');
@@ -283,120 +615,100 @@
             resultsDiv.innerHTML = '<div class="shipping-loading">⏳ Calculating shipping rates...</div>';
             
             try {
-                // Call YOUR Netlify function (not ShipEngine directly!)
                 const response = await fetch('/.netlify/functions/get-shipping-rates', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ zipCode: zipCode })
                 });
                 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to get rates');
+                    throw new Error('Failed to get rates');
                 }
                 
                 const rates = await response.json();
-                console.log('Received rates:', rates);
-                
                 if (rates && rates.length > 0) {
-                    displayShippingRatesNetlify(rates);
+                    displayShippingRates(rates);
                 } else {
-                    resultsDiv.innerHTML = '<div class="shipping-error">No shipping rates available for this location</div>';
+                    resultsDiv.innerHTML = '<div class="shipping-error">No shipping rates available</div>';
                 }
-                
             } catch (error) {
                 console.error('Shipping error:', error);
-                resultsDiv.innerHTML = `<div class="shipping-error">Unable to calculate shipping: ${error.message}</div>`;
+                resultsDiv.innerHTML = `<div class="shipping-error">Unable to calculate shipping</div>`;
             }
         }
-
-        // New display function for Netlify response format
-        function displayShippingRatesNetlify(rates) {
+        
+        function displayShippingRates(rates) {
             const resultsDiv = document.getElementById('shipping-results');
-            
-            // Sort by price
-            const sortedRates = rates
-                .filter(r => r.shipping_amount && r.shipping_amount.amount)
-                .sort((a, b) => a.shipping_amount.amount - b.shipping_amount.amount)
-                .slice(0, 5);
+            const sortedRates = rates.filter(r => r.shipping_amount && r.shipping_amount.amount).sort((a, b) => a.shipping_amount.amount - b.shipping_amount.amount).slice(0, 5);
             
             if (sortedRates.length === 0) {
                 resultsDiv.innerHTML = '<div class="shipping-error">No available shipping options</div>';
                 return;
             }
             
-            let html = '<div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #333;">Available Shipping Options:</div>';
-            
+            let html = '<div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #333;">Available Shipping:</div>';
             sortedRates.forEach((rate, index) => {
                 const price = rate.shipping_amount.amount;
                 const days = rate.delivery_days || 'N/A';
                 const carrier = rate.carrier_friendly_name || rate.carrier_id || 'Carrier';
                 const service = rate.service_type || 'Standard';
-                
                 html += `
                     <div class="shipping-rate" onclick="selectShippingRate('${rate.rate_id || index}', ${price})">
                         <div class="shipping-rate-info">
                             <div class="shipping-rate-name">${carrier} - ${service}</div>
-                            <div class="shipping-rate-details">
-                                ${days !== 'N/A' ? `Estimated delivery: ${days} business days` : 'Delivery time varies'}
-                            </div>
+                            <div class="shipping-rate-details">${days !== 'N/A' ? `Est: ${days} business days` : 'Delivery varies'}</div>
                         </div>
                         <div class="shipping-rate-price">$${price.toFixed(2)}</div>
                     </div>
                 `;
             });
+            resultsDiv.innerHTML = html;
+        }
+        
+        function selectShippingRate(rateId, price) {
+            selectedShippingRate = { id: rateId, price: price };
+            document.querySelectorAll('.shipping-rate').forEach(el => el.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            updatePriceWithShipping(price);
+            showToast(`Shipping selected: $${price.toFixed(2)}`);
+        }
+        
+        function updatePriceWithShipping(shippingCost) {
+            if (!currentProduct) return;
+            const priceElement = document.querySelector('.price');
+            const originalPrice = currentProduct.price || 0;
+            const totalPrice = originalPrice + shippingCost;
+            priceElement.innerHTML = `$${originalPrice.toFixed(2)}<span style="font-size: 14px; color: #707070; font-weight: normal; display: block; margin-top: 5px;">+ $${shippingCost.toFixed(2)} shipping = $${totalPrice.toFixed(2)} total</span>`;
+        }
+        
+        // ============================================
+        // CONTACT SELLER
+        // ============================================
+        
+        function contactSeller() {
+            const user = window.getCurrentUser();
+            if (!user) {
+                showToast('Please sign in to message sellers', 'error');
+                setTimeout(() => {
+                    window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.href);
+                }, 1500);
+                return;
+            }
+            if (!currentProduct) return;
             
-            resultsDiv.innerHTML = html;
+            showToast('Opening message with seller...', 'success');
+            // Implement your messaging logic here
         }
-
-// Keep your existing selectShippingRate and updatePriceWithShipping functions
-        function displayShippingRates(rates) {
-            const resultsDiv = document.getElementById('shipping-results');
-            const sortedRates = rates.filter(r => r.shipping_amount).sort((a, b) => a.shipping_amount.amount - b.shipping_amount.amount).slice(0, 5);
-            if (sortedRates.length === 0) { resultsDiv.innerHTML = '<div class="shipping-error">No options available</div>'; return; }
-            let html = '<div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #333;">Available Shipping:</div>';
-            sortedRates.forEach(rate => {
-                const price = rate.shipping_amount.amount;
-                const days = rate.delivery_days || 'N/A';
-                const carrier = rate.carrier_friendly_name || rate.carrier_id;
-                const service = rate.service_type || 'Standard';
-                html += `<div class="shipping-rate" onclick="selectShippingRate('${rate.rate_id}', ${price})"><div class="shipping-rate-info"><div class="shipping-rate-name">${carrier} - ${service}</div><div class="shipping-rate-details">${days !== 'N/A' ? `${days} business days` : 'Delivery varies'}</div></div><div class="shipping-rate-price">$${price.toFixed(2)}</div></div>`;
-            });
-            resultsDiv.innerHTML = html;
-        }
-        let selectedShippingRate = null;
-        function selectShippingRate(rateId, price) { selectedShippingRate = { id: rateId, price: price }; document.querySelectorAll('.shipping-rate').forEach(el => { el.classList.remove('selected'); }); event.currentTarget.classList.add('selected'); updatePriceWithShipping(price); showToast(`Shipping option selected: $${price.toFixed(2)}`); }
-        function updatePriceWithShipping(shippingCost) { const priceElement = document.querySelector('.price'); const originalPrice = product.price; const totalPrice = originalPrice + shippingCost; priceElement.innerHTML = `$${originalPrice.toFixed(2)}<span style="font-size: 14px; color: #707070; font-weight: normal; display: block; margin-top: 5px;">+ $${shippingCost.toFixed(2)} shipping = $${totalPrice.toFixed(2)} total</span>`; }
-
-        // REPLACE your current contactSeller() function in productdetail.html with this:
-
-async function contactSeller() {
-    const user = window.getCurrentUser();
-    
-    // Check if user is signed in
-    if (!user) { 
-        showToast('Please sign in to message sellers', 'error'); 
-        setTimeout(() => { 
-            window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.href); 
-        }, 1500); 
-        return; 
-    }
-    
-    // Redirect to Next.js messaging system with pre-filled info
-    const messagesUrl = new URL('http://localhost:3000/messages', window.location.origin);
-    messagesUrl.searchParams.set('recipient', product.seller); // seller username
-    messagesUrl.searchParams.set('product', product.name);     // product name
-    
-    // For production, change to your deployed URL:
-    // const messagesUrl = new URL('https://wrestleswap.web.app/messages', window.location.origin);
-    
-    showToast('Opening message with seller...', 'success');
-    setTimeout(() => {
-        window.location.href = messagesUrl.toString();
-    }, 500);
-}
+        
+        // ============================================
+        // INITIALIZE PAGE
+        // ============================================
+        
+        window.addEventListener('DOMContentLoaded', function() {
+            updateCartCount();
+            updateWatchlistCount();
+            loadProductData();
+        });
     </script>
 </body>
 </html>
