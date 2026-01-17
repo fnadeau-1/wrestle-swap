@@ -253,6 +253,12 @@
             border-color: #999;
         }
 
+        .social-btn:disabled {
+            background: #f0f0f0;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
         .error-message {
             color: #e53238;
             font-size: 13px;
@@ -267,6 +273,16 @@
             border-radius: 6px;
             margin-bottom: 20px;
             display: none;
+        }
+
+        .info-note {
+            background: #e7f3ff;
+            color: #004085;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            border-left: 3px solid #3665f3;
         }
 
         @media (max-width: 768px) {
@@ -335,9 +351,9 @@
                         <a href="forgot.html">Forgot password?</a>
                     </div>
 
-                    <!-- reCAPTCHA -->
+                    <!-- reCAPTCHA for Sign In -->
                     <div class="recaptcha-container">
-                        <div class="g-recaptcha" data-sitekey="6LeqLx0sAAAAAMj_mDw1C5KmH4n9G-IyOl3qeYdK"></div>
+                        <div class="g-recaptcha" id="signin-recaptcha" data-sitekey="6LeqLx0sAAAAAMj_mDw1C5KmH4n9G-IyOl3qeYdK"></div>
                     </div>
 
                     <button type="submit" class="submit-btn">Sign In</button>
@@ -348,7 +364,7 @@
                 </div>
 
                 <div class="social-buttons">
-                    <button class="social-btn" onclick="googleLogin()">
+                    <button class="social-btn" id="google-signin-btn" onclick="googleLogin()">
                         <span>🔵</span> Continue with Google
                     </button>
                 </div>
@@ -357,6 +373,11 @@
             <!-- Register Form -->
             <div class="form-container" id="register-form">
                 <h2 class="form-title">Create Account</h2>
+
+                <!-- Info note about username -->
+                <div class="info-note">
+                    📝 A unique username will be automatically generated for you. You can change it later in your profile settings.
+                </div>
 
                 <form onsubmit="handleRegister(event)">
                     <div class="form-group">
@@ -368,12 +389,6 @@
                         <label class="form-label">Email</label>
                         <input type="email" class="form-input" id="register-email" required>
                         <div class="error-message" id="register-email-error"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Username</label>
-                        <input type="text" class="form-input" id="register-username" required>
-                        <div class="error-message" id="register-username-error"></div>
                     </div>
 
                     <div class="form-group">
@@ -399,9 +414,9 @@
                         <label for="agree-terms">I agree to the Terms of Service and Privacy Policy</label>
                     </div>
 
-                    <!-- reCAPTCHA -->
+                    <!-- reCAPTCHA for Registration -->
                     <div class="recaptcha-container">
-                        <div class="g-recaptcha" data-sitekey="6LeqLx0sAAAAAMj_mDw1C5KmH4n9G-IyOl3qeYdK"></div>
+                        <div class="g-recaptcha" id="register-recaptcha" data-sitekey="6LeqLx0sAAAAAMj_mDw1C5KmH4n9G-IyOl3qeYdK"></div>
                     </div>
 
                     <button type="submit" class="submit-btn">Create Account</button>
@@ -412,7 +427,7 @@
                 </div>
 
                 <div class="social-buttons">
-                    <button class="social-btn" onclick="googleRegister()">
+                    <button class="social-btn" id="google-register-btn" onclick="googleRegister()">
                         <span>🔵</span> Sign up with Google
                     </button>
                 </div>
@@ -424,7 +439,8 @@
     <script type="module">
         // Import Firebase functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // Your Firebase configuration
         const firebaseConfig = {
@@ -440,19 +456,89 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // Make auth and functions available globally
+        // Make auth, db, and functions available globally
         window.firebaseAuth = auth;
+        window.firebaseDb = db;
         window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
         window.signInWithPopup = signInWithPopup;
         window.GoogleAuthProvider = GoogleAuthProvider;
+        window.updateProfile = updateProfile;
+        window.firestoreDoc = doc;
+        window.firestoreSetDoc = setDoc;
+        window.firestoreGetDoc = getDoc;
 
         console.log("Firebase initialized successfully!");
     </script>
 
     <!-- Main JavaScript -->
     <script>
+        // Track if a popup is currently open to prevent multiple popups
+        let popupInProgress = false;
+
+        // Generate a unique username
+        function generateUsername() {
+            // Generate a random username in the format: wrestler_XXXXX
+            // where XXXXX is a random 5-digit number
+            const randomNum = Math.floor(10000 + Math.random() * 90000);
+            return `wrestler_${randomNum}`;
+        }
+
+        // Check if username exists in Firestore
+        async function isUsernameUnique(username) {
+            try {
+                const usernameDoc = await window.firestoreGetDoc(window.firestoreDoc(window.firebaseDb, 'usernames', username));
+                return !usernameDoc.exists();
+            } catch (error) {
+                console.error('Error checking username:', error);
+                return false;
+            }
+        }
+
+        // Generate a unique username that doesn't exist in the database
+        async function generateUniqueUsername() {
+            let username;
+            let isUnique = false;
+            let attempts = 0;
+            const maxAttempts = 10;
+
+            // Try to generate a unique username
+            while (!isUnique && attempts < maxAttempts) {
+                username = generateUsername();
+                isUnique = await isUsernameUnique(username);
+                attempts++;
+            }
+
+            // If we couldn't find a unique username after max attempts, add timestamp
+            if (!isUnique) {
+                username = `wrestler_${Date.now()}`;
+            }
+
+            return username;
+        }
+
+        // Save user data to Firestore
+        async function saveUserData(userId, userData) {
+            try {
+                // Save user profile
+                await window.firestoreSetDoc(window.firestoreDoc(window.firebaseDb, 'users', userId), userData);
+                
+                // Reserve the username
+                await window.firestoreSetDoc(window.firestoreDoc(window.firebaseDb, 'usernames', userData.username), {
+                    userId: userId,
+                    createdAt: new Date().toISOString()
+                });
+                
+                console.log('User data saved successfully');
+                return true;
+            } catch (error) {
+                console.error('Error saving user data:', error);
+                return false;
+            }
+        }
+
         // Switch between Sign In and Register tabs
         function switchTab(tab) {
             const tabs = document.querySelectorAll('.tab-btn');
@@ -478,9 +564,10 @@
             input.type = input.type === 'password' ? 'text' : 'password';
         }
 
-        // Verify reCAPTCHA
-        function verifyRecaptcha() {
-            const response = grecaptcha.getResponse();
+        // Verify reCAPTCHA - now takes a widget ID parameter
+        function verifyRecaptcha(widgetId) {
+            // Get the response from the specific reCAPTCHA widget
+            const response = grecaptcha.getResponse(widgetId);
             if (response.length === 0) {
                 alert('Please complete the reCAPTCHA verification');
                 return false;
@@ -488,12 +575,27 @@
             return true;
         }
 
+        // Reset specific reCAPTCHA widget
+        function resetRecaptcha(widgetId) {
+            try {
+                grecaptcha.reset(widgetId);
+            } catch (e) {
+                console.error('Error resetting reCAPTCHA:', e);
+            }
+        }
+
         // Google Login for Sign In
         function googleLogin() {
-            // Verify reCAPTCHA first
-            if (!verifyRecaptcha()) {
+            // Prevent multiple popup requests
+            if (popupInProgress) {
+                console.log('Popup already in progress');
                 return;
             }
+
+            // Disable the button to prevent double-clicks
+            const button = document.getElementById('google-signin-btn');
+            button.disabled = true;
+            popupInProgress = true;
             
             const provider = new window.GoogleAuthProvider();
             
@@ -504,40 +606,76 @@
                     window.location.href = 'index.html';
                 })
                 .catch((error) => {
-                    alert('Error: ' + error.message);
+                    // Only show error if it's not a cancelled popup
+                    if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
+                        alert('Error: ' + error.message);
+                    }
                     console.error(error);
-                    grecaptcha.reset(); // Reset reCAPTCHA on error
+                })
+                .finally(() => {
+                    // Re-enable the button and reset the flag
+                    button.disabled = false;
+                    popupInProgress = false;
                 });
         }
 
         // Google Register for Registration
-        function googleRegister() {
-            // Verify reCAPTCHA first
-            if (!verifyRecaptcha()) {
+        async function googleRegister() {
+            // Prevent multiple popup requests
+            if (popupInProgress) {
+                console.log('Popup already in progress');
                 return;
             }
+
+            // Disable the button to prevent double-clicks
+            const button = document.getElementById('google-register-btn');
+            button.disabled = true;
+            popupInProgress = true;
             
             const provider = new window.GoogleAuthProvider();
             
-            window.signInWithPopup(window.firebaseAuth, provider)
-                .then((result) => {
-                    const user = result.user;
-                    alert('Account created successfully! Welcome to Wrestle Swap!');
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
+            try {
+                const result = await window.signInWithPopup(window.firebaseAuth, provider);
+                const user = result.user;
+                
+                // Generate a unique username for the new user
+                const username = await generateUniqueUsername();
+                
+                // Prepare user data
+                const userData = {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    username: username,
+                    photoURL: user.photoURL || '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // Save to Firestore
+                await saveUserData(user.uid, userData);
+                
+                alert('Account created successfully! Welcome to Wrestle Swap!');
+                window.location.href = 'index.html';
+            } catch (error) {
+                // Only show error if it's not a cancelled popup
+                if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
                     alert('Error: ' + error.message);
-                    console.error(error);
-                    grecaptcha.reset(); // Reset reCAPTCHA on error
-                });
+                }
+                console.error(error);
+            } finally {
+                // Re-enable the button and reset the flag
+                button.disabled = false;
+                popupInProgress = false;
+            }
         }
 
         // Handle Sign In
         function handleSignIn(event) {
             event.preventDefault();
             
-            // Verify reCAPTCHA
-            if (!verifyRecaptcha()) {
+            // Verify reCAPTCHA using widget ID 0 (first widget)
+            if (!verifyRecaptcha(0)) {
                 return;
             }
             
@@ -552,53 +690,78 @@
                 })
                 .catch((error) => {
                     alert('Error: ' + error.message);
-                    grecaptcha.reset(); // Reset reCAPTCHA on error
+                    resetRecaptcha(0); // Reset sign-in reCAPTCHA on error
                 });
         }
 
         // Handle Registration
-        function handleRegister(event) {
+        async function handleRegister(event) {
             event.preventDefault();
             
-            // Verify reCAPTCHA
-            if (!verifyRecaptcha()) {
+            // Verify reCAPTCHA using widget ID 1 (second widget)
+            if (!verifyRecaptcha(1)) {
                 return;
             }
             
             const name = document.getElementById('register-name').value;
             const email = document.getElementById('register-email').value;
-            const username = document.getElementById('register-username').value;
             const password = document.getElementById('register-password').value;
             const confirmPassword = document.getElementById('register-confirm-password').value;
             
+            // Clear previous error messages
             document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
             
+            // Validate passwords match
             if (password !== confirmPassword) {
                 const errorEl = document.getElementById('register-confirm-error');
                 errorEl.textContent = 'Passwords do not match';
                 errorEl.style.display = 'block';
-                grecaptcha.reset();
+                resetRecaptcha(1); // Reset register reCAPTCHA
                 return;
             }
             
+            // Validate password length
             if (password.length < 6) {
                 const errorEl = document.getElementById('register-password-error');
                 errorEl.textContent = 'Password must be at least 6 characters';
                 errorEl.style.display = 'block';
-                grecaptcha.reset();
+                resetRecaptcha(1); // Reset register reCAPTCHA
                 return;
             }
             
-            window.createUserWithEmailAndPassword(window.firebaseAuth, email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    alert('Account created successfully! Welcome to Wrestle Swap!');
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    alert('Error: ' + error.message);
-                    grecaptcha.reset(); // Reset reCAPTCHA on error
+            try {
+                // Create the account
+                const userCredential = await window.createUserWithEmailAndPassword(window.firebaseAuth, email, password);
+                const user = userCredential.user;
+                
+                // Generate a unique username
+                const username = await generateUniqueUsername();
+                
+                // Update the user's profile with their display name
+                await window.updateProfile(user, {
+                    displayName: name
                 });
+                
+                // Prepare user data
+                const userData = {
+                    uid: user.uid,
+                    email: email,
+                    displayName: name,
+                    username: username,
+                    photoURL: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // Save to Firestore
+                await saveUserData(user.uid, userData);
+                
+                alert('Account created successfully! Welcome to Wrestle Swap!');
+                window.location.href = 'index.html';
+            } catch (error) {
+                alert('Error: ' + error.message);
+                resetRecaptcha(1); // Reset register reCAPTCHA on error
+            }
         }
     </script>
 </body>

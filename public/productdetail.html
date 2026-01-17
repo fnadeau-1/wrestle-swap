@@ -182,7 +182,7 @@
                 <div class="option-section">
                     <div class="option-label">📍 Item Location:</div>
                     <div style="font-size: 15px; color: #333; margin-top: 5px;"><strong id="product-location">Loading...</strong></div>
-                    <div style="font-size: 13px; color: #707070; margin-top: 5px;" id="product-location-state">Ships from...</div>
+                    <div style="font-size: 13px; color: #707070; margin-top: 5px;" id="product-location-state">`${Ships From (Zip Code)}`</div>
                 </div>
                 <div class="option-section" style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
                     <div class="option-label">📦 Calculate Shipping Cost</div>
@@ -326,7 +326,7 @@
         function displayProduct(product) {
             document.title = `${product.name || 'Product'} | Wrestle Swap`;
             document.getElementById('breadcrumb-title').textContent = product.name || 'Product';
-            document.getElementById('product-title').textContent = product.name || 'Product Name';
+            document.getElementById('product-title').textContent = product.name || `${product.title}`;
             document.getElementById('product-condition').textContent = product.condition ? `Condition: ${product.condition}` : '';
             document.getElementById('product-price').textContent = `$${(product.price || 0).toFixed(2)}`;
             

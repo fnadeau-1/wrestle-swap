@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Shipping Instructions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fraunces:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================
+           CSS VARIABLES
+           These store colors and values we'll reuse throughout the page
+           Think of them like "settings" you can change in one place
+           ======================================== */
+        :root {
+            --primary-color: #2d5a3d;
+            --primary-light: #4a8a5f;
+            --accent-color: #f4a261;
+            --bg-color: #fdfbf7;
+            --text-dark: #1a1a1a;
+            --text-medium: #4a4a4a;
+            --border-color: #e8e3d8;
+            --success-green: #52b788;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        /* ========================================
+           RESET & BASE STYLES
+           These reset browser defaults and set up our foundation
+           ======================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box; /* Makes width/height include padding and border */
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif; /* Our main font */
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            line-height: 1.6; /* Space between lines of text */
+            padding: 20px;
+            min-height: 100vh; /* At least full viewport height */
+        }
+
+        /* ========================================
+           OVERLAY & MODAL CONTAINER
+           The overlay is the dark background behind the popup
+           The container is the white box that holds our content
+           ======================================== */
+        .modal-overlay {
+            position: fixed; /* Stays in place when scrolling */
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+            display: flex; /* Flexbox helps us center things */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            z-index: 1000; /* High number keeps it on top of other content */
+            padding: 20px;
+            
+            /* ANIMATION: Fade in when page loads */
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; /* Start invisible */
+            }
+            to { 
+                opacity: 1; /* End fully visible */
+            }
+        }
+
+        .modal-container {
+            background: white;
+            border-radius: 20px; /* Rounded corners */
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh; /* Max 90% of viewport height */
+            overflow-y: auto; /* Add scrollbar if content is too tall */
+            box-shadow: var(--shadow-md);
+            
+            /* ANIMATION: Slide up and scale in */
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px) scale(0.95); /* Start below and smaller */
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1); /* End at normal position and size */
+                opacity: 1;
+            }
+        }
+
+        /* ========================================
+           HEADER SECTION
+           The green banner at the top
+           ======================================== */
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 20px 20px 0 0; /* Only round top corners */
+            position: relative; /* Allows us to position the close button */
+            overflow: hidden; /* Clips the decorative circles */
+        }
+
+        /* DECORATIVE ELEMENTS: Background circles for visual interest */
+        .modal-header::before,
+        .modal-header::after {
+            content: ''; /* Required for ::before and ::after to show */
+            position: absolute;
+            border-radius: 50%; /* Makes them circles */
+            background: rgba(255, 255, 255, 0.1); /* Semi-transparent white */
+        }
+
+        .modal-header::before {
+            width: 300px;
+            height: 300px;
+            top: -150px;
+            right: -100px;
+        }
+
+        .modal-header::after {
+            width: 200px;
+            height: 200px;
+            bottom: -100px;
+            left: -50px;
+        }
+
+        .header-content {
+            position: relative; /* Keeps text above the decorative circles */
+            z-index: 1;
+        }
+
+        .success-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: inline-block;
+            /* ANIMATION: Bounce in */
+            animation: bounceIn 0.6s ease-out;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0); /* Start at 0 size */
+            }
+            50% {
+                transform: scale(1.1); /* Grow slightly bigger */
+            }
+            100% {
+                transform: scale(1); /* Settle at normal size */
+            }
+        }
+
+        .modal-header h1 {
+            font-family: 'Fraunces', serif; /* Fancy display font for title */
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+        }
+
+        .modal-header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        /* ========================================
+           CLOSE BUTTON
+           X button in top-right corner
+           ======================================== */
+        .close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%; /* Makes it circular */
+            cursor: pointer; /* Shows hand cursor on hover */
+            transition: all 0.3s ease; /* Smooth animation for changes */
+            z-index: 2; /* Keeps it above decorative elements */
+        }
+
+        .close-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg); /* Spins when you hover */
+        }
+
+        /* ========================================
+           MAIN CONTENT AREA
+           Where all the instructions live
+           ======================================== */
+        .modal-content {
+            padding: 40px;
+        }
+
+        /* ========================================
+           INSTRUCTION STEPS
+           Each numbered step in the process
+           ======================================== */
+        .instruction-step {
+            margin-bottom: 35px;
+            padding-bottom: 35px;
+            border-bottom: 2px solid var(--border-color);
+            
+            /* ANIMATION: Fade in from left, one after another */
+            opacity: 0;
+            animation: fadeInLeft 0.5s ease-out forwards;
+        }
+
+        /* Each step gets a slightly longer delay, creating a staggered effect */
+        .instruction-step:nth-child(1) { animation-delay: 0.1s; }
+        .instruction-step:nth-child(2) { animation-delay: 0.2s; }
+        .instruction-step:nth-child(3) { animation-delay: 0.3s; }
+        .instruction-step:nth-child(4) { animation-delay: 0.4s; }
+        .instruction-step:nth-child(5) { animation-delay: 0.5s; }
+        .instruction-step:nth-child(6) { animation-delay: 0.6s; }
+        .instruction-step:nth-child(7) { animation-delay: 0.7s; }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px); /* Start 20px to the left */
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0); /* End at normal position */
+            }
+        }
+
+        .instruction-step:last-child {
+            border-bottom: none; /* Remove border from last step */
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        /* STEP HEADER: The emoji and title */
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .step-icon {
+            font-size: 32px;
+            margin-right: 15px;
+            min-width: 40px; /* Prevents icon from shrinking */
+        }
+
+        .step-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        /* STEP NUMBER: The circled number */
+        .step-number {
+            display: inline-flex; /* Centers the number inside the circle */
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.9em;
+            margin-right: 12px;
+            flex-shrink: 0; /* Prevents circle from getting squished */
+        }
+
+        /* BULLET POINTS within each step */
+        .step-content ul {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        .step-content li {
+            margin-bottom: 10px;
+            color: var(--text-medium);
+            line-height: 1.7;
+        }
+
+        .step-content li::marker {
+            color: var(--accent-color); /* Makes bullet points orange */
+        }
+
+        /* ========================================
+           FOOTER ACTION BUTTONS
+           Buttons at the bottom of the modal
+           ======================================== */
+        .modal-footer {
+            padding: 0 40px 40px 40px;
+            display: flex;
+            gap: 15px; /* Space between buttons */
+            flex-wrap: wrap; /* Allows buttons to wrap on small screens */
+        }
+
+        .btn {
+            flex: 1; /* Buttons grow to fill available space equally */
+            min-width: 200px; /* Minimum width before wrapping */
+            padding: 16px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease; /* Smooth transitions for hover effects */
+            text-align: center;
+            text-decoration: none; /* If used as a link */
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px); /* Lifts up slightly */
+            box-shadow: var(--shadow-md); /* Bigger shadow when lifted */
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* ========================================
+           RESPONSIVE DESIGN
+           Adjustments for smaller screens (tablets and phones)
+           ======================================== */
+        @media (max-width: 768px) {
+            .modal-header {
+                padding: 30px 20px;
+            }
+
+            .modal-header h1 {
+                font-size: 1.6em;
+            }
+
+            .modal-content {
+                padding: 30px 20px;
+            }
+
+            .modal-footer {
+                padding: 0 20px 30px 20px;
+                flex-direction: column; /* Stack buttons vertically */
+            }
+
+            .btn {
+                min-width: 100%; /* Full width on mobile */
+            }
+
+            .step-title {
+                font-size: 1.2em;
+            }
+
+            .step-icon {
+                font-size: 28px;
+            }
+        }
+
+        /* ========================================
+           HIGHLIGHT BOX
+           Special callout box for important info
+           ======================================== */
+        .highlight-box {
+            background: #fff7ed; /* Light orange background */
+            border-left: 4px solid var(--accent-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- MODAL OVERLAY: Dark background -->
+    <div class="modal-overlay" id="modalOverlay">
+        
+        <!-- MODAL CONTAINER: White popup box -->
+        <div class="modal-container">
+            
+            <!-- HEADER: Green section with title -->
+            <div class="modal-header">
+                <button class="close-button" onclick="closeModal()" aria-label="Close modal">&times;</button>
+                <div class="header-content">
+                    <div class="success-icon">🎉</div>
+                    <h1>Seller Shipping Instructions</h1>
+                    <p>How to Ship Orders Using Your Provided Shipping Label</p>
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT: All the instruction steps -->
+            <div class="modal-content">
+                
+                <!-- STEP 1 -->
+                <div class="instruction-step">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <span class="step-icon">🧾</span>
+                        <h2 class="step-title">Download & Print Your Shipping Label</h2>
+                    </div>
+                    <div class="step-content">
+                        <ul>
+                            <li>After an order is placed, you'll receive a prepaid shipping label from our platform.</li>
+                            <li>Download the label and print it on standard printer paper.</li>
+                            <li>Make sure the barcode is clear and not smudged — carriers need to scan it.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- STEP 2 -->
+                <div class="instruction-step">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <span class="step-icon">📦</span>
+                        <h2 class="step-title">Prepare the Item for Shipment</h2>
+                    </div>
+                    <div class="step-content">
+                        <ul>
+                            <li>Package the item securely using a box or padded mailer appropriate for the product.</li>
+                            <li>Add protective materials (bubble wrap, packing paper, etc.) to prevent damage.</li>
+                            <li>Remove or cover any old barcodes or labels if you're reusing packaging.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- STEP 3 -->
+                <div class="instruction-step">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <span class="step-icon">🏷️</span>
+                        <h2 class="step-title">Attach the Shipping Label</h2>
+                    </div>
+                    <div class="step-content">
+                        <ul>
+                            <li>Cut out the printed label.</li>
+                            <li>Tape it flat onto the package using clear packing tape.</li>
+                            <li>Avoid placing tape over the barcode — it can cause scanning issues.</li>
+                            <li>Ensure the label is fully visible and firmly attached.</li>
+                        </ul>
+                        <div class="highlight-box">
+                            <strong>⚠️ Important:</strong> The barcode must be clearly visible and readable for the carrier to scan properly!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4 -->
+                <div class="instruction-step">
+                    <div class="step-header">
+                        <span class="step-number">4</span>
+                        <span class="step-icon">🧮</span>
+                        <h2 class="step-title">Double‑Check the Package</h2>
+                    </div>
+                    <div class="step-content">
+                        <ul>
+                            <li>Confirm the package is sealed tightly.</li>
+                            <li>Verify the label matches the correct order.</li>
+                            <li>Make sure the weight and size of the package match what was entered when the label was generated.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- STEP 5 -->
+                <div class="instruction-step">
+                    <div class="step-header">
+                        <span class="step-number">5</span>
+                        <span class="step-icon">🚚</span>
+                        <h2 class="step-title">Drop Off or Schedule Pickup</h2>
+                    </div>
+                    <div class="step-content">
+                        <ul>
+                            <li>Take the package to the carrier listed on the label (e.g., USPS, UPS, FedEx).</li>
+                            <li>Or schedule a pickup if the carrier offers it in your area.</li>
+                            <li>Keep the receipt or tracking confirmation for your records.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- STEP 6 -->
+                <div class="instruction-step">
+                    <div class="step-header">
+                        <span class="step-number">6</span>
+                        <span class="step-icon">🔍</span>
+                        <h2 class="step-title">Mark the Order as Shipped</h2>
+                    </div>
+                    <div class="step-content">
+                        <ul>
+                            <li>Return to your seller dashboard.</li>
+                            <li>Mark the order as "Shipped" so the buyer receives tracking information.</li>
+                            <li>Tracking updates will automatically sync from the carrier.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- STEP 7 -->
+                <div class="instruction-step">
+                    <div class="step-header">
+                        <span class="step-number">7</span>
+                        <span class="step-icon">😊</span>
+                        <h2 class="step-title">Keep an Eye on Delivery</h2>
+                    </div>
+                    <div class="step-content">
+                        <ul>
+                            <li>Monitor the tracking to ensure the package is moving normally.</li>
+                            <li>If any issues arise (delays, lost packages), contact our support team so we can assist.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FOOTER: Action buttons -->
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="goToDashboard()">Go to Seller Dashboard</button>
+                <button class="btn btn-secondary" onclick="printInstructions()">Print These Instructions</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========================================
+         JAVASCRIPT
+         This makes the page interactive
+         ======================================== -->
+    <script>
+        // FUNCTION: Close the modal
+        // This redirects the user to index.html after a fade-out animation
+        function closeModal() {
+            // Add a fade-out animation
+            const overlay = document.getElementById('modalOverlay');
+            overlay.style.animation = 'fadeOut 0.3s ease-out';
+            
+            // Wait for animation to finish (300ms), then redirect
+            setTimeout(() => {
+                // Redirect to index.html
+                window.location.href = 'index.html';
+            }, 300);
+        }
+
+        // Add the fade-out animation to our stylesheet dynamically
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // FUNCTION: Go to seller dashboard
+        // Replace this URL with your actual dashboard URL
+        function goToDashboard() {
+            window.location.href = '/seller-dashboard'; // Change this to your real dashboard URL
+        }
+
+        // FUNCTION: Print the instructions
+        // Opens the browser's print dialog
+        function printInstructions() {
+            window.print();
+        }
+
+        // OPTIONAL: Close modal when clicking outside the white box
+        document.getElementById('modalOverlay').addEventListener('click', function(event) {
+            // Only close if the click was on the overlay itself, not the modal container
+            if (event.target === this) {
+                closeModal();
+            }
+        });
+
+        // OPTIONAL: Close modal when pressing Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
