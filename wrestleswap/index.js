@@ -1,29 +1,41 @@
-const functions = require("firebase-functions");
+const { onRequest } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
 
-exports.deleteSoldProducts = functions.https.onRequest(async (req, res) => {
+const db = admin.firestore();
+
+// Define secrets
+const stripeSecret = defineSecret("STRIPE_SKEY");
+const shippoSecret = defineSecret("SHIPPO_API_KEY");
+
+// --- DELETE SOLD PRODUCTS ---
+exports.deleteSoldProducts = onRequest({ cors: true }, async (req, res) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
   try {
-    const db = admin.firestore();
     const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
-    
+
     const snapshot = await db.collection("products")
       .where("sold", "==", true)
       .where("soldTimestamp", "<=", ninetyDaysAgo)
       .get();
-    
+
     if (snapshot.empty) {
       return res.status(200).json({
         success: true,
         deletedCount: 0,
       });
     }
-    
+
     const batch = db.batch();
     snapshot.docs.forEach((doc) => batch.delete(doc.ref));
     await batch.commit();
-    
+
     return res.status(200).json({
       success: true,
       deletedCount: snapshot.size,
@@ -35,3 +47,218 @@ exports.deleteSoldProducts = functions.https.onRequest(async (req, res) => {
     });
   }
 });
+
+// --- STRIPE PAYMENT INTENT ---
+exports.createPaymentIntent = onRequest(
+  { cors: true, secrets: [stripeSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') {
+      return res.status(204).send('');
+    }
+
+    try {
+      const stripe = require('stripe')(stripeSecret.value());
+      const { amount, currency = 'usd' } = req.body;
+
+      if (!amount) {
+        return res.status(400).json({ error: 'Amount is required' });
+      }
+
+      console.log('Creating payment intent for amount:', amount, 'currency:', currency);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: currency,
+        automatic_payment_methods: { enabled: true },
+      });
+
+      console.log('Payment intent created:', paymentIntent.id);
+
+      return res.status(200).json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error) {
+      console.error('Stripe Error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- SHIPPO SHIPPING RATES ---
+exports.shippingRates = onRequest(
+  { cors: true, secrets: [shippoSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    try {
+      const Shippo = require('shippo');
+      const shippoKey = shippoSecret.value();
+
+      const shippoClient = (typeof Shippo === 'function')
+        ? Shippo(shippoKey)
+        : new Shippo.Shippo(shippoKey);
+
+      const { zipCode, senderAddress } = req.body;
+
+      if (!zipCode || !senderAddress) {
+        return res.status(400).json({ error: 'Missing zipCode or senderAddress' });
+      }
+
+      const shipment = await shippoClient.shipment.create({
+        address_from: {
+          name: senderAddress.name || "Seller",
+          street1: senderAddress.street1,
+          city: senderAddress.city,
+          state: senderAddress.state,
+          zip: senderAddress.zip,
+          country: senderAddress.country || "US"
+        },
+        address_to: {
+          name: "Buyer",
+          street1: "123 Main St",
+          city: "San Francisco",
+          state: "CA",
+          zip: zipCode,
+          country: "US"
+        },
+        parcels: [{
+          length: senderAddress.parcel?.length || "10",
+          width: senderAddress.parcel?.width || "10",
+          height: senderAddress.parcel?.height || "5",
+          distance_unit: "in",
+          weight: senderAddress.parcel?.weight || "2",
+          mass_unit: "lb"
+        }],
+        async: false
+      });
+
+      return res.status(200).json(shipment.rates);
+
+    } catch (error) {
+      console.error('Shippo Error:', error);
+      return res.status(500).json({
+        error: 'Failed to get shipping rates',
+        details: error.message
+      });
+    }
+  }
+);
+
+// --- STRIPE CONNECT: Create Connected Account for Sellers ---
+exports.createConnectedAccount = onRequest(
+  { cors: true, secrets: [stripeSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+
+    try {
+      const stripe = require('stripe')(stripeSecret.value());
+      const { userId, email, returnUrl, refreshUrl } = req.body;
+
+      if (!userId || !email) {
+        return res.status(400).json({ error: 'Missing userId or email' });
+      }
+
+      console.log('Creating Stripe Connect account for user:', userId);
+
+      const userDoc = await db.collection('users').doc(userId).get();
+      let stripeAccountId;
+
+      if (userDoc.exists && userDoc.data().stripeAccountId) {
+        stripeAccountId = userDoc.data().stripeAccountId;
+        console.log('User already has Stripe account:', stripeAccountId);
+      } else {
+        const account = await stripe.accounts.create({
+          type: 'express',
+          country: 'US',
+          email: email,
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+          business_type: 'individual',
+        });
+
+        stripeAccountId = account.id;
+        console.log('Created new Stripe account:', stripeAccountId);
+
+        await db.collection('users').doc(userId).set({
+          stripeAccountId: stripeAccountId,
+          email: email,
+          createdAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
+
+      const accountLink = await stripe.accountLinks.create({
+        account: stripeAccountId,
+        refresh_url: refreshUrl || 'https://yourwebsite.com/seller-onboarding.html',
+        return_url: returnUrl || 'https://yourwebsite.com/seller-dashboard.html',
+        type: 'account_onboarding',
+      });
+
+      console.log('Account link created:', accountLink.url);
+
+      res.json({
+        accountId: stripeAccountId,
+        url: accountLink.url
+      });
+
+    } catch (error) {
+      console.error('Error creating connected account:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- STRIPE CONNECT: Check Seller Status ---
+exports.checkSellerStatus = onRequest(
+  { cors: true, secrets: [stripeSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+
+    try {
+      const stripe = require('stripe')(stripeSecret.value());
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'Missing userId' });
+      }
+
+      const userDoc = await db.collection('users').doc(userId).get();
+
+      if (!userDoc.exists || !userDoc.data().stripeAccountId) {
+        return res.json({
+          connected: false,
+          chargesEnabled: false,
+          detailsSubmitted: false
+        });
+      }
+
+      const stripeAccountId = userDoc.data().stripeAccountId;
+      const account = await stripe.accounts.retrieve(stripeAccountId);
+
+      res.json({
+        connected: true,
+        chargesEnabled: account.charges_enabled,
+        detailsSubmitted: account.details_submitted,
+        payoutsEnabled: account.payouts_enabled
+      });
+
+    } catch (error) {
+      console.error('Error checking seller status:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
