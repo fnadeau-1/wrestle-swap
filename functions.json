@@ -1,8 +1,7 @@
 {
-  "name": "functions",
-  "description": "Cloud Functions for Firebase",
+  "name": "wrestleswap-functions",
+  "description": "Cloud Functions for Wrestle Swap",
   "scripts": {
-    "lint": "eslint .",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
@@ -10,17 +9,15 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "24"
+    "node": "18"
   },
   "main": "index.js",
   "dependencies": {
-    "firebase-admin": "^13.6.0",
-    "firebase-functions": "^7.0.0"
+    "firebase-admin": "^11.11.0",
+    "firebase-functions": "^4.5.0"
   },
   "devDependencies": {
-    "eslint": "^8.15.0",
-    "eslint-config-google": "^0.14.0",
-    "firebase-functions-test": "^3.4.1"
+    "firebase-functions-test": "^3.1.0"
   },
   "private": true
 }

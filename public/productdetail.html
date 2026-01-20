@@ -112,6 +112,7 @@
         .shipping-error { padding: 12px; background: #fee; border: 1px solid #fcc; border-radius: 4px; color: #c00; font-size: 13px; }
         .loading { text-align: center; padding: 50px; font-size: 20px; color: #707070; }
         .error-message { text-align: center; padding: 50px; font-size: 18px; color: #c00; }
+        .sold-badge { background: #dc3545; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; font-weight: bold; margin-bottom: 15px; }
         @media (max-width: 968px) { .product-layout { grid-template-columns: 1fr; } .main-image-container { height: 400px; } .toast { bottom: 20px; right: 20px; left: 20px; max-width: none; } }
     </style>
 </head>
@@ -125,7 +126,6 @@
             <div>
                 <a href="sell.html">Sell</a>
                 <a href="watchlist.html">Watchlist <span id="watchlist-count" class="cart-badge" style="display: none;">0</span></a>
-                <a href="cart.html">🛒 Cart <span id="cart-count" class="cart-badge" style="display: none;">0</span></a>
             </div>
         </div>
     </div>
@@ -168,6 +168,7 @@
                 </div>
             </div>
             <div class="product-info">
+                <div id="sold-badge-container"></div>
                 <h1 class="product-title" id="product-title">Loading...</h1>
                 <div class="product-condition" id="product-condition"></div>
                 <div class="product-rating">
@@ -182,9 +183,9 @@
                 <div class="option-section">
                     <div class="option-label">📍 Item Location:</div>
                     <div style="font-size: 15px; color: #333; margin-top: 5px;"><strong id="product-location">Loading...</strong></div>
-                    <div style="font-size: 13px; color: #707070; margin-top: 5px;" id="product-location-state">`${Ships From (Zip Code)}`</div>
+                    <div style="font-size: 13px; color: #707070; margin-top: 5px;" id="product-location-state">Ships from seller</div>
                 </div>
-                <div class="option-section" style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                <div class="option-section" id="shipping-section" style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
                     <div class="option-label">📦 Calculate Shipping Cost</div>
                     <div style="margin-bottom: 15px;">
                         <input type="text" id="shipping-zip" placeholder="Enter your ZIP code" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;" maxlength="5" />
@@ -192,8 +193,8 @@
                     <button onclick="calculateShipping()" style="width: 100%; padding: 12px; background: #3665f3; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Get Shipping Rates</button>
                     <div id="shipping-results" style="margin-top: 15px;"></div>
                 </div>
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" onclick="buyNow()">Buy This item</button>
+                <div class="action-buttons" id="action-buttons">
+                    <button class="btn btn-primary" onclick="buyNow()">Buy Now</button>
                     <button class="btn btn-secondary wishlist-btn" id="watchlist-btn" onclick="toggleWatchlist()">
                         <span id="heart-icon">♡</span> <span id="watchlist-text">Add to Watchlist</span>
                     </button>
@@ -326,14 +327,41 @@
         function displayProduct(product) {
             document.title = `${product.name || 'Product'} | Wrestle Swap`;
             document.getElementById('breadcrumb-title').textContent = product.name || 'Product';
-            document.getElementById('product-title').textContent = product.name || `${product.title}`;
+            document.getElementById('product-title').textContent = product.name || product.title || 'Product';
             document.getElementById('product-condition').textContent = product.condition ? `Condition: ${product.condition}` : '';
             document.getElementById('product-price').textContent = `$${(product.price || 0).toFixed(2)}`;
             
-            // Location
-            if (product.location) {
+            // Check if item is sold
+            if (product.sold) {
+                document.getElementById('sold-badge-container').innerHTML = '<div class="sold-badge">🚫 SOLD OUT</div>';
+                // Disable buy button
+                document.getElementById('action-buttons').innerHTML = `
+                    <button class="btn btn-primary" disabled style="background: #ccc; cursor: not-allowed;">Item Sold</button>
+                    <p style="text-align: center; color: #707070; font-size: 14px;">This item has been purchased and is no longer available.</p>
+                `;
+                // Hide shipping calculator
+                document.getElementById('shipping-section').style.display = 'none';
+            }
+            
+            // Location - Fixed to use the correct field from sell page
+            if (product.zipCode) {
+                document.getElementById('product-location').textContent = product.zipCode;
+                // You can optionally add city/state if available
+                const locationDetails = [];
+                if (product.city) locationDetails.push(product.city);
+                if (product.state) locationDetails.push(product.state);
+                if (locationDetails.length > 0) {
+                    document.getElementById('product-location-state').textContent = `Ships from ${locationDetails.join(', ')}`;
+                } else {
+                    document.getElementById('product-location-state').textContent = 'Ships from seller location';
+                }
+            } else if (product.location) {
+                // Fallback to old location field if zipCode doesn't exist
                 document.getElementById('product-location').textContent = product.location;
                 document.getElementById('product-location-state').textContent = product.locationState || 'Ships from seller';
+            } else {
+                document.getElementById('product-location').textContent = 'Not specified';
+                document.getElementById('product-location-state').textContent = 'Contact seller for details';
             }
             
             // Rating (default to 5 stars if not specified)
@@ -400,9 +428,38 @@
             const description = product.description || 'No description available.';
             document.getElementById('product-description').innerHTML = `<strong>Description:</strong><br><br>${description}`;
             
-            // Seller info
-            const sellerName = product.sellerUsername || product.sellerId || 'Seller';
-            document.getElementById('seller-name').textContent = `Sold by: ${sellerName}`;
+            // Seller info - FIXED to display actual username with better field checking
+            let sellerDisplayName = 'Anonymous Seller';
+            
+            console.log('Product seller data:', {
+                sellerUsername: product.sellerUsername,
+                sellerName: product.sellerName,
+                sellerEmail: product.sellerEmail,
+                sellerId: product.sellerId,
+                username: product.username,
+                displayName: product.displayName
+            });
+            
+            // Try different possible username fields in order of preference
+            if (product.sellerUsername && product.sellerUsername.trim() !== '') {
+                sellerDisplayName = product.sellerUsername;
+            } else if (product.username && product.username.trim() !== '') {
+                sellerDisplayName = product.username;
+            } else if (product.displayName && product.displayName.trim() !== '') {
+                sellerDisplayName = product.displayName;
+            } else if (product.sellerName && product.sellerName.trim() !== '') {
+                sellerDisplayName = product.sellerName;
+            } else if (product.sellerEmail && product.sellerEmail.trim() !== '') {
+                // If only email available, show part of it
+                const emailParts = product.sellerEmail.split('@');
+                sellerDisplayName = emailParts[0];
+            } else if (product.sellerId && product.sellerId.trim() !== '') {
+                // Last resort - show seller ID (shortened)
+                sellerDisplayName = `User_${product.sellerId.substring(0, 8)}`;
+            }
+            
+            console.log('Final seller display name:', sellerDisplayName);
+            document.getElementById('seller-name').textContent = `Sold by: ${sellerDisplayName}`;
             
             // Show content, hide loading
             document.getElementById('loading').style.display = 'none';
@@ -426,18 +483,20 @@
             const relatedContainer = document.getElementById('related-products');
             
             try {
-                // Get 4 random products from same category
+                // Get products, excluding sold ones
                 const productsRef = window.collection(window.firebaseDb, 'products');
-                let q = window.query(productsRef, window.limit(5));
+                let q = window.query(productsRef, window.limit(10));
                 
                 const querySnapshot = await window.getDocs(q);
                 const products = [];
                 
                 querySnapshot.forEach((doc) => {
-                    if (doc.id !== currentProduct.id) {
+                    const productData = doc.data();
+                    // Exclude current product and sold products
+                    if (doc.id !== currentProduct.id && !productData.sold) {
                         products.push({
                             id: doc.id,
-                            ...doc.data()
+                            ...productData
                         });
                     }
                 });
@@ -498,18 +557,8 @@
         }
         
         // ============================================
-        // CART & WATCHLIST
+        // WATCHLIST
         // ============================================
-        
-        function getCart() {
-            const cart = localStorage.getItem('wrestleSwapCart');
-            return cart ? JSON.parse(cart) : [];
-        }
-        
-        function saveCart(cart) {
-            localStorage.setItem('wrestleSwapCart', JSON.stringify(cart));
-            updateCartCount();
-        }
         
         function getWatchlist() {
             const watchlist = localStorage.getItem('wrestleSwapWatchlist');
@@ -519,17 +568,6 @@
         function saveWatchlist(watchlist) {
             localStorage.setItem('wrestleSwapWatchlist', JSON.stringify(watchlist));
             updateWatchlistCount();
-        }
-        
-        function updateCartCount() {
-            const cart = getCart();
-            const badge = document.getElementById('cart-count');
-            if (cart.length > 0) {
-                badge.textContent = cart.length;
-                badge.style.display = 'inline-block';
-            } else {
-                badge.style.display = 'none';
-            }
         }
         
         function updateWatchlistCount() {
@@ -567,15 +605,31 @@
             }, 3000);
         }
         
+        // ============================================
+        // BUY NOW - Goes directly to checkout
+        // ============================================
+        
         function buyNow() {
             if (!currentProduct) return;
-            const cart = getCart();
-            const existingItem = cart.find(item => item.id === currentProduct.id);
-            if (!existingItem) {
-                cart.push({ ...currentProduct, quantity: 1, addedAt: new Date().toISOString() });
-                saveCart(cart);
+            
+            // Check if item is sold
+            if (currentProduct.sold) {
+                showToast('This item has already been sold', 'error');
+                return;
             }
-            showToast('Proceeding to checkout...', 'success');
+            
+            // Store the current product in sessionStorage for checkout page
+            sessionStorage.setItem('checkoutProduct', JSON.stringify({
+                id: currentProduct.id,
+                name: currentProduct.name || currentProduct.title,
+                price: currentProduct.price || 0,
+                condition: currentProduct.condition,
+                image: currentProduct.image || (currentProduct.images && currentProduct.images[0]) || '📦',
+                shippingCost: selectedShippingRate ? selectedShippingRate.price : 0
+            }));
+            
+            // Redirect to checkout
+            window.location.href = 'checkout.html';
         }
         
         function toggleWatchlist() {
@@ -705,7 +759,6 @@
         // ============================================
         
         window.addEventListener('DOMContentLoaded', function() {
-            updateCartCount();
             updateWatchlistCount();
             loadProductData();
         });

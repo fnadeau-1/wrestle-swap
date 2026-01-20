@@ -226,10 +226,28 @@
             overflow: hidden;
             cursor: pointer;
             transition: box-shadow 0.2s;
+            position: relative;
         }
 
         .product-item:hover {
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .product-item.sold {
+            opacity: 0.7;
+        }
+
+        .sold-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc2626;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 10;
         }
 
         .product-img {
@@ -484,8 +502,12 @@
                     <input type="checkbox" id="good" onchange="filterProducts()">
                     <label for="good">Used - Good</label>
                 </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="Fair" onchange="filterProducts()">
+                    <label for="Fair">Used - Fair</label>
+                </div>
             </div>
-
+            
             <div class="filter-section">
                 <div class="filter-title">Price</div>
                 <div class="price-inputs">
@@ -542,8 +564,6 @@
 
             <!-- Products Grid -->
             <div class="products-grid" id="products-container"></div>
-
-            
 
             <!-- No Results -->
             <div class="no-results" id="no-results" style="display: none;">
@@ -616,6 +636,13 @@
                 allProducts = [];
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
+                    
+                    // Skip sold products - don't show them in search results at all
+                    if (data.sold === true) {
+                        console.log('Skipping sold product:', data.title);
+                        return;
+                    }
+                    
                     console.log('Product loaded:', data.title, 'Active:', data.active);
                     
                     allProducts.push({
@@ -628,11 +655,12 @@
                         size: data.size,
                         shipping: getShippingDisplay(data),
                         icon: getCategoryIcon(data.category),
-                        images: data.images || []
+                        images: data.images || [],
+                        sold: data.sold || false
                     });
                 });
                 
-                console.log(`Loaded ${allProducts.length} products from Firestore`);
+                console.log(`Loaded ${allProducts.length} available products from Firestore`);
                 currentProducts = [...allProducts];
                 
                 // Hide loading, show content
@@ -820,8 +848,12 @@
                         ? `<img src="${product.images[0]}" alt="${product.name}">`
                         : product.icon;
                     
+                    const soldClass = product.sold ? 'sold' : '';
+                    const soldBadge = product.sold ? '<div class="sold-badge">SOLD</div>' : '';
+                    
                     return `
-                        <div class="product-item" onclick="window.location.href='productdetail.html?id=${product.id}'">
+                        <div class="product-item ${soldClass}" onclick="window.location.href='productdetail.html?id=${product.id}'">
+                            ${soldBadge}
                             <div class="product-img">${imageDisplay}</div>
                             <div class="product-details">
                                 <div class="product-name">${product.name}</div>

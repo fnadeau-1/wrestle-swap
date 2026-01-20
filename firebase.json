@@ -19,7 +19,6 @@
       "source": "functions"
     },
     {
-      "source": "wrestleswap",
       "codebase": "wrestleswap",
       "disallowLegacyRuntimeConfig": true,
       "ignore": [
@@ -28,6 +27,9 @@
         "firebase-debug.log",
         "firebase-debug.*.log",
         "*.local"
+      ],
+      "source": "wrestleswap",
+      "predeploy": [
       ]
     }
   ],

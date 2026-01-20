@@ -111,6 +111,10 @@
             transform: translateY(-2px);
         }
 
+        .listing-card.sold {
+            opacity: 0.7;
+        }
+
         .listing-image {
             width: 100%;
             height: 200px;
@@ -149,6 +153,20 @@
         .status-draft {
             background: #fef3c7;
             color: #d97706;
+        }
+
+        .status-sold {
+            background: #dc2626;
+            color: white;
+        }
+
+        .sold-listing {
+            opacity: 0.7;
+        }
+
+        .status-sold {
+            background: #dc2626;
+            color: white;
         }
 
         .listing-content {
@@ -570,10 +588,6 @@
         // USER-SPECIFIC LISTINGS
         // ============================================
         
-        /*
-         * This function gets ONLY the current user's listings
-         * by filtering products where userId matches the signed-in user
-         */
         async function fetchUserListings() {
             try {
                 const user = auth.currentUser;
@@ -585,7 +599,6 @@
 
                 console.log('Fetching listings for user:', user.uid);
 
-                // Query products where userId matches current user
                 const query = db.collection('products').where('userId', '==', user.uid);
                 const snapshot = await query.get();
                 
@@ -595,7 +608,6 @@
                     return [];
                 }
 
-                // Convert to array
                 const listings = [];
                 snapshot.forEach(doc => {
                     listings.push({
@@ -612,7 +624,6 @@
             }
         }
 
-        // Update a listing
         async function updateListing(listingId, data) {
             try {
                 await db.collection('products').doc(listingId).update({
@@ -626,7 +637,6 @@
             }
         }
 
-        // Delete a listing
         async function deleteListing(listingId) {
             try {
                 await db.collection('products').doc(listingId).delete();
@@ -637,7 +647,6 @@
             }
         }
 
-        // Toggle active status
         async function toggleListingActive(listingId, currentStatus) {
             try {
                 await db.collection('products').doc(listingId).update({
@@ -656,8 +665,18 @@
         // ============================================
 
         function createListingCard(listing) {
-            const statusClass = listing.active ? 'status-active' : 'status-draft';
-            const statusText = listing.active ? 'Active' : 'Draft';
+            // Determine status - sold takes priority
+            let statusClass, statusText;
+            if (listing.sold) {
+                statusClass = 'status-sold';
+                statusText = '🚫 SOLD';
+            } else if (listing.active) {
+                statusClass = 'status-active';
+                statusText = 'Active';
+            } else {
+                statusClass = 'status-draft';
+                statusText = 'Draft';
+            }
             
             const shippingMethodNames = {
                 'standard': 'Standard Shipping',
@@ -671,13 +690,16 @@
                 ? 'Free' 
                 : `$${parseFloat(listing.shippingCost || 0).toFixed(2)}`;
 
-            // Show first image if available
             const imageDisplay = listing.images && listing.images.length > 0
                 ? `<img src="${listing.images[0]}" alt="${listing.title}">`
                 : '<span>📦 No Image</span>';
 
+            // Disable edit/delete buttons for sold items
+            const disabledClass = listing.sold ? 'disabled' : '';
+            const soldCardClass = listing.sold ? 'sold' : '';
+
             return `
-                <div class="listing-card" data-id="${listing.id}">
+                <div class="listing-card ${soldCardClass}" data-id="${listing.id}">
                     <div class="listing-image">
                         ${imageDisplay}
                         <span class="status-badge ${statusClass}">${statusText}</span>
@@ -697,15 +719,21 @@
                         </div>
 
                         <div class="listing-actions">
-                            <button class="btn btn-primary" onclick="openEditModal('${listing.id}')">
-                                Edit
-                            </button>
-                            <button class="btn btn-secondary" onclick="toggleActive('${listing.id}', ${listing.active || false})">
-                                ${listing.active ? 'Deactivate' : 'Activate'}
-                            </button>
-                            <button class="btn btn-danger" onclick="openDeleteModal('${listing.id}')">
-                                🗑️
-                            </button>
+                            ${!listing.sold ? `
+                                <button class="btn btn-primary" onclick="openEditModal('${listing.id}')">
+                                    Edit
+                                </button>
+                                <button class="btn btn-secondary" onclick="toggleActive('${listing.id}', ${listing.active || false})">
+                                    ${listing.active ? 'Deactivate' : 'Activate'}
+                                </button>
+                                <button class="btn btn-danger" onclick="openDeleteModal('${listing.id}')">
+                                    🗑️
+                                </button>
+                            ` : `
+                                <div style="text-align: center; color: var(--color-text-muted); font-size: 0.875rem; padding: 8px;">
+                                    This item has been sold
+                                </div>
+                            `}
                         </div>
                     </div>
                 </div>
@@ -737,8 +765,8 @@
             // Calculate stats
             const stats = {
                 totalListings: listings.length,
-                activeListings: listings.filter(l => l.active).length,
-                totalValue: listings.reduce((sum, l) => sum + ((l.price || 0) * (l.stock || 0)), 0)
+                activeListings: listings.filter(l => l.active && !l.sold).length,
+                totalValue: listings.filter(l => !l.sold).reduce((sum, l) => sum + ((l.price || 0) * (l.stock || 0)), 0)
             };
             updateStatsDisplay(stats);
         }
@@ -785,6 +813,12 @@
                 }
 
                 const listing = doc.data();
+                
+                // Don't allow editing sold items
+                if (listing.sold) {
+                    showError('Cannot edit sold items');
+                    return;
+                }
                 
                 document.getElementById('editListingId').value = listingId;
                 document.getElementById('editTitle').value = listing.title || '';
