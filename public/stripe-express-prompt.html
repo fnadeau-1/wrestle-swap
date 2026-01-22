@@ -197,6 +197,24 @@
             display: block;
         }
 
+        .already-connected {
+            background: #d4edda;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .already-connected.active {
+            display: block;
+        }
+
+        .already-connected h3 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+
         @media (max-width: 640px) {
             .container {
                 padding: 32px 24px;
@@ -210,123 +228,249 @@
                 font-size: 15px;
             }
         }
+           .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: white;
+        color: #667eea;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+        background: #f7fafc;
+        transform: translateY(-2px);
+    }
     </style>
 </head>
 <body>
+        <a href="index.html" class="back-button">← Back to Home</a>
+    </div>
     <div class="container">
         <div class="icon">💳</div>
         
-        <h1>Set Up Your Stripe Express Account</h1>
-        <p class="subtitle">To start selling on our platform, you'll need to create a Stripe Express account. This is required by law for all sellers.</p>
-
-        <div class="info-box">
-            <h3>Why is this required?</h3>
-            <p>All sellers are legally required to have a verified payment account to ensure secure transactions and comply with financial regulations.</p>
+        <div id="already-connected-section" class="already-connected">
+            <h3>✅ You're already connected!</h3>
+            <p>Your Stripe account is connected and ready to receive payments.</p>
+            <a href="sell.html" class="btn btn-primary" style="margin-top: 15px; display: inline-block;">Go to Sell Page</a>
         </div>
 
-        <div class="benefits">
-            <h3>What you'll get:</h3>
-            
-            <div class="benefit-item">
-                <div class="benefit-icon">✓</div>
-                <div class="benefit-text">Fast, secure payments directly to your bank account</div>
+        <div id="onboarding-section">
+            <h1>Set Up Your Stripe Express Account</h1>
+            <p class="subtitle">To start selling on our platform, you'll need to create a Stripe Express account. This is required by law for all sellers.</p>
+
+            <div class="info-box">
+                <h3>Why is this required?</h3>
+                <p>All sellers are legally required to have a verified payment account to ensure secure transactions and comply with financial regulations.</p>
             </div>
 
-            <div class="benefit-item">
-                <div class="benefit-icon">✓</div>
-                <div class="benefit-text">Industry-leading fraud protection and security</div>
+            <div class="benefits">
+                <h3>What you'll get:</h3>
+                
+                <div class="benefit-item">
+                    <div class="benefit-icon">✓</div>
+                    <div class="benefit-text">Fast, secure payments directly to your bank account</div>
+                </div>
+
+                <div class="benefit-item">
+                    <div class="benefit-icon">✓</div>
+                    <div class="benefit-text">Industry-leading fraud protection and security</div>
+                </div>
+
+                <div class="benefit-item">
+                    <div class="benefit-icon">✓</div>
+                    <div class="benefit-text">Easy tax reporting and financial management</div>
+                </div>
+
+                <div class="benefit-item">
+                    <div class="benefit-icon">✓</div>
+                    <div class="benefit-text">Support for multiple payment methods</div>
+                </div>
             </div>
 
-            <div class="benefit-item">
-                <div class="benefit-icon">✓</div>
-                <div class="benefit-text">Easy tax reporting and financial management</div>
+            <div class="button-group">
+                <button class="btn btn-primary" id="createAccountBtn">Create Stripe Express Account</button>
+                <a href="https://stripe.com/connect" target="_blank" class="btn btn-secondary">Learn More About Stripe</a>
             </div>
 
-            <div class="benefit-item">
-                <div class="benefit-icon">✓</div>
-                <div class="benefit-text">Support for multiple payment methods</div>
+            <div class="loading" id="loading">
+                Creating your account... Please wait.
             </div>
-        </div>
 
-        <div class="button-group">
-            <button class="btn btn-primary" id="createAccountBtn">Create Stripe Express Account</button>
-            <a href="https://stripe.com/connect" target="_blank" class="btn btn-secondary">Learn More About Stripe</a>
-        </div>
+            <div class="error" id="error"></div>
 
-        <div class="loading" id="loading">
-            Creating your account... Please wait.
-        </div>
-
-        <div class="error" id="error"></div>
-
-        <div class="legal-notice">
-            By creating a Stripe Express account, you agree to Stripe's terms of service. Your information will be securely processed and protected.
+            <div class="legal-notice">
+                By creating a Stripe Express account, you agree to Stripe's terms of service. Your information will be securely processed and protected.
+            </div>
         </div>
     </div>
 
+    <!-- Firebase SDK (Compat version for easier global access) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <script>
-        // Configuration - Your backend server URL
-        const SERVER_URL = 'http://localhost:3000';
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
+            authDomain: "wrestleswap.firebaseapp.com",
+            projectId: "wrestleswap",
+            storageBucket: "wrestleswap.firebasestorage.app",
+            messagingSenderId: "857051782398",
+            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
+            measurementId: "G-B411WXLF3J"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+    </script>
+
+    <script>
+        let currentUser = null;
+
+        console.log('Page loaded - waiting for Firebase auth...');
+
+        // Check if user is logged in and if they already have a Stripe account
+        auth.onAuthStateChanged(async (user) => {
+            console.log('Auth state changed. User:', user ? user.uid : 'Not logged in');
+            
+            if (user) {
+                currentUser = user;
+                console.log('✓ User logged in:', user.uid);
+                console.log('Email:', user.email);
+                
+                // Enable the button since user is logged in
+                document.getElementById('createAccountBtn').disabled = false;
+                
+                // Check if user already has a Stripe account connected
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    console.log('User doc exists:', userDoc.exists);
+                    
+                    if (userDoc.exists) {
+                        console.log('User data:', userDoc.data());
+                        
+                        if (userDoc.data().stripeAccountId) {
+                            console.log('✓ User already has Stripe account:', userDoc.data().stripeAccountId);
+                            // User already connected
+                            document.getElementById('onboarding-section').style.display = 'none';
+                            document.getElementById('already-connected-section').classList.add('active');
+                        }
+                    } else {
+                        console.log('No user document found - first time user');
+                    }
+                } catch (error) {
+                    console.error('Error checking user status:', error);
+                }
+            } else {
+                console.log('✗ No user logged in');
+                showError('Please sign in to become a seller');
+                document.getElementById('createAccountBtn').disabled = true;
+            }
+        });
 
         // Button click handler
         document.getElementById('createAccountBtn').addEventListener('click', async function() {
+            console.log('🔘 Button clicked!');
+            console.log('Current user:', currentUser ? currentUser.uid : 'none');
+            
+            if (!currentUser) {
+                console.log('✗ No user - showing error');
+                showError('Please sign in first');
+                return;
+            }
+
             const button = this;
             const loading = document.getElementById('loading');
             const errorDiv = document.getElementById('error');
 
+            console.log('Starting Stripe Connect process...');
+
             // Reset states
             button.disabled = true;
+            button.textContent = 'Processing...';
             loading.classList.add('active');
             errorDiv.classList.remove('active');
 
             try {
-                // STEP 1: Create a Stripe Express account
-                console.log('Creating Stripe Express account...');
-                const accountResponse = await fetch(`${SERVER_URL}/create-connect-account`, {
+                console.log('📤 Sending request to Cloud Function...');
+                console.log('User ID:', currentUser.uid);
+                console.log('Email:', currentUser.email);
+                
+                // Call your Firebase Cloud Function
+                const CLOUD_FUNCTION_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/createConnectedAccount';
+                console.log('Cloud Function URL:', CLOUD_FUNCTION_URL);
+                
+                const requestBody = {
+                    userId: currentUser.uid,
+                    email: currentUser.email,
+                    returnUrl: window.location.origin + '/sell.html',
+                    refreshUrl: window.location.origin + '/stripe-express.html'
+                };
+                console.log('Request body:', requestBody);
+                
+                const response = await fetch(CLOUD_FUNCTION_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({}),
+                    body: JSON.stringify(requestBody),
                 });
 
-                if (!accountResponse.ok) {
-                    throw new Error('Failed to create account');
+                console.log('📥 Response status:', response.status);
+                console.log('Response OK:', response.ok);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Server error response:', errorText);
+                    throw new Error('Failed to create account: ' + response.status + ' - ' + errorText);
                 }
 
-                const accountData = await accountResponse.json();
-                console.log('Account created:', accountData.accountId);
+                const data = await response.json();
+                console.log('✓ Response data:', data);
 
-                // STEP 2: Create an onboarding link
-                console.log('Generating onboarding link...');
-                const linkResponse = await fetch(`${SERVER_URL}/create-account-link`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        accountId: accountData.accountId
-                    }),
-                });
-
-                if (!linkResponse.ok) {
-                    throw new Error('Failed to create onboarding link');
+                if (data.error) {
+                    console.error('❌ Error in response:', data.error);
+                    throw new Error(data.error);
                 }
 
-                const linkData = await linkResponse.json();
-                console.log('Onboarding link created:', linkData.url);
+                if (!data.url) {
+                    console.error('❌ No URL in response');
+                    throw new Error('No onboarding URL received from server');
+                }
 
-                // STEP 3: Redirect the seller to Stripe's onboarding
-                window.location.href = linkData.url;
+                console.log('✓ Got onboarding URL:', data.url);
+                console.log('🔄 Redirecting to Stripe...');
+                
+                // Redirect to Stripe Connect onboarding
+                window.location.href = data.url;
 
             } catch (error) {
-                console.error('Error:', error);
-                errorDiv.textContent = 'Something went wrong. Please try again or contact support.';
-                errorDiv.classList.add('active');
+                console.error('❌ Error occurred:', error);
+                console.error('Error name:', error.name);
+                console.error('Error message:', error.message);
+                console.error('Full error:', error);
+                
+                showError('Failed to connect: ' + error.message);
                 button.disabled = false;
+                button.textContent = 'Create Stripe Express Account';
                 loading.classList.remove('active');
             }
         });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('active');
+        }
     </script>
 </body>
 </html>

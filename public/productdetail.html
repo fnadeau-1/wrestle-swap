@@ -120,7 +120,7 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <a href="sign-in.html">Hi! Sign in or register</a>
+                <a href="sign-in.html" id="user-greeting" style="cursor: pointer;">Hi! Sign in</a>
                 <a href="help.html">Help & Contact</a>
             </div>
             <div>
@@ -246,10 +246,17 @@
         const db = getFirestore(app);
         
         let currentUser = null;
-        onAuthStateChanged(auth, (user) => { 
-            if (user) { 
-                currentUser = user; 
-            } 
+        onAuthStateChanged(auth, (user) => {
+            const greeting = document.getElementById('user-greeting');
+            if (user) {
+                currentUser = user;
+                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+                greeting.textContent = `Hi, ${firstName}!`;
+                greeting.href = 'profile.html';
+            } else {
+                greeting.textContent = 'Hi! Sign in';
+                greeting.href = 'sign-in.html';
+            }
         });
         
         // Make Firebase available globally

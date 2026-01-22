@@ -310,6 +310,17 @@
             font-size: 14px;
         }
 
+        /* Username status styles */
+        #username-status.checking {
+            color: #707070;
+        }
+        #username-status.success {
+            color: #28a745;
+        }
+        #username-status.error {
+            color: #dc3545;
+        }
+
         @media (max-width: 768px) {
             .info-row {
                 flex-direction: column;
@@ -328,13 +339,12 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <a href="sign-in.html" id="auth-link">Hi! Sign in or register</a>
+                <a href="sign-in.html" id="user-greeting">Hi! Sign in</a>
                 <a href="help.html">Help & Contact</a>
             </div>
             <div>
                 <a href="sell.html">Sell</a>
                 <a href="watchlist.html">Watchlist</a>
-                <a href="cart.html">Cart</a>
             </div>
         </div>
     </div>
@@ -375,6 +385,13 @@
             <div class="error-message" id="profile-error"></div>
 
             <form id="profile-form">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="username" placeholder="Enter a unique username" style="text-transform: lowercase;">
+                    <div id="username-status" style="font-size: 12px; margin-top: 5px;"></div>
+                    <p class="helper-text">This must be unique - other users will find you by this name</p>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Display Name</label>
                     <input type="text" class="form-input" id="display-name" placeholder="Enter your display name">
@@ -486,9 +503,9 @@
                         <span style="color: #ffa500;">⚠ Not Connected</span>
                     </span>
                     <br>
-                    <button class="btn btn-primary" id="stripe-connect-btn" style="margin-top: 10px; display: none;">
+                    <a href="stripe-express-prompt.html" class="btn btn-primary" id="stripe-connect-btn" style="margin-top: 10px; display: none; text-decoration: none;">
                         Connect Stripe Account
-                    </button>
+                    </a>
                     <button class="btn btn-secondary" id="stripe-manage-btn" style="margin-top: 10px; display: none;">
                         Manage Account
                     </button>
@@ -678,7 +695,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // Firebase configuration
         const firebaseConfig = {
@@ -697,10 +714,87 @@
         const db = getFirestore(app);
 
         let currentUser = null;
+        let currentUsername = null; // Store the user's current username
+        let usernameCheckTimeout;
+        let isUsernameAvailable = true;
+
+        // Check if username is available (uses 'usernames' collection like sign-in.html)
+        async function checkUsernameAvailable(username, currentUserId) {
+            try {
+                // Check the usernames collection (same as sign-in.html)
+                const usernameDoc = await getDoc(doc(db, 'usernames', username.toLowerCase()));
+
+                // If document doesn't exist, username is available
+                if (!usernameDoc.exists()) {
+                    return true;
+                }
+
+                // If it exists, check if it belongs to the current user (they can keep their own username)
+                const data = usernameDoc.data();
+                return data.userId === currentUserId;
+            } catch (error) {
+                console.error('Error checking username:', error);
+                return false;
+            }
+        }
+
+        // Setup username input listener
+        document.getElementById('username').addEventListener('input', function(e) {
+            const username = e.target.value.toLowerCase();
+            const statusDiv = document.getElementById('username-status');
+
+            // Clear previous timeout
+            clearTimeout(usernameCheckTimeout);
+
+            // If empty, clear status
+            if (!username) {
+                statusDiv.textContent = '';
+                statusDiv.className = '';
+                isUsernameAvailable = false;
+                return;
+            }
+
+            // Show checking status
+            statusDiv.textContent = 'Checking...';
+            statusDiv.className = 'checking';
+
+            // Wait for user to stop typing (debounce)
+            usernameCheckTimeout = setTimeout(async () => {
+                if (username.length < 3) {
+                    statusDiv.textContent = 'Username must be at least 3 characters';
+                    statusDiv.className = 'error';
+                    isUsernameAvailable = false;
+                    return;
+                }
+
+                // Check for invalid characters (only allow letters, numbers, underscores)
+                if (!/^[a-z0-9_]+$/.test(username)) {
+                    statusDiv.textContent = 'Only letters, numbers, and underscores allowed';
+                    statusDiv.className = 'error';
+                    isUsernameAvailable = false;
+                    return;
+                }
+
+                const available = await checkUsernameAvailable(username, currentUser?.uid);
+                isUsernameAvailable = available;
+
+                if (available) {
+                    statusDiv.textContent = '✓ Available';
+                    statusDiv.className = 'success';
+                } else {
+                    statusDiv.textContent = '✗ Already taken';
+                    statusDiv.className = 'error';
+                }
+            }, 500); // Wait 500ms after user stops typing
+        });
 
         // Check authentication and load user data
         onAuthStateChanged(auth, async (user) => {
+            const greeting = document.getElementById('user-greeting');
+
             if (!user) {
+                greeting.textContent = 'Hi! Sign in';
+                greeting.href = 'sign-in.html';
                 alert('Please sign in to access settings');
                 window.location.href = 'sign-in.html';
                 return;
@@ -708,9 +802,14 @@
 
             currentUser = user;
 
+            // Update greeting
+            const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+            greeting.textContent = `Hi, ${firstName}!`;
+            greeting.href = 'profile.html';
+
             // Display account info
             document.getElementById('user-email').textContent = user.email;
-            
+
             // Format member since date
             const memberSince = new Date(user.metadata.creationTime);
             document.getElementById('member-since').textContent = memberSince.toLocaleDateString('en-US', { 
@@ -726,6 +825,11 @@
                     const userData = userDoc.data();
                     
                     // Profile data
+                    document.getElementById('username').value = userData.username || '';
+                    currentUsername = userData.username || '';
+                    if (currentUsername) {
+                        isUsernameAvailable = true; // Their current username is valid
+                    }
                     document.getElementById('display-name').value = userData.displayName || '';
                     document.getElementById('location').value = userData.location || '';
                     document.getElementById('bio').value = userData.bio || '';
@@ -801,13 +905,6 @@
             }
         }
 
-        // Connect to Stripe
-        document.getElementById('stripe-connect-btn').addEventListener('click', async function() {
-            // This would redirect to your Stripe Connect onboarding
-            // For now, we'll show an alert
-            window.location.href = 'http://localhost:3000'; // Your Stripe onboarding page
-        });
-
         // Manage Stripe account
         document.getElementById('stripe-manage-btn').addEventListener('click', function() {
             // This would open Stripe Express dashboard
@@ -817,13 +914,60 @@
         // Save profile
         document.getElementById('profile-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
+            const username = document.getElementById('username').value.toLowerCase().trim();
             const displayName = document.getElementById('display-name').value;
             const location = document.getElementById('location').value;
             const bio = document.getElementById('bio').value;
+            const errorMsg = document.getElementById('profile-error');
+
+            // Validate username
+            if (!username) {
+                errorMsg.textContent = 'Username is required';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (username.length < 3) {
+                errorMsg.textContent = 'Username must be at least 3 characters';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (!/^[a-z0-9_]+$/.test(username)) {
+                errorMsg.textContent = 'Username can only contain letters, numbers, and underscores';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // Check availability one more time before saving (in case someone took it)
+            const available = await checkUsernameAvailable(username, currentUser.uid);
+            if (!available) {
+                errorMsg.textContent = 'Username is already taken. Please choose another.';
+                errorMsg.style.display = 'block';
+                document.getElementById('username-status').textContent = '✗ Already taken';
+                document.getElementById('username-status').className = 'error';
+                return;
+            }
 
             try {
+                // If username changed, update the usernames collection
+                if (username !== currentUsername) {
+                    // Delete old username reservation (if exists)
+                    if (currentUsername) {
+                        await deleteDoc(doc(db, 'usernames', currentUsername));
+                    }
+
+                    // Reserve new username
+                    await setDoc(doc(db, 'usernames', username), {
+                        userId: currentUser.uid,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+
+                // Update user profile
                 await setDoc(doc(db, 'users', currentUser.uid), {
+                    username: username,
                     displayName: displayName,
                     location: location,
                     bio: bio,
@@ -831,7 +975,11 @@
                     updatedAt: serverTimestamp()
                 }, { merge: true });
 
+                // Update stored username
+                currentUsername = username;
+
                 // Show success
+                errorMsg.style.display = 'none';
                 const successMsg = document.getElementById('profile-success');
                 successMsg.style.display = 'block';
                 setTimeout(() => {
@@ -839,7 +987,6 @@
                 }, 3000);
 
             } catch (error) {
-                const errorMsg = document.getElementById('profile-error');
                 errorMsg.textContent = 'Error updating profile: ' + error.message;
                 errorMsg.style.display = 'block';
             }

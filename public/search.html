@@ -371,14 +371,12 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <a href="sign-in.html">Hi! Sign in or register</a>
+                <a href="sign-in.html" id="user-greeting" style="cursor: pointer;">Hi! Sign in</a>
                 <a href="help.html">Help & Contact</a>
             </div>
             <div>
                 <a href="sell.html">Sell</a>
                 <a href="watchlist.html">Watchlist</a>
-                <a href="swaps.html">My Swaps</a>
-                <a href="cart.html">View Cart</a>
             </div>
         </div>
     </div>
@@ -584,6 +582,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -597,7 +596,21 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // User greeting
+        onAuthStateChanged(auth, (user) => {
+            const greeting = document.getElementById('user-greeting');
+            if (user) {
+                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+                greeting.textContent = `Hi, ${firstName}!`;
+                greeting.href = 'profile.html';
+            } else {
+                greeting.textContent = 'Hi! Sign in';
+                greeting.href = 'sign-in.html';
+            }
+        });
 
         // Make available globally
         window.firestoreDB = db;

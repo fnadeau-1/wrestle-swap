@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -c:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(node -e:*)",
+      "Bash(firebase functions:list:*)",
+      "Bash(npm ls:*)",
+      "Bash(node:*)",
+      "Bash(node_modules.binfirebase-functions.cmd)",
+      "Bash(cmd /c \"node_modules\\\\.bin\\\\firebase-functions.cmd\")",
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

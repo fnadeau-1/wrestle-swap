@@ -346,13 +346,12 @@
         <div class="top-bar-content">
             <div>
                 <a href="index.html" class="top-bar-btn">Home</a>
-                <a href="sign-in.html" class="top-bar-btn">Hi! Sign in or register</a>
+                <a href="sign-in.html" class="top-bar-btn" id="user-greeting">Hi! Sign in</a>
                 <a href="chat.html" class="top-bar-btn">Help & Contact</a>
             </div>
             <div>
                 <a href="sell.html" class="top-bar-btn">Sell</a>
                 <a href="watchlist.html" class="top-bar-btn">Watchlist</a>
-                <a href="swaps.html" class="top-bar-btn">My Swaps</a>
                 <a href="settings.html" class="top-bar-btn">Settings</a>
             </div>
         </div>
@@ -553,6 +552,37 @@
             </form>
         </div>
     </div>
+
+    <!-- Firebase SDK for User Greeting -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
+            authDomain: "wrestleswap.firebaseapp.com",
+            projectId: "wrestleswap",
+            storageBucket: "wrestleswap.firebasestorage.app",
+            messagingSenderId: "857051782398",
+            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
+            measurementId: "G-B411WXLF3J"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            const greeting = document.getElementById('user-greeting');
+            if (user) {
+                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+                greeting.textContent = `Hi, ${firstName}!`;
+                greeting.href = 'profile.html';
+            } else {
+                greeting.textContent = 'Hi! Sign in';
+                greeting.href = 'sign-in.html';
+            }
+        });
+    </script>
 
     <script>
         // Toggle FAQ answers
