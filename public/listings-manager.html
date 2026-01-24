@@ -15,7 +15,7 @@
             --color-text: #1a1a1a;
             --color-text-muted: #666666;
             --color-border: #e5e5e5;
-            --color-accent: #d97706;
+            --color-accent: #f94545;
             --color-success: #059669;
             --color-danger: #dc2626;
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
@@ -49,7 +49,7 @@
         }
 
         h1 {
-            font-family: 'Newsreader', serif;
+            font-family: 'DM Sans', sans-serif;
             font-size: 2.5rem;
             font-weight: 700;
             margin-bottom: 8px;
@@ -112,7 +112,11 @@
         }
 
         .listing-card.sold {
-            opacity: 0.7;
+            opacity: 0.85;
+        }
+
+        .listing-card.sold:hover {
+            opacity: 1;
         }
 
         .listing-image {
@@ -160,21 +164,12 @@
             color: white;
         }
 
-        .sold-listing {
-            opacity: 0.7;
-        }
-
-        .status-sold {
-            background: #dc2626;
-            color: white;
-        }
-
         .listing-content {
             padding: 20px;
         }
 
         .listing-title {
-            font-family: 'Newsreader', serif;
+            font-family: 'DM Sans', serif;
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 8px;
@@ -202,24 +197,6 @@
             gap: 4px;
         }
 
-        .shipping-info {
-            background: #f9fafb;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 0.875rem;
-        }
-
-        .shipping-method {
-            font-weight: 600;
-            color: var(--color-text);
-            margin-bottom: 4px;
-        }
-
-        .shipping-cost {
-            color: var(--color-text-muted);
-        }
-
         .listing-actions {
             display: flex;
             gap: 8px;
@@ -236,6 +213,9 @@
             cursor: pointer;
             transition: all 0.2s ease;
             font-family: 'DM Sans', sans-serif;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
         }
 
         .btn:disabled {
@@ -309,7 +289,7 @@
         }
 
         .modal-title {
-            font-family: 'Newsreader', serif;
+            font-family: 'DM Sans', sans-serif;
             font-size: 1.5rem;
             font-weight: 700;
         }
@@ -339,7 +319,18 @@
             outline: none;
             border-color: var(--color-accent);
         }
-
+        .home-btn {
+            background: #e90909;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
         textarea {
             resize: vertical;
             min-height: 80px;
@@ -379,7 +370,7 @@
         }
 
         .empty-state-title {
-            font-family: 'Newsreader', serif;
+            font-family: 'DM Sans', sans-serif;
             font-size: 1.5rem;
             font-weight: 600;
             margin-bottom: 8px;
@@ -395,7 +386,7 @@
             padding: 40px;
             color: var(--color-text-muted);
         }
-
+        
         .spinner {
             display: inline-block;
             width: 40px;
@@ -444,11 +435,15 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
+<div class="container">
+<div class="container">
+    <header style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
             <h1>My Listings</h1>
             <p class="subtitle">Manage your active and draft product listings</p>
-        </header>
+        </div>
+        <button class="home-btn" onclick="window.location.href='index.html'">Home</button>
+    </header>
 
         <div class="stats-bar">
             <div class="stat-card">
@@ -510,22 +505,6 @@
                 <div class="form-group">
                     <label for="editDescription">Description</label>
                     <textarea id="editDescription"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="editShippingMethod">Shipping Method</label>
-                    <select id="editShippingMethod" required>
-                        <option value="standard">Standard Shipping</option>
-                        <option value="express">Express Shipping</option>
-                        <option value="overnight">Overnight Shipping</option>
-                        <option value="local">Local Pickup</option>
-                        <option value="free">Free Shipping</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="editShippingCost">Shipping Cost ($)</label>
-                    <input type="number" id="editShippingCost" step="0.01" min="0">
                 </div>
 
                 <div class="form-group">
@@ -669,7 +648,7 @@
             let statusClass, statusText;
             if (listing.sold) {
                 statusClass = 'status-sold';
-                statusText = '🚫 SOLD';
+                statusText = '✅ SOLD';
             } else if (listing.active) {
                 statusClass = 'status-active';
                 statusText = 'Active';
@@ -678,28 +657,43 @@
                 statusText = 'Draft';
             }
             
-            const shippingMethodNames = {
-                'standard': 'Standard Shipping',
-                'express': 'Express Shipping',
-                'overnight': 'Overnight',
-                'local': 'Local Pickup',
-                'free': 'Free Shipping'
-            };
-            
-            const shippingDisplay = listing.shippingMethod === 'free' 
-                ? 'Free' 
-                : `$${parseFloat(listing.shippingCost || 0).toFixed(2)}`;
-
             const imageDisplay = listing.images && listing.images.length > 0
                 ? `<img src="${listing.images[0]}" alt="${listing.title}">`
                 : '<span>📦 No Image</span>';
 
-            // Disable edit/delete buttons for sold items
-            const disabledClass = listing.sold ? 'disabled' : '';
+            // For sold items, create fulfillment page link
             const soldCardClass = listing.sold ? 'sold' : '';
+            const orderId = listing.soldOrderId || 'unknown';
+            const fulfillmentLink = `seller-order-fulfillment.html?productId=${listing.id}&orderId=${orderId}`;
+
+            // Different actions based on sold status
+            let actionsHtml;
+            if (listing.sold) {
+                // SOLD ITEM - Show button to view shipping details
+                actionsHtml = `
+                    <a href="${fulfillmentLink}" class="btn btn-primary" style="text-align: center; flex: 1;">
+                        📦 View Shipping Details
+                    </a>
+                `;
+            } else {
+                // AVAILABLE ITEM - Show edit/toggle/delete buttons
+                actionsHtml = `
+                    <button class="btn btn-primary" onclick="openEditModal('${listing.id}')">
+                        Edit
+                    </button>
+                    <button class="btn btn-secondary" onclick="toggleActive('${listing.id}', ${listing.active || false})">
+                        ${listing.active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button class="btn btn-danger" onclick="openDeleteModal('${listing.id}')">
+                        🗑️
+                    </button>
+                `;
+            }
 
             return `
-                <div class="listing-card ${soldCardClass}" data-id="${listing.id}">
+                <div class="listing-card ${soldCardClass}" 
+                     data-id="${listing.id}" 
+                     ${listing.sold ? `onclick="window.location.href='${fulfillmentLink}'" style="cursor: pointer;"` : ''}>
                     <div class="listing-image">
                         ${imageDisplay}
                         <span class="status-badge ${statusClass}">${statusText}</span>
@@ -713,27 +707,8 @@
                             <span class="detail-item">👁️ ${listing.views || 0} views</span>
                         </div>
 
-                        <div class="shipping-info">
-                            <div class="shipping-method">${shippingMethodNames[listing.shippingMethod] || 'Standard Shipping'}</div>
-                            <div class="shipping-cost">${shippingDisplay}</div>
-                        </div>
-
-                        <div class="listing-actions">
-                            ${!listing.sold ? `
-                                <button class="btn btn-primary" onclick="openEditModal('${listing.id}')">
-                                    Edit
-                                </button>
-                                <button class="btn btn-secondary" onclick="toggleActive('${listing.id}', ${listing.active || false})">
-                                    ${listing.active ? 'Deactivate' : 'Activate'}
-                                </button>
-                                <button class="btn btn-danger" onclick="openDeleteModal('${listing.id}')">
-                                    🗑️
-                                </button>
-                            ` : `
-                                <div style="text-align: center; color: var(--color-text-muted); font-size: 0.875rem; padding: 8px;">
-                                    This item has been sold
-                                </div>
-                            `}
+                        <div class="listing-actions" ${listing.sold ? 'onclick="event.stopPropagation()"' : ''}>
+                            ${actionsHtml}
                         </div>
                     </div>
                 </div>
@@ -825,8 +800,6 @@
                 document.getElementById('editPrice').value = listing.price || 0;
                 document.getElementById('editStock').value = listing.stock || 0;
                 document.getElementById('editDescription').value = listing.description || '';
-                document.getElementById('editShippingMethod').value = listing.shippingMethod || 'standard';
-                document.getElementById('editShippingCost').value = listing.shippingCost || 0;
                 document.getElementById('editActive').checked = listing.active || false;
 
                 document.getElementById('editModal').classList.add('active');
@@ -856,8 +829,6 @@
                 price: parseFloat(document.getElementById('editPrice').value),
                 stock: parseInt(document.getElementById('editStock').value),
                 description: document.getElementById('editDescription').value,
-                shippingMethod: document.getElementById('editShippingMethod').value,
-                shippingCost: parseFloat(document.getElementById('editShippingCost').value),
                 active: document.getElementById('editActive').checked
             };
 

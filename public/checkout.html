@@ -106,6 +106,52 @@
             color: #e53238;
         }
 
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3665f3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-message {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #1976d2;
+        }
+
+        .success-message {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #2e7d32;
+        }
+
+        .error-message {
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #c62828;
+        }
+
         /* Order Summary */
         .order-summary {
             background: white;
@@ -188,6 +234,12 @@
             margin-top: 15px;
         }
 
+        .shipping-info-display {
+            font-size: 12px;
+            color: #707070;
+            margin-top: 4px;
+        }
+
         /* Stripe Card Element */
         #card-element {
             padding: 12px;
@@ -217,13 +269,22 @@
             transition: background 0.3s;
         }
 
-        .pay-button:hover {
+        .pay-button:hover:not(:disabled) {
             background: #2348c5;
         }
 
         .pay-button:disabled {
             background: #ccc;
             cursor: not-allowed;
+        }
+
+        .calculate-button {
+            background: #28a745;
+            margin-bottom: 20px;
+        }
+
+        .calculate-button:hover:not(:disabled) {
+            background: #218838;
         }
 
         .back-to-cart {
@@ -306,7 +367,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
             authDomain: "wrestleswap.firebaseapp.com",
@@ -316,20 +378,50 @@
             appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
             measurementId: "G-B411WXLF3J"
         };
-        
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        
+        const auth = getAuth(app);
+
         // Make Firebase available globally
         window.firebaseDb = db;
+        window.firebaseAuth = auth;
         window.updateDoc = updateDoc;
         window.doc = doc;
         window.serverTimestamp = serverTimestamp;
+
+        // Track current user
+        onAuthStateChanged(auth, (user) => {
+            window.currentUser = user;
+            console.log('Auth state changed. User:', user ? user.uid : 'Not logged in');
+        });
     </script>
 
     <script>
         // ============================================
-        // LOAD PRODUCT FROM SESSION STORAGE
+        // CLOUD FUNCTION URLS
+        // ============================================
+
+        const CLOUD_FUNCTIONS = {
+            getShippingRates: 'https://us-central1-wrestleswap.cloudfunctions.net/shippoGetRates',
+            createShippingLabel: 'https://us-central1-wrestleswap.cloudfunctions.net/shippoCreateLabel'
+        };
+
+        // Your business address (where you're shipping FROM)
+        // UPDATE THESE WITH YOUR ACTUAL BUSINESS ADDRESS
+        const FROM_ADDRESS = {
+            name: "Wrestle Swap",
+            street1: "123 Main Street",
+            city: "New York",
+            state: "NY",
+            zip: "10001",
+            country: "US",
+            phone: "+1 555-555-5555",
+            email: "orders@wrestleswap.com"
+        };
+
+        // ============================================
+        // GLOBAL VARIABLES
         // ============================================
         
         let checkoutProduct = null;
@@ -337,12 +429,17 @@
         let shippingCost = 0;
         let tax = 0;
         let total = 0;
+        let selectedShippingRate = null; // Will store the cheapest Shippo rate
+        let shippingCalculated = false; // Track if shipping has been calculated
 
+        // ============================================
+        // LOAD PRODUCT FROM SESSION STORAGE
+        // ============================================
+        
         function loadCheckoutProduct() {
             const productData = sessionStorage.getItem('checkoutProduct');
             
             if (!productData) {
-                // No product in checkout
                 displayEmptyCheckout();
                 return;
             }
@@ -361,13 +458,55 @@
             if (!checkoutProduct) return;
 
             subtotal = checkoutProduct.price || 0;
-            shippingCost = checkoutProduct.shippingCost || 0;
             
-            // Calculate 8% tax on subtotal only
+            // Shipping cost will be determined by Shippo after calculation
+            // Calculate 8% tax on subtotal only (not on shipping)
             tax = subtotal * 0.08;
             
             // Total = subtotal + shipping + tax
             total = subtotal + shippingCost + tax;
+        }
+
+        function updateOrderSummary() {
+            // Update the shipping cost display
+            const shippingElement = document.getElementById('shipping-cost');
+            const shippingInfoElement = document.getElementById('shipping-info');
+            
+            if (shippingElement) {
+                if (shippingCalculated && shippingCost > 0) {
+                    shippingElement.textContent = '$' + shippingCost.toFixed(2);
+                    if (shippingInfoElement && selectedShippingRate) {
+                        const serviceName = `${selectedShippingRate.provider} ${selectedShippingRate.servicelevel.name}`;
+                        const estimatedDays = selectedShippingRate.estimated_days || 'Standard';
+                        const deliveryTime = typeof estimatedDays === 'number' 
+                            ? `${estimatedDays} business days` 
+                            : estimatedDays;
+                        shippingInfoElement.innerHTML = `<div class="shipping-info-display">${serviceName} (${deliveryTime})</div>`;
+                    }
+                } else if (shippingCalculated && shippingCost === 0) {
+                    shippingElement.textContent = 'FREE';
+                    if (shippingInfoElement) {
+                        shippingInfoElement.innerHTML = '<div class="shipping-info-display">Free Shipping Applied</div>';
+                    }
+                } else {
+                    shippingElement.textContent = 'Calculate shipping';
+                    if (shippingInfoElement) {
+                        shippingInfoElement.innerHTML = '';
+                    }
+                }
+            }
+
+            // Update the tax display
+            const taxElement = document.getElementById('tax-cost');
+            if (taxElement) {
+                taxElement.textContent = '$' + tax.toFixed(2);
+            }
+
+            // Update the total display
+            const totalElement = document.getElementById('total-amount');
+            if (totalElement) {
+                totalElement.textContent = '$' + total.toFixed(2);
+            }
         }
 
         function displayEmptyCheckout() {
@@ -445,11 +584,10 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">State <span class="required">*</span></label>
-                                <input type="text" class="form-input" id="state" placeholder="New York" required>
+                                <input type="text" class="form-input" id="state" placeholder="NY" required>
                                 <p style="font-size: 12px; color: #707070; margin-top: 5px;">No shipping to Hawaii or Alaska.</p>
                             </div>
                         </div>
-                        
 
                         <div class="form-row">
                             <div class="form-group">
@@ -462,6 +600,14 @@
                                 <p style="font-size: 12px; color: #707070; margin-top: 5px;">Only shipping within the United States.</p>
                             </div>
                         </div>
+
+                        <!-- Calculate Shipping Button -->
+                        <button type="button" class="pay-button calculate-button" id="calculate-shipping-button">
+                            Calculate Shipping
+                        </button>
+
+                        <!-- Shipping Calculation Result -->
+                        <div id="shipping-result-message"></div>
                         
                         <!-- Payment Information -->
                         <h3 style="font-size: 18px; margin: 30px 0 15px 0;">Payment Information</h3>
@@ -472,7 +618,7 @@
                             <div id="card-errors" role="alert"></div>
                         </div>
 
-                        <button type="submit" class="pay-button" id="submit-button">
+                        <button type="submit" class="pay-button" id="submit-button" disabled>
                             Complete Purchase
                         </button>
 
@@ -483,6 +629,7 @@
                         <div class="badge">🔒 SSL Encrypted</div>
                         <div class="badge">💳 Stripe Secure</div>
                         <div class="badge">✅ PCI Compliant</div>
+                        <div class="badge">📦 Shippo Shipping</div>
                     </div>
                 </div>
 
@@ -491,7 +638,7 @@
                     <h2 class="summary-title">Order Summary</h2>
 
                     <div class="order-item">
-                        <div class="item-image ${isImageUrl ? '' : 'emoji'}">${imageHtml}</div>
+                        <div class="item-image">${imageHtml}</div>
                         <div class="item-details">
                             <div class="item-name">${checkoutProduct.name}</div>
                             ${checkoutProduct.condition ? `<div class="item-condition">${checkoutProduct.condition}</div>` : ''}
@@ -505,13 +652,16 @@
                     </div>
 
                     <div class="summary-row">
-                        <span>Shipping</span>
-                        <span>${shippingCost > 0 ? '$' + shippingCost.toFixed(2) : 'FREE'}</span>
+                        <div>
+                            <div>Shipping</div>
+                            <div id="shipping-info"></div>
+                        </div>
+                        <span id="shipping-cost">Calculate shipping</span>
                     </div>
 
                     <div class="summary-row">
                         <span>Tax (8%)</span>
-                        <span>$${tax.toFixed(2)}</span>
+                        <span id="tax-cost">$${tax.toFixed(2)}</span>
                     </div>
 
                     <div class="summary-row total">
@@ -523,27 +673,265 @@
 
             // Initialize Stripe after DOM is ready
             initializeStripe();
+            
+            // Add event listener for the "Calculate Shipping" button
+            document.getElementById('calculate-shipping-button').addEventListener('click', calculateShipping);
+        }
+
+        // ============================================
+        // SHIPPO FUNCTIONS
+        // ============================================
+
+        /**
+         * Calculate shipping and automatically select the cheapest option
+         */
+        async function calculateShipping() {
+            const calculateButton = document.getElementById('calculate-shipping-button');
+            const resultMessage = document.getElementById('shipping-result-message');
+
+            // Validate that all required address fields are filled
+            const firstName = document.getElementById('first-name').value.trim();
+            const lastName = document.getElementById('last-name').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const city = document.getElementById('city').value.trim();
+            const state = document.getElementById('state').value.trim();
+            const zip = document.getElementById('zip').value.trim();
+
+            if (!firstName || !lastName || !address || !city || !state || !zip) {
+                resultMessage.innerHTML = `
+                    <div class="error-message">
+                        Please fill in all required shipping address fields first.
+                    </div>
+                `;
+                return;
+            }
+
+            // Check for Hawaii or Alaska
+            const stateUpper = state.toUpperCase();
+            if (stateUpper === 'HI' || stateUpper === 'HAWAII' || stateUpper === 'AK' || stateUpper === 'ALASKA') {
+                resultMessage.innerHTML = `
+                    <div class="error-message">
+                        Sorry, we don't currently ship to Hawaii or Alaska.
+                    </div>
+                `;
+                return;
+            }
+
+            // Disable button and show loading state
+            calculateButton.disabled = true;
+            calculateButton.innerHTML = '<span class="loading-spinner"></span> Calculating shipping...';
+            resultMessage.innerHTML = '';
+
+            try {
+                // Build the "to" address from the form
+                const toAddress = {
+                    name: `${firstName} ${lastName}`,
+                    street1: address,
+                    street2: document.getElementById('address2').value.trim(),
+                    city: city,
+                    state: state,
+                    zip: zip,
+                    country: "US"
+                };
+
+                // Define package dimensions and weight
+                const parcel = {
+                    length: "10",
+                    width: "8",
+                    height: "4",
+                    distance_unit: "in",
+                    weight: "2",
+                    mass_unit: "lb"
+                };
+
+                console.log('Requesting shipping rates via Cloud Function...');
+
+                // Call Cloud Function to get shipping rates
+                const response = await fetch(CLOUD_FUNCTIONS.getShippingRates, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        addressFrom: FROM_ADDRESS,
+                        addressTo: toAddress,
+                        parcel: parcel
+                    })
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Shipping rates error:', errorData);
+                    throw new Error(errorData.error || `Failed to get shipping rates: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Shipping rates response:', data);
+
+                // Check if we got rates back
+                if (data.rates && data.rates.length > 0) {
+                    // Filter out rates with errors and sort by price (lowest first)
+                    const validRates = data.rates
+                        .filter(rate => !rate.messages || rate.messages.length === 0)
+                        .sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount));
+
+                    if (validRates.length === 0) {
+                        throw new Error('No valid shipping rates available for this address');
+                    }
+
+                    // Automatically select the cheapest rate
+                    selectedShippingRate = validRates[0];
+                    shippingCost = parseFloat(selectedShippingRate.amount);
+                    shippingCalculated = true;
+
+                    // Update totals and display
+                    calculateTotals();
+                    updateOrderSummary();
+
+                    // Show success message
+                    const serviceName = `${selectedShippingRate.provider} ${selectedShippingRate.servicelevel.name}`;
+                    const estimatedDays = selectedShippingRate.estimated_days || 'Standard';
+                    const deliveryTime = typeof estimatedDays === 'number' 
+                        ? `${estimatedDays} business days` 
+                        : estimatedDays;
+
+                    resultMessage.innerHTML = `
+                        <div class="success-message">
+                            ✓ Shipping calculated: ${serviceName}<br>
+                            Estimated delivery: ${deliveryTime}<br>
+                            Cost: $${shippingCost.toFixed(2)}
+                        </div>
+                    `;
+
+                    // Enable the payment button
+                    document.getElementById('submit-button').disabled = false;
+
+                    // Update button text
+                    calculateButton.disabled = false;
+                    calculateButton.textContent = 'Recalculate Shipping';
+
+                } else {
+                    throw new Error('No shipping rates available');
+                }
+
+            } catch (error) {
+                console.error('Error calculating shipping:', error);
+                resultMessage.innerHTML = `
+                    <div class="error-message">
+                        Error calculating shipping: ${error.message}<br>
+                        Please check your address and try again.
+                    </div>
+                `;
+                calculateButton.disabled = false;
+                calculateButton.textContent = 'Calculate Shipping';
+            }
+        }
+
+        /**
+         * Create a shipping label after successful payment
+         */
+        async function createShippingLabel() {
+            try {
+                console.log('Creating shipping label with rate:', selectedShippingRate);
+
+                // Call Cloud Function to create shipping label
+                const response = await fetch(CLOUD_FUNCTIONS.createShippingLabel, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        rateObjectId: selectedShippingRate.object_id,
+                        labelFileType: 'PDF',
+                        async: false
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Failed to create label: ${response.status}`);
+                }
+
+                const transaction = await response.json();
+                console.log('Shipping label response:', transaction);
+
+                if (transaction.status === 'SUCCESS') {
+                    console.log('Shipping label created successfully!');
+                    console.log('Label URL:', transaction.label_url);
+                    console.log('Tracking number:', transaction.tracking_number);
+                    return transaction;
+                } else {
+                    throw new Error(transaction.messages?.[0]?.text || 'Failed to create shipping label');
+                }
+
+            } catch (error) {
+                console.error('Error creating shipping label:', error);
+                throw error;
+            }
         }
 
         // ============================================
         // MARK PRODUCT AS SOLD IN FIRESTORE
         // ============================================
         
-        async function markProductAsSold(productId) {
+        async function markProductAsSold(productId, orderId, shippingInfo = null) {
             try {
-                const productRef = window.doc(window.firebaseDb, 'products', productId);
-                await window.updateDoc(productRef, {
+                // Validate product ID
+                if (!productId) {
+                    console.error('markProductAsSold: No product ID provided');
+                    return false;
+                }
+
+                console.log('markProductAsSold: Starting for product:', productId);
+
+                // Check if Firebase is ready
+                if (!window.firebaseDb || !window.updateDoc || !window.doc) {
+                    console.error('markProductAsSold: Firebase not initialized');
+                    return false;
+                }
+
+                // Get current user (buyer)
+                const buyer = window.currentUser;
+                if (!buyer) {
+                    console.error('markProductAsSold: No user logged in');
+                    return false;
+                }
+
+                const updateData = {
                     sold: true,
-                    soldAt: window.serverTimestamp(),
-                    soldTimestamp: Date.now() // For easier deletion scheduling
-                });
-                console.log('Product marked as sold:', productId);
+                    soldAt: window.serverTimestamp ? window.serverTimestamp() : new Date(),
+                    soldTimestamp: Date.now(),
+                    buyerId: buyer.uid,
+                    buyerEmail: buyer.email,
+                    soldOrderId: orderId
+                };
+
+                // Add shipping info if available
+                if (shippingInfo) {
+                    updateData.shippingLabel = shippingInfo.label_url;
+                    updateData.trackingNumber = shippingInfo.tracking_number;
+                    updateData.trackingUrl = shippingInfo.tracking_url_provider;
+                }
+
+                console.log('markProductAsSold: Update data:', updateData);
+
+                const productRef = window.doc(window.firebaseDb, 'products', productId);
+                await window.updateDoc(productRef, updateData);
+
+                console.log('markProductAsSold: SUCCESS - Product marked as sold:', productId);
                 return true;
             } catch (error) {
-                console.error('Error marking product as sold:', error);
+                console.error('markProductAsSold: FAILED - Error:', error.message);
+                console.error('markProductAsSold: Full error:', error);
                 return false;
             }
         }
+
+        // ============================================
+        // STRIPE INTEGRATION
+        // ============================================
 
         function initializeStripe() {
             // Initialize Stripe
@@ -582,6 +970,19 @@
             form.addEventListener('submit', async function(event) {
                 event.preventDefault();
 
+                // Check if user is logged in
+                if (!window.currentUser) {
+                    alert('Please sign in to complete your purchase.');
+                    window.location.href = 'sign-in.html';
+                    return;
+                }
+
+                // Check if shipping has been calculated
+                if (!shippingCalculated || !selectedShippingRate) {
+                    alert('Please calculate shipping before completing your purchase.');
+                    return;
+                }
+
                 // Disable submit button to prevent multiple submissions
                 submitButton.disabled = true;
                 submitButton.textContent = 'Processing...';
@@ -606,7 +1007,6 @@
 
                     console.log('Response status:', response.status);
 
-                    // Check if the response is OK
                     if (!response.ok) {
                         const errorText = await response.text();
                         console.error('Server error response:', errorText);
@@ -616,19 +1016,17 @@
                     const data = await response.json();
                     console.log('Backend response:', data);
                     
-                    // Check if we got an error from backend
                     if (data.error) {
                         console.error('Backend returned error:', data.error);
                         throw new Error(data.error);
                     }
                     
-                    // Check if clientSecret exists
                     if (!data.clientSecret) {
                         console.error('No clientSecret in response. Full response:', data);
                         throw new Error('No client secret received from server');
                     }
 
-                    console.log('Client secret received, length:', data.clientSecret.length);
+                    console.log('Client secret received');
                     console.log('Step 2: Confirming payment with Stripe...');
 
                     // Step 2: Confirm the payment
@@ -654,28 +1052,62 @@
                     console.log('Stripe confirmation result:', result);
 
                     if (result.error) {
-                        // Show error to customer
                         console.error('Payment error:', result.error);
                         const errorElement = document.getElementById('card-errors');
                         errorElement.textContent = result.error.message;
                         submitButton.disabled = false;
                         submitButton.textContent = 'Complete Purchase';
                     } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
-                        // Payment successful!
                         console.log('Payment succeeded!', result.paymentIntent);
                         
-                        // Step 3: Mark product as sold in Firestore
-                        console.log('Step 3: Marking product as sold...');
-                        const soldSuccess = await markProductAsSold(checkoutProduct.id);
+                        // Step 3: Create shipping label with Shippo
+                        console.log('Step 3: Creating shipping label...');
+                        submitButton.textContent = 'Creating shipping label...';
                         
+                        let shippingInfo = null;
+                        try {
+                            shippingInfo = await createShippingLabel();
+                            console.log('Shipping label created successfully:', shippingInfo);
+                        } catch (labelError) {
+                            console.error('Failed to create shipping label:', labelError);
+                            alert('Payment successful! Note: Shipping label creation failed - we will create it manually and email it to you.');
+                        }
+                        
+                        // Step 4: Mark product as sold in Firestore
+                        console.log('Step 4: Marking product as sold...');
+                        console.log('Product ID to mark as sold:', checkoutProduct.id);
+                        console.log('Order ID:', result.paymentIntent.id);
+                        console.log('Full checkoutProduct:', checkoutProduct);
+
+                        if (!checkoutProduct.id) {
+                            console.error('ERROR: checkoutProduct.id is missing!');
+                        }
+
+                        const soldSuccess = await markProductAsSold(checkoutProduct.id, result.paymentIntent.id, shippingInfo);
+
                         if (soldSuccess) {
                             console.log('Product successfully marked as sold');
                         } else {
-                            console.warn('Payment succeeded but failed to mark product as sold');
+                            console.error('FAILED: Payment succeeded but failed to mark product as sold');
+                            // Don't block the user - they still completed payment
                         }
                         
                         // Clear the checkout product from session
                         sessionStorage.removeItem('checkoutProduct');
+                        
+                        // Store order info for confirmation page
+                        sessionStorage.setItem('orderInfo', JSON.stringify({
+                            orderId: result.paymentIntent.id,
+                            trackingNumber: shippingInfo?.tracking_number,
+                            trackingUrl: shippingInfo?.tracking_url_provider,
+                            labelUrl: shippingInfo?.label_url,
+                            shippingService: selectedShippingRate ? `${selectedShippingRate.provider} ${selectedShippingRate.servicelevel.name}` : 'Standard Shipping',
+                            subtotal: subtotal,
+                            shippingCost: shippingCost,
+                            tax: tax,
+                            total: total,
+                            product: checkoutProduct
+                        }));
                         
                         alert('Payment successful! Order ID: ' + result.paymentIntent.id);
                         

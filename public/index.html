@@ -295,6 +295,24 @@
             color: #707070;
         }
 
+        .product-seller {
+            font-size: 12px;
+            color: #707070;
+            margin-top: 4px;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .loading-products {
+            text-align: center;
+            padding: 40px;
+            color: #707070;
+        }
+
         /* Footer */
         .footer {
             background-color: #fff;
@@ -346,9 +364,9 @@
             <div>
                 <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='profile.html'">Hi! Sign in</button>
                 <button class="top-bar-btn" onclick="window.location.href='chat.html'">Help & Contact</button>
-                <button class="top-bar-btn" onclick="window.location.href='contactseller.html'">Chats</button>
                 <button class="top-bar-btn" onclick="window.location.href='listings-manager.html'">Your listings</button>
                 <button class="top-bar-btn" onclick="window.location.href='Sign-in.html'">Sign in page-subtitle</button>
+                <button class="top-bar-btn" onclick="window.location.href='my-orders.html'">My orders</button>
             </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
@@ -436,62 +454,8 @@
         <!-- Products -->
         <h2 class="section-title">Today's Deals</h2>
 
-        <div class="products">
-
-            <a href="productdetail.html" class="product-card">
-                <div class="product-image">👟</div>
-                <div class="product-info">
-                    <div class="product-title">
-                        ASICS Matflex Wrestling Shoes - Size 10 - Excellent Condition
-                    </div>
-                    <div class="product-price">$45.99</div>
-                    <div class="product-shipping">Free shipping</div>
-                </div>
-            </a>
-            
-            <a href="productdetail.html" class="product-card">
-                <div class="product-image">🤼</div>
-                <div class="product-info">
-                    <div class="product-title">
-                        Adidas Wrestling Singlet - Red/Blue - Youth Large
-                    </div>
-                    <div class="product-price">$29.99</div>
-                    <div class="product-shipping">Free shipping</div>
-                </div>
-            </a>
-            <div class="product-card">
-                <div class="product-image">🧥</div>
-                <div class="product-info">
-                    <div class="product-title">Nike Team Warm-up Jacket & Pants Set - Adult Medium</div>
-                    <div class="product-price">$65.00</div>
-                    <div class="product-shipping">Free shipping</div>
-                </div>
-            </div>
-            <div class="product-card">
-                <div class="product-image">👕</div>
-                <div class="product-info">
-                    <div class="product-title">Wrestling Team Compression Shirt - Long Sleeve - Large</div>
-                    <div class="product-price">$18.99</div>
-                    <div class="product-shipping">+$4.99 shipping</div>
-                </div>
-            </div>
-            <div class="product-card">
-                <div class="product-image">🩳</div>
-                <div class="product-info">
-                    <div class="product-title">Under Armour Wrestling Shorts - Black - Size Medium</div>
-                    <div class="product-price">$22.50</div>
-                    <div class="product-shipping">Free shipping</div>
-                </div>
-            </div>
-            <div class="product-card">
-                <div class="product-image">🎽</div>
-                <div class="product-info">
-                    <div class="product-title">Wrestling Headgear & Knee Pads Bundle - Like New</div>
-                    <div class="product-price">$35.00</div>
-                    <div class="product-shipping">+$6.99 shipping</div>
-                </div>
-            </div>
-        </div>
+        <div class="loading-products" id="loading-products">Loading products...</div>
+        <div class="products" id="products-container"></div>
     </div>
 
     <!-- Footer -->
@@ -517,7 +481,7 @@
                 <div class="footer-column">
                     <h3>Community</h3>
                     <a href="#">Announcements</a>
-                    <a href="track-order.html">Track Order</a>
+                    <a href="track.html">Track Order</a>
                 </div>
             </div>
             <footer style="background: #dad0d0; padding: 30px; text-align: center;">
@@ -533,10 +497,11 @@
         </div>
     </div>
 
-    <!-- Firebase SDK for User Greeting -->
+    <!-- Firebase SDK for User Greeting and Products -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
@@ -550,10 +515,12 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
+        // Handle user greeting
         onAuthStateChanged(auth, (user) => {
             const greeting = document.getElementById('user-greeting');
-            
+
             if (user) {
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
                 greeting.textContent = `Hi, ${firstName}!`;
@@ -563,6 +530,69 @@
                 greeting.onclick = () => window.location.href = 'sign-in.html';
             }
         });
+
+        // Load products from Firestore
+        async function loadProducts() {
+            const container = document.getElementById('products-container');
+            const loading = document.getElementById('loading-products');
+
+            try {
+                const q = query(
+                    collection(db, 'products'),
+                    where('active', '==', true),
+                    limit(12)
+                );
+
+                const querySnapshot = await getDocs(q);
+                const products = [];
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    // Skip sold products
+                    if (data.sold === true) return;
+
+                    products.push({
+                        id: doc.id,
+                        title: data.title,
+                        price: data.price || 0,
+                        sellerName: data.sellerName || 'Unknown Seller',
+                        images: data.images || [],
+                        condition: data.condition || ''
+                    });
+                });
+
+                loading.style.display = 'none';
+
+                if (products.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #707070; padding: 40px;">No products available yet. Be the first to list!</p>';
+                    return;
+                }
+
+                container.innerHTML = products.map(product => {
+                    const imageDisplay = product.images && product.images.length > 0
+                        ? `<img src="${product.images[0]}" alt="${product.title}">`
+                        : '📦';
+
+                    return `
+                        <div class="product-card" onclick="window.location.href='productdetail.html?id=${product.id}'">
+                            <div class="product-image">${imageDisplay}</div>
+                            <div class="product-info">
+                                <div class="product-title">${product.title}</div>
+                                <div class="product-price">$${product.price.toFixed(2)}</div>
+                                <div class="product-seller">${product.sellerName}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error loading products:', error);
+                loading.textContent = 'Error loading products. Please refresh.';
+            }
+        }
+
+        // Load products when page loads
+        loadProducts();
     </script>
 
     <!-- Search Function -->

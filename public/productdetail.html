@@ -626,15 +626,20 @@
             }
             
             // Store the current product in sessionStorage for checkout page
-            sessionStorage.setItem('checkoutProduct', JSON.stringify({
+            const checkoutData = {
                 id: currentProduct.id,
                 name: currentProduct.name || currentProduct.title,
                 price: currentProduct.price || 0,
                 condition: currentProduct.condition,
                 image: currentProduct.image || (currentProduct.images && currentProduct.images[0]) || '📦',
                 shippingCost: selectedShippingRate ? selectedShippingRate.price : 0
-            }));
-            
+            };
+
+            console.log('Saving to checkout - Product ID:', currentProduct.id);
+            console.log('Full checkout data:', checkoutData);
+
+            sessionStorage.setItem('checkoutProduct', JSON.stringify(checkoutData));
+
             // Redirect to checkout
             window.location.href = 'checkout.html';
         }

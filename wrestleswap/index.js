@@ -219,6 +219,130 @@ exports.createConnectedAccount = onRequest(
   }
 );
 
+// --- SHIPPO: Get Shipping Rates (for checkout) ---
+exports.shippoGetRates = onRequest(
+  { cors: true, secrets: [shippoSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    try {
+      const shippoKey = shippoSecret.value();
+      const { addressFrom, addressTo, parcel } = req.body;
+
+      if (!addressFrom || !addressTo || !parcel) {
+        return res.status(400).json({ error: 'Missing addressFrom, addressTo, or parcel' });
+      }
+
+      // Create shipment data for Shippo API
+      const shipmentData = {
+        address_from: addressFrom,
+        address_to: addressTo,
+        parcels: [parcel],
+        async: false
+      };
+
+      console.log('Requesting shipping rates from Shippo...', shipmentData);
+
+      // Call Shippo API
+      const response = await fetch('https://api.goshippo.com/shipments/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `ShippoToken ${shippoKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(shipmentData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Shippo API error:', errorData);
+        return res.status(response.status).json({
+          error: errorData.detail || errorData.error || `Shippo API error: ${response.status}`
+        });
+      }
+
+      const data = await response.json();
+      console.log('Shippo rates received:', data.rates?.length || 0, 'rates');
+
+      return res.status(200).json(data);
+
+    } catch (error) {
+      console.error('Shippo Error:', error);
+      return res.status(500).json({
+        error: 'Failed to get shipping rates',
+        details: error.message
+      });
+    }
+  }
+);
+
+// --- SHIPPO: Create Shipping Label ---
+exports.shippoCreateLabel = onRequest(
+  { cors: true, secrets: [shippoSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    try {
+      const shippoKey = shippoSecret.value();
+      const { rateObjectId, labelFileType = 'PDF', async = false } = req.body;
+
+      if (!rateObjectId) {
+        return res.status(400).json({ error: 'Missing rateObjectId' });
+      }
+
+      console.log('Creating shipping label for rate:', rateObjectId);
+
+      // Call Shippo API to create transaction (purchase label)
+      const response = await fetch('https://api.goshippo.com/transactions/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `ShippoToken ${shippoKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rate: rateObjectId,
+          label_file_type: labelFileType,
+          async: async
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Shippo transaction error:', errorData);
+        return res.status(response.status).json({
+          error: errorData.detail || errorData.error || `Shippo API error: ${response.status}`
+        });
+      }
+
+      const transaction = await response.json();
+      console.log('Shippo transaction response:', transaction.status);
+
+      return res.status(200).json(transaction);
+
+    } catch (error) {
+      console.error('Shippo Label Error:', error);
+      return res.status(500).json({
+        error: 'Failed to create shipping label',
+        details: error.message
+      });
+    }
+  }
+);
+
 // --- STRIPE CONNECT: Check Seller Status ---
 exports.checkSellerStatus = onRequest(
   { cors: true, secrets: [stripeSecret] },

@@ -586,6 +586,11 @@
 
         // Google Login for Sign In
         function googleLogin() {
+            // Verify reCAPTCHA first (widget ID 0 for sign-in form)
+            if (!verifyRecaptcha(0)) {
+                return;
+            }
+
             // Prevent multiple popup requests
             if (popupInProgress) {
                 console.log('Popup already in progress');
@@ -596,9 +601,9 @@
             const button = document.getElementById('google-signin-btn');
             button.disabled = true;
             popupInProgress = true;
-            
+
             const provider = new window.GoogleAuthProvider();
-            
+
             window.signInWithPopup(window.firebaseAuth, provider)
                 .then((result) => {
                     const user = result.user;
@@ -611,6 +616,7 @@
                         alert('Error: ' + error.message);
                     }
                     console.error(error);
+                    resetRecaptcha(0); // Reset reCAPTCHA on error
                 })
                 .finally(() => {
                     // Re-enable the button and reset the flag
@@ -621,6 +627,11 @@
 
         // Google Register for Registration
         async function googleRegister() {
+            // Verify reCAPTCHA first (widget ID 1 for register form)
+            if (!verifyRecaptcha(1)) {
+                return;
+            }
+
             // Prevent multiple popup requests
             if (popupInProgress) {
                 console.log('Popup already in progress');
@@ -631,16 +642,16 @@
             const button = document.getElementById('google-register-btn');
             button.disabled = true;
             popupInProgress = true;
-            
+
             const provider = new window.GoogleAuthProvider();
-            
+
             try {
                 const result = await window.signInWithPopup(window.firebaseAuth, provider);
                 const user = result.user;
-                
+
                 // Generate a unique username for the new user
                 const username = await generateUniqueUsername();
-                
+
                 // Prepare user data
                 const userData = {
                     uid: user.uid,
@@ -651,10 +662,10 @@
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
-                
+
                 // Save to Firestore
                 await saveUserData(user.uid, userData);
-                
+
                 alert('Account created successfully! Welcome to Wrestle Swap!');
                 window.location.href = 'index.html';
             } catch (error) {
@@ -663,6 +674,7 @@
                     alert('Error: ' + error.message);
                 }
                 console.error(error);
+                resetRecaptcha(1); // Reset reCAPTCHA on error
             } finally {
                 // Re-enable the button and reset the flag
                 button.disabled = false;

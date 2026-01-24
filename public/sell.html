@@ -452,8 +452,8 @@
             </div>
 
             <div class="form-section">
-                <h2 class="section-title">Pricing & Shipping</h2>
-                
+                <h2 class="section-title">Pricing</h2>
+
                 <div class="form-group">
                     <label class="form-label">Price <span class="required">*</span></label>
                     <div class="price-input-group">
@@ -467,26 +467,6 @@
                     <label class="form-label">Quantity in Stock <span class="required">*</span></label>
                     <input type="number" class="form-input" id="stock" placeholder="1" min="1" value="1" required>
                     <p class="helper-text">How many of this item do you have available?</p>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Shipping Method <span class="required">*</span></label>
-                    <select class="form-select" id="shipping-method" required>
-                        <option value="standard">Standard Shipping</option>
-                        <option value="express">Express Shipping</option>
-                        <option value="overnight">Overnight Shipping</option>
-                        <option value="local">Local Pickup</option>
-                        <option value="free">Free Shipping</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Shipping Cost</label>
-                    <div class="price-input-group">
-                        <span class="price-symbol">$</span>
-                        <input type="number" class="form-input price-input" id="shipping-cost" placeholder="0.00" step="0.01" min="0" value="0">
-                    </div>
-                    <p class="helper-text">Leave as $0 for free shipping or local pickup</p>
                 </div>
 
                 <div class="form-group">
@@ -708,10 +688,8 @@
                     images: imageUrls,
                     zipCode: document.getElementById('zip-code').value || '',
                     
-                    // Inventory & shipping
+                    // Inventory
                     stock: parseInt(document.getElementById('stock').value) || 1,
-                    shippingMethod: document.getElementById('shipping-method').value,
-                    shippingCost: parseFloat(document.getElementById('shipping-cost').value) || 0,
                     active: true,
                     views: 0,
                     sold: false,

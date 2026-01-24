@@ -56,6 +56,28 @@
             padding: 0 20px;
         }
 
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 12px;
+            margin: 30px auto;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #c41e3a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .profile-header {
             background: white;
             border-radius: 12px;
@@ -73,6 +95,12 @@
             border-radius: 50%;
             object-fit: cover;
             border: 4px solid #c41e3a;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            color: #c41e3a;
         }
 
         .profile-info {
@@ -190,6 +218,8 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn-primary {
@@ -253,6 +283,16 @@
             height: 200px;
             object-fit: cover;
             background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .item-details {
@@ -280,6 +320,15 @@
             background: #f5f5f5;
             border-radius: 4px;
             display: inline-block;
+        }
+
+        .sold-badge {
+            background: #dc2626;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
         }
 
         .reviews-list {
@@ -339,6 +388,25 @@
             line-height: 1.6;
         }
 
+        .review-product {
+            font-size: 13px;
+            color: #707070;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #707070;
+        }
+
+        .empty-icon {
+            font-size: 60px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
         @media (max-width: 768px) {
             .profile-header {
                 flex-direction: column;
@@ -367,15 +435,23 @@
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="search.html">Marketplace</a>
-            <a href="settings.html">Settings</a>
+            <a href="listings-manager.html">My Listings</a>
         </div>
     </nav>
 
+    <!-- Loading State -->
+    <div class="loading" id="loadingState">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; color: #707070;">Loading profile...</p>
+    </div>
+
     <!-- Main Container -->
-    <div class="container">
+    <div class="container" id="profileContainer" style="display: none;">
         <!-- Profile Header -->
         <div class="profile-header">
-            <img src="https://via.placeholder.com/150" alt="Profile Picture" class="profile-image" id="profile-image">
+            <div class="profile-image" id="profile-image">
+                👤
+            </div>
             
             <div class="profile-info">
                 <h1 class="profile-name" id="profile-name">Loading...</h1>
@@ -383,33 +459,31 @@
                 
                 <div class="profile-stats">
                     <div class="stat">
-                        <div class="stat-number" id="items-sold">47</div>
+                        <div class="stat-number" id="items-sold">0</div>
                         <div class="stat-label">Items Sold</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-number" id="active-listings">12</div>
+                        <div class="stat-number" id="active-listings">0</div>
                         <div class="stat-label">Active Listings</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-number" id="total-reviews">38</div>
+                        <div class="stat-number" id="total-reviews">0</div>
                         <div class="stat-label">Reviews</div>
                     </div>
                 </div>
 
-                <div class="rating-container">
-                    <div class="stars">★★★★★</div>
-                    <span class="rating-text">4.8</span>
-                    <span class="rating-count">(38 reviews)</span>
+                <div class="rating-container" id="rating-container" style="display: none;">
+                    <div class="stars" id="rating-stars">★★★★★</div>
+                    <span class="rating-text" id="rating-value">0.0</span>
+                    <span class="rating-count" id="rating-count">(0 reviews)</span>
                 </div>
 
                 <p class="profile-bio" id="profile-bio">
-                    Passionate wrestler and gear enthusiast. Selling quality wrestling equipment at fair prices. Fast shipping and excellent customer service guaranteed!
+                    No bio available
                 </p>
 
-                <div class="profile-badges">
-                    <span class="badge verified">✓ Verified Seller</span>
-                    <span class="badge trusted">🛡️ Trusted Trader</span>
-                    <span class="badge member-since">📅 Member since Jan 2023</span>
+                <div class="profile-badges" id="profile-badges">
+                    <!-- Badges will be added dynamically -->
                 </div>
 
                 <div class="action-buttons" id="action-buttons">
@@ -422,128 +496,34 @@
         <div class="section">
             <h2 class="section-title">🛍️ Currently Selling</h2>
             <div class="items-grid" id="selling-items">
-                <!-- Item 1 -->
-                <div class="item-card">
-                    <img src="https://via.placeholder.com/250x200" alt="Wrestling Singlet" class="item-image">
-                    <div class="item-details">
-                        <div class="item-name">Adidas Wrestling Singlet</div>
-                        <div class="item-price">$45.00</div>
-                        <span class="item-condition">Like New</span>
-                    </div>
-                </div>
-
-                <!-- Item 2 -->
-                <div class="item-card">
-                    <img src="https://via.placeholder.com/250x200" alt="Wrestling Shoes" class="item-image">
-                    <div class="item-details">
-                        <div class="item-name">Nike Inflict 3 Wrestling Shoes</div>
-                        <div class="item-price">$80.00</div>
-                        <span class="item-condition">Used - Good</span>
-                    </div>
-                </div>
-
-                <!-- Item 3 -->
-                <div class="item-card">
-                    <img src="https://via.placeholder.com/250x200" alt="Headgear" class="item-image">
-                    <div class="item-details">
-                        <div class="item-name">Cliff Keen Headgear</div>
-                        <div class="item-price">$25.00</div>
-                        <span class="item-condition">Like New</span>
-                    </div>
-                </div>
-
-                <!-- Item 4 -->
-                <div class="item-card">
-                    <img src="https://via.placeholder.com/250x200" alt="Wrestling Mat" class="item-image">
-                    <div class="item-details">
-                        <div class="item-name">Practice Wrestling Mat</div>
-                        <div class="item-price">$150.00</div>
-                        <span class="item-condition">Used - Good</span>
-                    </div>
-                </div>
+                <!-- Items will be loaded dynamically -->
+            </div>
+            <div class="empty-state" id="empty-selling" style="display: none;">
+                <div class="empty-icon">📦</div>
+                <p>No active listings</p>
             </div>
         </div>
 
         <!-- Reviews Section -->
-        <div class="section">
+        <div class="section" id="reviews-section">
             <h2 class="section-title">⭐ Reviews</h2>
-            <div class="reviews-list">
-                <!-- Review 1 -->
-                <div class="review-card">
-                    <div class="review-header">
-                        <div class="reviewer-info">
-                            <div class="reviewer-avatar">M</div>
-                            <div>
-                                <div class="reviewer-name">Mike Johnson</div>
-                                <div class="review-date">2 days ago</div>
-                            </div>
-                        </div>
-                        <div class="review-stars">★★★★★</div>
-                    </div>
-                    <p class="review-text">
-                        Excellent seller! The singlet arrived exactly as described. Fast shipping and great communication. Would definitely buy from again!
-                    </p>
-                </div>
-
-                <!-- Review 2 -->
-                <div class="review-card">
-                    <div class="review-header">
-                        <div class="reviewer-info">
-                            <div class="reviewer-avatar">S</div>
-                            <div>
-                                <div class="reviewer-name">Sarah Martinez</div>
-                                <div class="review-date">1 week ago</div>
-                            </div>
-                        </div>
-                        <div class="review-stars">★★★★★</div>
-                    </div>
-                    <p class="review-text">
-                        Great experience! The wrestling shoes were in perfect condition and shipped super fast. Highly recommend this seller!
-                    </p>
-                </div>
-
-                <!-- Review 3 -->
-                <div class="review-card">
-                    <div class="review-header">
-                        <div class="reviewer-info">
-                            <div class="reviewer-avatar">D</div>
-                            <div>
-                                <div class="reviewer-name">David Lee</div>
-                                <div class="review-date">2 weeks ago</div>
-                            </div>
-                        </div>
-                        <div class="review-stars">★★★★☆</div>
-                    </div>
-                    <p class="review-text">
-                        Good product and fair price. Shipping took a bit longer than expected, but overall satisfied with the purchase.
-                    </p>
-                </div>
-
-                <!-- Review 4 -->
-                <div class="review-card">
-                    <div class="review-header">
-                        <div class="reviewer-info">
-                            <div class="reviewer-avatar">A</div>
-                            <div>
-                                <div class="reviewer-name">Alex Rodriguez</div>
-                                <div class="review-date">3 weeks ago</div>
-                            </div>
-                        </div>
-                        <div class="review-stars">★★★★★</div>
-                    </div>
-                    <p class="review-text">
-                        Top-notch seller! Very professional and the headgear was exactly what I needed. Will buy again for sure!
-                    </p>
-                </div>
+            <div class="reviews-list" id="reviews-list">
+                <!-- Reviews will be loaded dynamically -->
+            </div>
+            <div class="empty-state" id="empty-reviews" style="display: none;">
+                <div class="empty-icon">⭐</div>
+                <p>No reviews yet</p>
             </div>
         </div>
     </div>
 
     <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
+    <script>
+        // Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
             authDomain: "wrestleswap.firebaseapp.com",
@@ -554,77 +534,319 @@
             measurementId: "G-B411WXLF3J"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
 
         // Get userId from URL parameter
         const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('user');
+        const profileUserId = urlParams.get('user');
 
-        // Check current user
-        onAuthStateChanged(auth, (currentUser) => {
-            if (!currentUser) {
-                // Redirect to sign in if not logged in
+        let currentUser = null;
+        let isOwnProfile = false;
+
+        // ============================================
+        // LOAD PROFILE DATA
+        // ============================================
+
+        auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
+            
+            if (!user && !profileUserId) {
+                // Not logged in and no user specified
                 window.location.href = 'sign-in.html';
                 return;
             }
 
-            // Check if viewing own profile or someone else's
-            if (!userId || userId === currentUser.uid) {
-                // Viewing own profile
-                loadOwnProfile(currentUser);
-            } else {
-                // Viewing someone else's profile
-                loadOtherProfile(userId, currentUser);
+            // Determine which user's profile to load
+            const targetUserId = profileUserId || (user ? user.uid : null);
+            isOwnProfile = user && (!profileUserId || profileUserId === user.uid);
+
+            if (!targetUserId) {
+                document.getElementById('loadingState').innerHTML = '<p>User not found</p>';
+                return;
             }
+
+            await loadUserProfile(targetUserId);
         });
 
-        function loadOwnProfile(user) {
-            // Update profile with current user data
-            document.getElementById('profile-name').textContent = user.displayName || 'User';
-            document.getElementById('profile-username').textContent = '@' + (user.email.split('@')[0]);
-            
-            if (user.photoURL) {
-                document.getElementById('profile-image').src = user.photoURL;
-            }
+        async function loadUserProfile(userId) {
+            try {
+                // Fetch all products by this user
+                const productsQuery = await db.collection('products')
+                    .where('userId', '==', userId)
+                    .get();
 
-            // Show Edit Profile button
-            const actionButtons = document.getElementById('action-buttons');
-            actionButtons.innerHTML = `
-                <button class="btn btn-primary" onclick="editProfile()">Edit Profile</button>
-                <button class="btn btn-secondary" onclick="window.location.href='add-listing.html'">Add New Listing</button>
-            `;
+                const allProducts = [];
+                productsQuery.forEach(doc => {
+                    allProducts.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Fetch seller ratings for this user
+                const sellerRatingsQuery = await db.collection('sellerRatings')
+                    .where('sellerId', '==', userId)
+                    .get();
+
+                const sellerRatings = [];
+                sellerRatingsQuery.forEach(doc => {
+                    sellerRatings.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Calculate stats
+                const soldProducts = allProducts.filter(p => p.sold);
+                const activeProducts = allProducts.filter(p => !p.sold && p.active);
+                
+                // Get product reviews from sold products
+                const productReviews = soldProducts
+                    .filter(p => p.review)
+                    .map(p => ({ ...p.review, productName: p.title, productId: p.id }));
+
+                // Calculate seller rating average
+                const totalSellerReviews = sellerRatings.length;
+                const averageSellerRating = totalSellerReviews > 0 
+                    ? sellerRatings.reduce((sum, r) => sum + r.rating, 0) / totalSellerReviews 
+                    : 0;
+
+                // Use seller ratings for the profile rating display
+                const displayRating = averageSellerRating > 0 ? averageSellerRating : 0;
+                const displayReviewCount = totalSellerReviews;
+
+                // Update profile display
+                displayProfile(userId, {
+                    itemsSold: soldProducts.length,
+                    activeListings: activeProducts.length,
+                    totalReviews: displayReviewCount,
+                    averageRating: displayRating,
+                    reviews: productReviews,
+                    sellerRatings: sellerRatings
+                });
+
+                // Display active products
+                displayProducts(activeProducts);
+
+                // Display reviews (now showing seller ratings instead of product reviews)
+                displaySellerReviews(sellerRatings);
+
+                // Hide loading, show content
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('profileContainer').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                document.getElementById('loadingState').innerHTML = '<p>Error loading profile: ' + error.message + '</p>';
+            }
         }
 
-        function loadOtherProfile(userId, currentUser) {
-            // In a real app, you would fetch this user's data from Firestore
-            // For now, we'll use placeholder data
+        function displayProfile(userId, stats) {
+            // Get user info from auth or construct from userId
+            let displayName = 'User';
+            let email = '';
+            let photoURL = null;
+
+            if (currentUser && (isOwnProfile || userId === currentUser.uid)) {
+                displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
+                email = currentUser.email;
+                photoURL = currentUser.photoURL;
+            } else {
+                // For other users, we'd typically fetch from a users collection
+                // For now, use generic data
+                displayName = 'Wrestler';
+                email = 'user@example.com';
+            }
+
+            // Update profile header
+            document.getElementById('profile-name').textContent = displayName;
+            document.getElementById('profile-username').textContent = '@' + (email.split('@')[0]);
+
+            if (photoURL) {
+                const imgElement = document.createElement('img');
+                imgElement.src = photoURL;
+                imgElement.className = 'profile-image';
+                document.getElementById('profile-image').replaceWith(imgElement);
+            }
+
+            // Update stats
+            document.getElementById('items-sold').textContent = stats.itemsSold;
+            document.getElementById('active-listings').textContent = stats.activeListings;
+            document.getElementById('total-reviews').textContent = stats.totalReviews;
+
+            // Update rating
+            if (stats.totalReviews > 0) {
+                document.getElementById('rating-container').style.display = 'flex';
+                document.getElementById('rating-value').textContent = stats.averageRating.toFixed(1);
+                document.getElementById('rating-count').textContent = `(${stats.totalReviews} review${stats.totalReviews !== 1 ? 's' : ''})`;
+                
+                const fullStars = Math.floor(stats.averageRating);
+                const hasHalfStar = stats.averageRating % 1 >= 0.5;
+                let starsHTML = '★'.repeat(fullStars);
+                if (hasHalfStar) starsHTML += '☆';
+                starsHTML += '☆'.repeat(5 - fullStars - (hasHalfStar ? 1 : 0));
+                document.getElementById('rating-stars').textContent = starsHTML;
+            }
+
+            // Update badges
+            const badgesContainer = document.getElementById('profile-badges');
+            badgesContainer.innerHTML = '';
             
-            document.getElementById('profile-name').textContent = 'John Wrestler';
-            document.getElementById('profile-username').textContent = '@johnwrestler';
-            
-            // Show Contact Seller and Report buttons
+            if (stats.totalReviews >= 10 && stats.averageRating >= 4.5) {
+                badgesContainer.innerHTML += '<span class="badge verified">✓ Verified Seller</span>';
+            }
+            if (stats.itemsSold >= 20) {
+                badgesContainer.innerHTML += '<span class="badge trusted">🛡️ Trusted Trader</span>';
+            }
+            badgesContainer.innerHTML += '<span class="badge member-since">📅 Member since 2024</span>';
+
+            // Update action buttons
             const actionButtons = document.getElementById('action-buttons');
-            actionButtons.innerHTML = `
-                <button class="btn btn-primary" onclick="contactSeller()">📧 Contact Seller</button>
-                <button class="btn btn-secondary" onclick="reportUser()">⚠️ Report User</button>
-            `;
+            if (isOwnProfile) {
+                actionButtons.innerHTML = `
+                    <a href="listings-manager.html" class="btn btn-primary">View My Listings</a>
+                    <a href="sell.html" class="btn btn-secondary">Add New Listing</a>
+                `;
+            } else {
+                actionButtons.innerHTML = `
+                    <button class="btn btn-primary" onclick="alert('Contact seller feature coming soon!')">📧 Contact Seller</button>
+                `;
+            }
         }
 
-        // Make functions available globally
-        window.editProfile = function() {
-            alert('Edit profile feature coming soon! This will allow you to update your bio, profile picture, and other information.');
-        };
+        function displayProducts(products) {
+            const container = document.getElementById('selling-items');
+            const emptyState = document.getElementById('empty-selling');
 
-        window.contactSeller = function() {
-            alert('Contact seller feature coming soon! You will be able to send messages to this seller.');
-        };
-
-        window.reportUser = function() {
-            if (confirm('Are you sure you want to report this user?')) {
-                alert('Thank you for your report. Our team will review this user.');
+            if (products.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
             }
-        };
+
+            container.style.display = 'grid';
+            emptyState.style.display = 'none';
+
+            container.innerHTML = products.map(product => {
+                const imageHTML = product.images && product.images.length > 0
+                    ? `<img src="${product.images[0]}" alt="${product.title}">`
+                    : '<div class="item-image">📦</div>';
+
+                return `
+                    <div class="item-card" onclick="window.location.href='productdetail.html?id=${product.id}'">
+                        <div class="item-image">${imageHTML}</div>
+                        <div class="item-details">
+                            <div class="item-name">${product.title || 'Untitled'}</div>
+                            <div class="item-price">$${parseFloat(product.price || 0).toFixed(2)}</div>
+                            <span class="item-condition">${product.condition || 'New'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function displayReviews(reviews) {
+            const container = document.getElementById('reviews-list');
+            const emptyState = document.getElementById('empty-reviews');
+
+            if (reviews.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            container.style.display = 'flex';
+            emptyState.style.display = 'none';
+
+            // Sort reviews by date (newest first)
+            reviews.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            container.innerHTML = reviews.map(review => {
+                const reviewDate = review.createdAt 
+                    ? formatRelativeTime(review.createdAt)
+                    : 'Recently';
+
+                const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                const initial = (review.userName || 'A')[0].toUpperCase();
+
+                return `
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="reviewer-info">
+                                <div class="reviewer-avatar">${initial}</div>
+                                <div>
+                                    <div class="reviewer-name">${review.userName || 'Anonymous'}</div>
+                                    <div class="review-date">${reviewDate}</div>
+                                </div>
+                            </div>
+                            <div class="review-stars">${stars}</div>
+                        </div>
+                        <p class="review-text">${review.text}</p>
+                        ${review.productName ? `<p class="review-product">Product: ${review.productName}</p>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function displaySellerReviews(sellerRatings) {
+            const container = document.getElementById('reviews-list');
+            const emptyState = document.getElementById('empty-reviews');
+
+            if (sellerRatings.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            container.style.display = 'flex';
+            emptyState.style.display = 'none';
+
+            // Sort reviews by date (newest first)
+            sellerRatings.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            container.innerHTML = sellerRatings.map(rating => {
+                const reviewDate = rating.createdAt 
+                    ? formatRelativeTime(rating.createdAt)
+                    : 'Recently';
+
+                const stars = '★'.repeat(rating.rating) + '☆'.repeat(5 - rating.rating);
+                const initial = (rating.buyerName || 'A')[0].toUpperCase();
+
+                return `
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="reviewer-info">
+                                <div class="reviewer-avatar">${initial}</div>
+                                <div>
+                                    <div class="reviewer-name">${rating.buyerName || 'Anonymous'}</div>
+                                    <div class="review-date">${reviewDate}</div>
+                                </div>
+                            </div>
+                            <div class="review-stars">${stars}</div>
+                        </div>
+                        <p class="review-text">${rating.text || 'No written feedback provided.'}</p>
+                        <p class="review-product" style="margin-top: 8px; color: #059669; font-weight: 500;">
+                            ⭐ Seller Rating
+                        </p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatRelativeTime(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            const weeks = Math.floor(days / 7);
+            const months = Math.floor(days / 30);
+
+            if (seconds < 60) return 'Just now';
+            if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+            if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+            if (weeks < 4) return `${weeks} week${weeks !== 1 ? 's' : ''} ago`;
+            if (months < 12) return `${months} month${months !== 1 ? 's' : ''} ago`;
+            return new Date(timestamp).toLocaleDateString();
+        }
     </script>
 </body>
 </html>
