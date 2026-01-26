@@ -113,6 +113,37 @@
             border-left-color: #17a2b8;
         }
 
+        .shoes-warning {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+            padding: 25px 30px;
+            margin: 25px 0;
+            border-radius: 12px;
+            border: 4px solid #990000;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+        }
+
+        .shoes-warning-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .shoes-warning-text {
+            font-size: 18px;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        .shoes-warning-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
         .alert-title {
             font-weight: bold;
             margin-bottom: 8px;
@@ -402,6 +433,17 @@
                 <div class="alert-title">✅ Payment Received</div>
                 <div class="alert-text">
                     The buyer's payment has been processed successfully. Please ship this item within 2 business days.
+                </div>
+            </div>
+
+            <!-- Wrestling Shoes Warning -->
+            <div class="shoes-warning">
+                <div class="shoes-warning-icon">👟⚠️</div>
+                <div class="shoes-warning-title">🚨 Wrestling Shoes Alert 🚨</div>
+                <div class="shoes-warning-text">
+                    If this order contains <strong>WRESTLING SHOES</strong>, do <strong>NOT</strong> ship them in the original shoe box!<br><br>
+                    The shipping label was created based on specific package dimensions. Shipping in the original shoe box will result in <strong>incorrect packaging</strong> and item <strong>will not</strong> be able to be delivered properly.<br><br>
+                    <strong>Remove shoes from the original box and use appropriate packaging that matches the label dimensions.</strong>
                 </div>
             </div>
 

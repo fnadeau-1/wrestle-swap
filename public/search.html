@@ -416,8 +416,8 @@
                     <label for="singlets">Singlets</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="warmups" onchange="filterProducts()">
-                    <label for="warmups">Warm-ups</label>
+                    <input type="checkbox" id="jackets" onchange="filterProducts()">
+                    <label for="jackets">Jackets</label>
                 </div>
                 <div class="filter-option">
                     <input type="checkbox" id="shirts" onchange="filterProducts()">
@@ -703,7 +703,7 @@
             const icons = {
                 'shoes': '👟',
                 'singlets': '🤼',
-                'warmups': '🧥',
+                'jackets': '🧥',
                 'shirts': '👕',
                 'bottoms': '🩳',
                 'accessories': '🎒',
@@ -766,7 +766,7 @@
 
             // Filter by category
             const selectedCategories = [];
-            ['shoes', 'singlets', 'warmups', 'shirts', 'bottoms'].forEach(cat => {
+            ['shoes', 'singlets', 'jackets', 'shirts', 'bottoms'].forEach(cat => {
                 if (document.getElementById(cat)?.checked) {
                     selectedCategories.push(cat);
                 }

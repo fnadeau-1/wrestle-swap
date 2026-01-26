@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>List Your Wrestling Gear | Wrestle Swap</title>
+    <script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
     <style>
         * {
             margin: 0;
@@ -342,6 +343,24 @@
         .loading.active {
             display: block;
         }
+
+        .recaptcha-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .recaptcha-error {
+            color: #e53238;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .recaptcha-error.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -385,12 +404,13 @@
                         <option value="">Select a category</option>
                         <option value="shoes">Wrestling Shoes</option>
                         <option value="singlets">Singlets</option>
-                        <option value="warmups">Warm-ups</option>
+                        <option value="jackets">Jackets</option>
                         <option value="shirts">Shirts</option>
                         <option value="bottoms">Shorts/Pants</option>
                         <option value="accessories">Bags</option>
                         <option value="other">Other</option>
                     </select>
+                    <p class="helper-text">If selling wrestling shoes DO NOT send them in the box, packaging will not be accepted</p>
                 </div>
 
                 <div class="form-group">
@@ -478,6 +498,12 @@
             <div class="loading" id="loading">
                 <p>Listing your item...</p>
             </div>
+
+            <!-- reCAPTCHA Verification -->
+            <div class="recaptcha-container">
+                <div class="g-recaptcha" data-sitekey="6LcM51YsAAAAAJIK9J6ztDQhKET0FdHvOBZ9p9Ah" data-action="LIST_ITEM"></div>
+            </div>
+            <p class="recaptcha-error" id="recaptcha-error">Please complete the reCAPTCHA verification</p>
 
             <div class="submit-section">
                 <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">Cancel</button>
@@ -635,16 +661,80 @@
             selectedFiles.forEach(file => displayPreview(file));
         }
 
+        // Cloud Function URL for reCAPTCHA verification
+        const RECAPTCHA_VERIFY_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/verifyRecaptcha';
+
+        // reCAPTCHA Enterprise verification function (server-side)
+        async function verifyRecaptchaServer() {
+            const recaptchaToken = grecaptcha.enterprise.getResponse();
+            const errorElement = document.getElementById('recaptcha-error');
+
+            if (!recaptchaToken || recaptchaToken.length === 0) {
+                errorElement.textContent = 'Please complete the reCAPTCHA verification';
+                errorElement.classList.add('show');
+                return false;
+            }
+
+            try {
+                // Send token to Cloud Function for verification
+                const response = await fetch(RECAPTCHA_VERIFY_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        token: recaptchaToken,
+                        expectedAction: 'LIST_ITEM'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    errorElement.textContent = result.error || 'reCAPTCHA verification failed. Please try again.';
+                    errorElement.classList.add('show');
+                    grecaptcha.enterprise.reset();
+                    return false;
+                }
+
+                console.log('reCAPTCHA verified successfully. Score:', result.score);
+                errorElement.classList.remove('show');
+                return true;
+
+            } catch (error) {
+                console.error('reCAPTCHA verification error:', error);
+                errorElement.textContent = 'Error verifying reCAPTCHA. Please try again.';
+                errorElement.classList.add('show');
+                grecaptcha.enterprise.reset();
+                return false;
+            }
+        }
+
         document.getElementById('sell-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submit-btn');
+
+            // Show loading while verifying reCAPTCHA
+            loading.classList.add('active');
+            submitBtn.disabled = true;
+
+            // Verify reCAPTCHA with server
+            const recaptchaValid = await verifyRecaptchaServer();
+            if (!recaptchaValid) {
+                loading.classList.remove('active');
+                submitBtn.disabled = false;
+                return;
+            }
+
             // Double-check Stripe account before submission
             const stripeAccountId = window.getStripeAccountId();
             if (!stripeAccountId) {
                 alert('You must connect your Stripe account before listing items. Click the button above to get started.');
                 return;
             }
-            
+
             if (selectedFiles.length === 0) {
                 alert('Please add at least one photo');
                 return;
@@ -720,6 +810,7 @@
             } catch (error) {
                 loading.classList.remove('active');
                 submitBtn.disabled = false;
+                grecaptcha.enterprise.reset(); // Reset reCAPTCHA so user can try again
                 console.error('Error listing item:', error);
                 alert('Error listing item: ' + error.message);
             }

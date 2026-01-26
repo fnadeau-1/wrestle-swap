@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Back Guarantee - Wrestle Swap</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #fafaf8;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #c41e3a 0%, #8b1528 100%);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 50px;
+            padding: 40px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .hero-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #c41e3a;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .content-section {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #c41e3a;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            color: #c41e3a;
+            margin: 30px 0 15px 0;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #555;
+            font-size: 1.05rem;
+        }
+
+        ul, ol {
+            margin: 20px 0 20px 30px;
+        }
+
+        li {
+            margin-bottom: 12px;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .highlight-box {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 6px;
+        }
+
+        .highlight-box.success {
+            background: #f0fdf4;
+            border-left-color: #059669;
+        }
+
+        .highlight-box.warning {
+            background: #fffbeb;
+            border-left-color: #f59e0b;
+        }
+
+        .highlight-box.danger {
+            background: #fef2f2;
+            border-left-color: #dc2626;
+        }
+
+        .cta-box {
+            background: linear-gradient(135deg, #c41e3a 0%, #8b1528 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .cta-box h3 {
+            color: white;
+            margin: 0 0 15px 0;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: white;
+            color: #c41e3a;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .timeline {
+            margin: 30px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #c41e3a;
+        }
+
+        .timeline-number {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            background: #c41e3a;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .timeline-content h4 {
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            margin-top: 50px;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .content-section {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="index.html" class="logo">Wrestle Swap</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="buyer-protection.html">Buyer Protection</a>
+            <a href="return-policy.html">Returns</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <div class="hero-icon">🛡️</div>
+            <h1>Money Back Guarantee</h1>
+            <p class="subtitle">Shop with confidence knowing your purchase is protected</p>
+        </div>
+
+        <!-- Overview -->
+        <div class="content-section">
+            <h2>Your Purchase is Protected</h2>
+            <p>At Wrestle Swap, we want you to buy with confidence. That's why every eligible purchase is covered by our Money Back Guarantee. If an item doesn't arrive or isn't as described, we've got you covered.</p>
+            
+            <div class="highlight-box success">
+                <strong>✓ You're covered when you:</strong>
+                <ul style="margin-top: 10px;">
+                    <li>Don't receive an item you ordered</li>
+                    <li>Receive an item that is significantly different from the description</li>
+                    <li>Receive a damaged or defective item</li>
+                    <li>Return an item that doesn't match the listing</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- What's Covered -->
+        <div class="content-section">
+            <h2>What's Covered</h2>
+            
+            <h3>📦 Item Not Received</h3>
+            <p>If your item doesn't arrive, you can request a refund. This includes situations where:</p>
+            <ul>
+                <li>The tracking shows delivered but you didn't receive it</li>
+                <li>The item was lost in transit</li>
+                <li>The seller didn't ship within their stated handling time</li>
+            </ul>
+
+            <h3>📋 Item Not as Described</h3>
+            <p>You're protected if the item you receive is materially different from the listing. This includes:</p>
+            <ul>
+                <li>Wrong item was sent (e.g., you ordered a Large singlet but received a Medium)</li>
+                <li>Missing parts or accessories that were included in the description</li>
+                <li>Condition is significantly worse than described (e.g., listed as "Like New" but arrived heavily worn)</li>
+                <li>Item is damaged and damage wasn't disclosed in the listing</li>
+                <li>Item is a different brand, model, or version than listed</li>
+            </ul>
+
+            <h3>💔 Damaged or Defective Items</h3>
+            <p>Items that arrive damaged or don't work as intended are covered, including:</p>
+            <ul>
+                <li>Items damaged during shipping</li>
+                <li>Items with defects not mentioned in the listing</li>
+                <li>Items that don't function properly (e.g., zippers broken, tears in fabric)</li>
+            </ul>
+
+            <div class="highlight-box warning">
+                <strong>⚠️ Important:</strong> Take photos of damaged items and their packaging before opening a case. This documentation helps us resolve your claim faster.
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="content-section">
+            <h2>How to Request a Refund</h2>
+            
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-number">1</div>
+                    <div class="timeline-content">
+                        <h4>Use the contact form as soon as possible</h4>
+                        <p>We can often help so the earlier you email the easier we can be of service, use the subject line "Refund request" and give an accurate description of your situation</p>
+                    </div>
+                </div>
+
+        <!-- Important Deadlines -->
+        <div class="content-section">
+            <h2>⏰ Important Deadlines</h2>
+            
+            <div class="highlight-box">
+                <strong>Report by:</strong>
+                <ul style="margin-top: 10px; margin-bottom: 0;">
+                    <li><strong>30 days</strong> from the actual or latest estimated delivery date</li>
+                    <li><strong>6 months</strong> from payment for items that never arrived</li>
+                </ul>
+            </div>
+
+            <p>Don't wait! The sooner you report an issue, the faster we can help resolve it.</p>
+        </div>
+
+        <!-- What's Not Covered -->
+        <div class="content-section">
+            <h2>What's Not Covered</h2>
+            
+            <div class="highlight-box danger">
+                <strong>✗ The Money Back Guarantee does not cover:</strong>
+                <ul style="margin-top: 10px; margin-bottom: 0;">
+                    <li>Items picked up in person (local pickup transactions)</li>
+                    <li>Buyer's remorse or change of mind</li>
+                    <li>Minor differences in color due to screen variations</li>
+                    <li>Items damaged after delivery</li>
+                    <li>Normal wear and tear on used items when condition was accurately described</li>
+                    <li>Items returned without seller authorization (unless item not as described)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Return Shipping -->
+        <div class="content-section">
+            <h2>📬 Return Shipping</h2>
+            
+            <h3>Who Pays for Return Shipping?</h3>
+            <ul>
+                <li><strong>Item not as described or damaged:</strong> Seller pays return shipping</li>
+                <li><strong>Item not received:</strong> No return shipping needed (item never arrived)</li>
+                <li><strong>Buyer's remorse:</strong> Buyer pays return shipping (if seller accepts returns)</li>
+            </ul>
+
+            <p>When the seller is responsible for return shipping, we'll provide a prepaid return label for you to use.</p>
+        </div>
+
+        <!-- Seller Responsibilities -->
+        <div class="content-section">
+            <h2>👥 Seller Responsibilities</h2>
+            
+            <p>Sellers must:</p>
+            <ul>
+                <li>Ship items within the stated handling time</li>
+                <li>Describe items accurately and completely</li>
+                <li>Provide valid tracking information</li>
+                <li>Package items securely to prevent damage</li>
+                <li>Respond to buyer messages within 48 hours</li>
+                <li>Accept returns when items don't match the description</li>
+            </ul>
+
+            <div class="highlight-box">
+                <strong>💡 For Sellers:</strong> Accurate descriptions and clear photos prevent returns and disputes. Be honest about condition, flaws, and measurements!
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-box">
+            <h3>Need Help?</h3>
+            <p>Our support team is here to help resolve any issues with your order.</p>
+            <a href="contact.html" class="btn">Contact Support</a>
+        </div>
+
+        <!-- Additional Resources -->
+        <div class="content-section">
+            <h2>📚 Additional Resources</h2>
+            <ul>
+                <li><a href="return-policy.html" style="color: #c41e3a; font-weight: 600;">Return Policy</a> - Learn about voluntary returns</li>
+                <li><a href="buyer-protection.html" style="color: #c41e3a; font-weight: 600;">Buyer Protection Program</a> - Full details on all protections</li>
+                <li><a href="shipping-policy.html" style="color: #c41e3a; font-weight: 600;">Shipping Policy</a> - Expected delivery times and tracking</li>
+                <li><a href="seller-guidelines.html" style="color: #c41e3a; font-weight: 600;">Seller Guidelines</a> - What sellers must do</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>&copy; 2024 Wrestle Swap. All rights reserved.</p>
+        <p style="margin-top: 10px;">
+            <a href="terms.html" style="color: #c41e3a; margin: 0 10px;">Terms of Service</a> | 
+            <a href="privacy.html" style="color: #c41e3a; margin: 0 10px;">Privacy Policy</a> | 
+            <a href="contact.html" style="color: #c41e3a; margin: 0 10px;">Contact Us</a>
+        </p>
+        <p style="margin-top: 15px; font-size: 0.9rem;">Last updated: January 2024</p>
+    </div>
+</body>
+</html>
