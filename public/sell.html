@@ -14,12 +14,12 @@
 
         body {
             font-family: Arial, sans-serif;
-            background-color: #f7f7f7;
+            background-color: #ffffff;
         }
 
         .top-bar {
-            background-color: #f7f7f7;
-            border-bottom: 1px solid #e5e5e5;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e6e1e1;
             padding: 8px 0;
             font-size: 12px;
         }
@@ -32,16 +32,69 @@
             justify-content: space-between;
         }
 
-        .top-bar a {
+
+        .top-bar-btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 0px solid #ffffff;
+            background: #fff;
+            border-radius: 4px;
+            font-size: 12px;
             color: #000;
             text-decoration: none;
-            margin: 0 10px;
+            display: inline-block;
+        }
+
+        .top-bar-btn:hover {
+            background: #e5e5e5;
+        }
+
+        /* Dropdown Menu Styles */
+        .user-menu-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 180px;
+            margin-top: 0px;
+            z-index: 1000;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 10px 16px;
+            color: #333;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f5f5f5;
+        }
+
+        .user-menu-container:hover .dropdown-menu {
+            display: block;
         }
 
         .main-header {
             background-color: #fff;
             padding: 12px 0;
-            border-bottom: 1px solid #e5e5e5;
+            border-bottom: 1px solid #ffffff;
         }
 
         .header-content {
@@ -367,12 +420,14 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <a href="sign-in.html" id="user-greeting" style="cursor: pointer;">Hi! Sign in</a>
-                <a href="help.html">Help & Contact</a>
+                <span id="user-menu-wrapper">
+                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                </span>
+                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
             </div>
             <div>
-                <a href="sell.html">Sell</a>
-                <a href="watchlist.html">Watchlist</a>
+                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
+                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
             </div>
         </div>
     </div>
@@ -560,21 +615,30 @@
         }
 
         onAuthStateChanged(auth, async (user) => {
-            const greeting = document.getElementById('user-greeting');
+            const menuWrapper = document.getElementById('user-menu-wrapper');
 
             if (!user) {
-                greeting.textContent = 'Hi! Sign in';
-                greeting.href = 'sign-in.html';
+                menuWrapper.innerHTML = `
+                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                `;
                 alert('Please sign in to list items');
                 window.location.href = 'sign-in.html';
             } else {
                 currentUser = user;
                 console.log('User logged in:', user.email);
 
-                // Update greeting
+                // Update greeting with dropdown
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                greeting.textContent = `Hi, ${firstName}!`;
-                greeting.href = 'profile.html';
+                menuWrapper.innerHTML = `
+                    <div class="user-menu-container">
+                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                        <div class="dropdown-menu">
+                            <a href="watchlist.html">Watchlist</a>
+                            <a href="my-orders.html">Your Orders</a>
+                            <a href="listings-manager.html">Your Listings</a>
+                        </div>
+                    </div>
+                `;
 
                 // Check for Stripe account
                 userStripeAccountId = await checkStripeAccount(user);
@@ -732,24 +796,25 @@
             const stripeAccountId = window.getStripeAccountId();
             if (!stripeAccountId) {
                 alert('You must connect your Stripe account before listing items. Click the button above to get started.');
+                loading.classList.remove('active');
+                submitBtn.disabled = false;
                 return;
             }
 
             if (selectedFiles.length === 0) {
                 alert('Please add at least one photo');
+                loading.classList.remove('active');
+                submitBtn.disabled = false;
                 return;
             }
 
             const currentUser = window.getCurrentUser();
             if (!currentUser) {
                 alert('You must be signed in to list items');
+                loading.classList.remove('active');
+                submitBtn.disabled = false;
                 return;
             }
-
-            const loading = document.getElementById('loading');
-            const submitBtn = document.getElementById('submit-btn');
-            loading.classList.add('active');
-            submitBtn.disabled = true;
 
             try {
                 // Upload images to Firebase Storage

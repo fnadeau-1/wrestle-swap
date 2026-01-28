@@ -38,6 +38,62 @@
             margin: 0 10px;
         }
 
+        .top-bar-btn {
+            padding: 4px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 0px solid #ccc;
+            background: #f7f7f7;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #000;
+        }
+
+        .top-bar-btn:hover {
+            background: #e5e5e5;
+        }
+
+        /* Dropdown Menu Styles */
+        .user-menu-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 180px;
+            margin-top: 0px;
+            z-index: 1000;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 10px 16px;
+            color: #333;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f5f5f5;
+        }
+
+        .user-menu-container:hover .dropdown-menu {
+            display: block;
+        }
+
         .main-header {
             background-color: #fff;
             padding: 12px 0;
@@ -371,12 +427,14 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <a href="sign-in.html" id="user-greeting" style="cursor: pointer;">Hi! Sign in</a>
-                <a href="help.html">Help & Contact</a>
+                <span id="user-menu-wrapper">
+                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                </span>
+                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
             </div>
             <div>
-                <a href="sell.html">Sell</a>
-                <a href="watchlist.html">Watchlist</a>
+                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
+                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
             </div>
         </div>
     </div>
@@ -599,16 +657,30 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // User greeting
+        // User greeting with dropdown
         onAuthStateChanged(auth, (user) => {
-            const greeting = document.getElementById('user-greeting');
+            const menuWrapper = document.getElementById('user-menu-wrapper');
+
             if (user) {
+                // User is signed in - show dropdown menu
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                greeting.textContent = `Hi, ${firstName}!`;
-                greeting.href = 'profile.html';
+
+                // Create the dropdown menu HTML
+                menuWrapper.innerHTML = `
+                    <div class="user-menu-container">
+                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                        <div class="dropdown-menu">
+                            <a href="watchlist.html">Watchlist</a>
+                            <a href="my-orders.html">Your Orders</a>
+                            <a href="listings-manager.html">Your Listings</a>
+                        </div>
+                    </div>
+                `;
             } else {
-                greeting.textContent = 'Hi! Sign in';
-                greeting.href = 'sign-in.html';
+                // User is not signed in - show simple sign-in button
+                menuWrapper.innerHTML = `
+                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                `;
             }
         });
 

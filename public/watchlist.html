@@ -18,7 +18,7 @@
 
         /* Header */
         .top-bar {
-            background-color: #f7f7f7;
+            background-color: #ffffff;
             border-bottom: 1px solid #e5e5e5;
             padding: 8px 0;
             font-size: 12px;
@@ -42,7 +42,7 @@
             padding: 8px 16px;
             margin: 0 5px;
             cursor: pointer;
-            border: 1px solid #ccc;
+            border: 0px solid #ffffff;
             background: #fff;
             border-radius: 4px;
             font-size: 12px;
@@ -55,10 +55,51 @@
             background: #f0f0f0;
         }
 
+        /* Dropdown Menu Styles */
+        .user-menu-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 180px;
+            margin-top: 0px;
+            z-index: 1000;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 10px 16px;
+            color: #333;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f5f5f5;
+        }
+
+        .user-menu-container:hover .dropdown-menu {
+            display: block;
+        }
+
         .main-header {
             background-color: #fff;
             padding: 12px 0;
-            border-bottom: 1px solid #e5e5e5;
+            border-bottom: 0px solid #e5e5e5;
         }
 
         .header-content {
@@ -106,6 +147,10 @@
             padding: 0 24px;
             cursor: pointer;
             font-size: 14px;
+        }
+
+        .search-btn:hover {
+            background-color: #2348c5;
         }
 
         /* Main Content */
@@ -208,6 +253,13 @@
             justify-content: center;
             font-size: 60px;
             flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .item-details {
@@ -253,11 +305,23 @@
             margin-bottom: 12px;
         }
 
-        .item-time {
+        .item-status {
             font-size: 13px;
-            color: #e53238;
-            font-weight: bold;
             margin-bottom: 15px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .status-available {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-sold {
+            background-color: #ffebee;
+            color: #c62828;
         }
 
         .item-actions {
@@ -285,13 +349,18 @@
             background-color: #2348c5;
         }
 
-        .message-btn {
+        .buy-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .view-btn {
             background-color: #fff;
             color: #333;
             border: 1px solid #ccc;
         }
 
-        .message-btn:hover {
+        .view-btn:hover {
             background-color: #f0f0f0;
         }
 
@@ -352,6 +421,70 @@
             background-color: #2348c5;
         }
 
+        /* Loading State */
+        .loading-state {
+            background: #fff;
+            padding: 60px 40px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            font-size: 48px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: #707070;
+            margin-top: 20px;
+        }
+
+        /* Auth Required State */
+        .auth-required {
+            background: #fff;
+            padding: 60px 40px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .auth-required-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .auth-required-title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .auth-required-text {
+            font-size: 16px;
+            color: #707070;
+            margin-bottom: 25px;
+        }
+
+        .signin-btn {
+            padding: 12px 32px;
+            background-color: #3665f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .signin-btn:hover {
+            background-color: #2348c5;
+        }
+
         @media (max-width: 768px) {
             .watchlist-item {
                 flex-direction: column;
@@ -380,12 +513,14 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <a href="profile.html">Profile</a>
-                <a href="help.html">Help & Contact</a>
+                <span id="user-menu-wrapper">
+                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                </span>
+                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
             </div>
             <div>
-                <a href="sell.html">Sell</a>
-                <a href="watchlist.html">Watchlist</a>
+                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
+                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
             </div>
         </div>
     </div>
@@ -396,9 +531,15 @@
             <a href="index.html" class="logo">Wrestle Swap</a>
             <div class="search-container">
                 <div class="search-box">
-                    <input type="text" class="search-input" placeholder="Search for wrestling gear...">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="search-input"
+                        placeholder="Search for wrestling gear..."
+                        onkeypress="if(event.key==='Enter') performSearch()"
+                    >
                 </div>
-                <button class="search-btn">Search</button>
+                <button class="search-btn" onclick="performSearch()">Search</button>
             </div>
         </div>
     </div>
@@ -410,10 +551,24 @@
             <p class="page-subtitle">Keep track of items you're interested in</p>
         </div>
 
+        <!-- Loading State -->
+        <div class="loading-state" id="loading-state">
+            <div class="loading-spinner">⏳</div>
+            <div class="loading-text">Loading your watchlist...</div>
+        </div>
+
+        <!-- Auth Required State -->
+        <div class="auth-required" id="auth-required" style="display: none;">
+            <div class="auth-required-icon">🔒</div>
+            <h2 class="auth-required-title">Sign in to view your watchlist</h2>
+            <p class="auth-required-text">You need to be signed in to save and view items on your watchlist</p>
+            <button class="signin-btn" onclick="window.location.href='sign-in.html'">Sign In</button>
+        </div>
+
         <!-- Watchlist Controls -->
-        <div class="watchlist-controls">
+        <div class="watchlist-controls" id="watchlist-controls" style="display: none;">
             <div class="item-count" id="item-count">
-                <strong>5 items</strong> in your watchlist
+                <strong>0 items</strong> in your watchlist
             </div>
             <div class="sort-filter">
                 <label>Sort by:</label>
@@ -421,7 +576,6 @@
                     <option value="recent">Recently added</option>
                     <option value="price-low">Price: Low to High</option>
                     <option value="price-high">Price: High to Low</option>
-                    <option value="ending">Ending soon</option>
                     <option value="title">Title A-Z</option>
                 </select>
                 <button class="clear-all-btn" onclick="clearWatchlist()">Clear All</button>
@@ -429,9 +583,9 @@
         </div>
 
         <!-- Watchlist Items -->
-        <div class="watchlist-grid" id="watchlist-container"></div>
+        <div class="watchlist-grid" id="watchlist-container" style="display: none;"></div>
 
-        <!-- Empty State (hidden by default) -->
+        <!-- Empty State -->
         <div class="empty-state" id="empty-state" style="display: none;">
             <div class="empty-icon">👁️</div>
             <h2 class="empty-title">Your watchlist is empty</h2>
@@ -440,111 +594,239 @@
         </div>
     </div>
 
-    <script>
-        // Watchlist data array
-        let watchlistItems = [
-            {
-                id: 1,
-                title: "ASICS Matflex 6 Wrestling Shoes - Black/Silver - Size 10",
-                condition: "Used - Excellent condition",
-                price: 49.99,
-                shipping: "Free shipping",
-                seller: "wrestlingpro23",
-                rating: 98.5,
-                timeLeft: "2 days 5 hours",
-                endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-                dateAdded: new Date('2024-01-20'),
-                emoji: "👟"
-            },
-            {
-                id: 2,
-                title: "Adidas Wrestling Singlet - Red/Blue - Youth Large",
-                condition: "New with tags",
-                price: 35.00,
-                shipping: "+$5.99 shipping",
-                seller: "matgear4u",
-                rating: 100,
-                timeLeft: "5 hours",
-                endTime: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
-                dateAdded: new Date('2024-01-25'),
-                emoji: "🤼"
-            },
-            {
-                id: 3,
-                title: "Nike Team Warm-up Jacket & Pants Set - Adult Medium",
-                condition: "Used - Like new",
-                price: 65.00,
-                shipping: "Free shipping",
-                seller: "coachsmith",
-                rating: 95.2,
-                timeLeft: "1 day 12 hours",
-                endTime: new Date(Date.now() + 1.5 * 24 * 60 * 60 * 1000), // 1.5 days from now
-                dateAdded: new Date('2024-01-22'),
-                emoji: "🧥"
-            },
-            {
-                id: 4,
-                title: "Rudis KS Elite Wrestling Shoes - Gray - Size 9.5",
-                condition: "New without box",
-                price: 95.00,
-                shipping: "Free shipping",
-                seller: "wrestlegearstore",
-                rating: 99.8,
-                timeLeft: "3 days",
-                endTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-                dateAdded: new Date('2024-01-18'),
-                emoji: "👟"
-            },
-            {
-                id: 5,
-                title: "Wrestling Headgear & Knee Pads Bundle - Cliff Keen",
-                condition: "Used - Good condition",
-                price: 35.00,
-                shipping: "+$6.99 shipping",
-                seller: "teamgear88",
-                rating: 97.1,
-                timeLeft: "6 days 8 hours",
-                endTime: new Date(Date.now() + 6.3 * 24 * 60 * 60 * 1000), // 6.3 days from now
-                dateAdded: new Date('2024-01-15'),
-                emoji: "🎽"
-            }
-        ];
+    <!-- Firebase Integration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayRemove, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Function to render watchlist items
-        function renderWatchlist() {
-            const container = document.getElementById('watchlist-container');
-            
-            if (watchlistItems.length === 0) {
-                checkEmptyState();
-                return;
-            }
-            
-            container.innerHTML = watchlistItems.map(item => `
-                <div class="watchlist-item" data-id="${item.id}">
-                    <button class="remove-btn" onclick="removeItem(${item.id})">✕</button>
-                    <div class="item-image">${item.emoji}</div>
-                    <div class="item-details">
-                        <div class="item-title">${item.title}</div>
-                        <div class="item-condition">${item.condition}</div>
-                        <div class="item-price">$${item.price.toFixed(2)}</div>
-                        <div class="item-shipping">${item.shipping}</div>
-                        <div class="item-seller">Seller: ${item.seller} (${item.rating}% positive)</div>
-                        <div class="item-time">Ends in ${item.timeLeft}</div>
-                        <div class="item-actions">
-                            <button class="action-btn buy-btn" onclick="buyItem(${item.id})">Buy It Now</button>
-                            <button class="action-btn message-btn" onclick="messageItem(${item.id})">Message Seller</button>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
+            authDomain: "wrestleswap.firebaseapp.com",
+            projectId: "wrestleswap",
+            storageBucket: "wrestleswap.firebasestorage.app",
+            messagingSenderId: "857051782398",
+            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
+            measurementId: "G-B411WXLF3J"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let watchlistItems = [];
+        let currentUser = null;
+
+        // Update header with user info and dropdown
+        onAuthStateChanged(auth, async (user) => {
+            const menuWrapper = document.getElementById('user-menu-wrapper');
+
+            if (user) {
+                currentUser = user;
+                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+                
+                menuWrapper.innerHTML = `
+                    <div class="user-menu-container">
+                        <button class="top-bar-btn">Hi, ${firstName}!</button>
+                        <div class="dropdown-menu">
+                            <a href="watchlist.html">Watchlist</a>
+                            <a href="my-orders.html">Your Orders</a>
+                            <a href="listings-manager.html">Your Listings</a>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+
+                // Load watchlist for signed-in user
+                await loadWatchlist(user.uid);
+            } else {
+                currentUser = null;
+                menuWrapper.innerHTML = `
+                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                `;
+
+                // Show auth required state
+                showAuthRequired();
+            }
+        });
+
+        // Load watchlist from Firestore
+        async function loadWatchlist(userId) {
+            const loadingState = document.getElementById('loading-state');
+            const authRequired = document.getElementById('auth-required');
             
+            try {
+                loadingState.style.display = 'block';
+                authRequired.style.display = 'none';
+
+                // Get user's watchlist document
+                const watchlistRef = doc(db, 'watchlists', userId);
+                const watchlistDoc = await getDoc(watchlistRef);
+
+                if (watchlistDoc.exists()) {
+                    const watchlistData = watchlistDoc.data();
+                    const productIds = watchlistData.products || [];
+
+                    if (productIds.length === 0) {
+                        watchlistItems = [];
+                        showEmptyState();
+                        return;
+                    }
+
+                    // Fetch product details for each item in watchlist
+                    watchlistItems = [];
+                    for (const productId of productIds) {
+                        const productRef = doc(db, 'products', productId);
+                        const productDoc = await getDoc(productRef);
+                        
+                        if (productDoc.exists()) {
+                            const productData = productDoc.data();
+                            watchlistItems.push({
+                                id: productDoc.id,
+                                title: productData.title,
+                                price: productData.price || 0,
+                                condition: productData.condition || 'Used',
+                                sellerName: productData.sellerName || 'Unknown Seller',
+                                images: productData.images || [],
+                                sold: productData.sold || false,
+                                active: productData.active !== false,
+                                dateAdded: watchlistData.dateAdded || new Date()
+                            });
+                        }
+                    }
+
+                    renderWatchlist();
+                } else {
+                    // No watchlist document exists yet
+                    watchlistItems = [];
+                    showEmptyState();
+                }
+
+            } catch (error) {
+                console.error('Error loading watchlist:', error);
+                loadingState.innerHTML = `
+                    <div class="loading-text" style="color: #e53238;">
+                        Error loading watchlist. Please refresh the page.
+                    </div>
+                `;
+            }
+        }
+
+        // Render watchlist items
+        function renderWatchlist() {
+            const loadingState = document.getElementById('loading-state');
+            const container = document.getElementById('watchlist-container');
+            const controls = document.getElementById('watchlist-controls');
+            const emptyState = document.getElementById('empty-state');
+
+            loadingState.style.display = 'none';
+            emptyState.style.display = 'none';
+
+            if (watchlistItems.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            controls.style.display = 'flex';
+            container.style.display = 'grid';
+
+            container.innerHTML = watchlistItems.map(item => {
+                const imageDisplay = item.images && item.images.length > 0
+                    ? `<img src="${item.images[0]}" alt="${item.title}">`
+                    : '📦';
+
+                const statusClass = item.sold ? 'status-sold' : 'status-available';
+                const statusText = item.sold ? 'Sold' : 'Available';
+
+                return `
+                    <div class="watchlist-item" data-id="${item.id}">
+                        <button class="remove-btn" onclick="window.removeItem('${item.id}')">✕</button>
+                        <div class="item-image">${imageDisplay}</div>
+                        <div class="item-details">
+                            <div class="item-title" onclick="window.location.href='productdetail.html?id=${item.id}'">${item.title}</div>
+                            <div class="item-condition">${item.condition}</div>
+                            <div class="item-price">$${item.price.toFixed(2)}</div>
+                            <div class="item-seller">Seller: ${item.sellerName}</div>
+                            <div class="item-status ${statusClass}">${statusText}</div>
+                            <div class="item-actions">
+                                <button class="action-btn buy-btn" onclick="window.location.href='productdetail.html?id=${item.id}'" ${item.sold ? 'disabled' : ''}>
+                                    ${item.sold ? 'Sold Out' : 'View Item'}
+                                </button>
+                                <button class="action-btn view-btn" onclick="window.removeItem('${item.id}')">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
             updateItemCount();
         }
 
-        // Function to sort watchlist
-        function sortWatchlist() {
+        // Remove item from watchlist
+        window.removeItem = async function(productId) {
+            if (!currentUser) {
+                alert('Please sign in to manage your watchlist');
+                return;
+            }
+
+            if (!confirm('Remove this item from your watchlist?')) {
+                return;
+            }
+
+            try {
+                const watchlistRef = doc(db, 'watchlists', currentUser.uid);
+                
+                // Remove product ID from the array
+                await updateDoc(watchlistRef, {
+                    products: arrayRemove(productId)
+                });
+
+                // Update local array
+                watchlistItems = watchlistItems.filter(item => item.id !== productId);
+                
+                if (watchlistItems.length === 0) {
+                    showEmptyState();
+                } else {
+                    renderWatchlist();
+                }
+
+            } catch (error) {
+                console.error('Error removing item:', error);
+                alert('Failed to remove item. Please try again.');
+            }
+        };
+
+        // Clear all items from watchlist
+        window.clearWatchlist = async function() {
+            if (!currentUser) {
+                alert('Please sign in to manage your watchlist');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to clear your entire watchlist?')) {
+                return;
+            }
+
+            try {
+                const watchlistRef = doc(db, 'watchlists', currentUser.uid);
+                
+                // Clear the products array
+                await updateDoc(watchlistRef, {
+                    products: []
+                });
+
+                watchlistItems = [];
+                showEmptyState();
+
+            } catch (error) {
+                console.error('Error clearing watchlist:', error);
+                alert('Failed to clear watchlist. Please try again.');
+            }
+        };
+
+        // Sort watchlist
+        window.sortWatchlist = function() {
             const sortType = document.getElementById('sort-select').value;
-            
+
             switch(sortType) {
                 case 'recent':
                     watchlistItems.sort((a, b) => b.dateAdded - a.dateAdded);
@@ -555,34 +837,13 @@
                 case 'price-high':
                     watchlistItems.sort((a, b) => b.price - a.price);
                     break;
-                case 'ending':
-                    watchlistItems.sort((a, b) => a.endTime - b.endTime);
-                    break;
                 case 'title':
                     watchlistItems.sort((a, b) => a.title.localeCompare(b.title));
                     break;
             }
-            
+
             renderWatchlist();
-        }
-
-        // Remove individual item
-        function removeItem(id) {
-            if (confirm('Remove this item from your watchlist?')) {
-                watchlistItems = watchlistItems.filter(item => item.id !== id);
-                renderWatchlist();
-                checkEmptyState();
-            }
-        }
-
-        // Clear all items
-        function clearWatchlist() {
-            if (confirm('Are you sure you want to clear your entire watchlist?')) {
-                watchlistItems = [];
-                renderWatchlist();
-                checkEmptyState();
-            }
-        }
+        };
 
         // Update item count
         function updateItemCount() {
@@ -591,35 +852,43 @@
             countElement.innerHTML = `<strong>${count} ${count === 1 ? 'item' : 'items'}</strong> in your watchlist`;
         }
 
-        // Check if watchlist is empty and show empty state
-        function checkEmptyState() {
+        // Show empty state
+        function showEmptyState() {
+            const loadingState = document.getElementById('loading-state');
             const emptyState = document.getElementById('empty-state');
-            const controls = document.querySelector('.watchlist-controls');
+            const controls = document.getElementById('watchlist-controls');
             const container = document.getElementById('watchlist-container');
-            
-            if (watchlistItems.length === 0) {
-                emptyState.style.display = 'block';
-                controls.style.display = 'none';
-                container.style.display = 'none';
+
+            loadingState.style.display = 'none';
+            emptyState.style.display = 'block';
+            controls.style.display = 'none';
+            container.style.display = 'none';
+        }
+
+        // Show auth required state
+        function showAuthRequired() {
+            const loadingState = document.getElementById('loading-state');
+            const authRequired = document.getElementById('auth-required');
+            const controls = document.getElementById('watchlist-controls');
+            const container = document.getElementById('watchlist-container');
+            const emptyState = document.getElementById('empty-state');
+
+            loadingState.style.display = 'none';
+            authRequired.style.display = 'block';
+            controls.style.display = 'none';
+            container.style.display = 'none';
+            emptyState.style.display = 'none';
+        }
+
+        // Search function
+        window.performSearch = function() {
+            const searchTerm = document.getElementById('search-input').value;
+            if (searchTerm) {
+                window.location.href = `search.html?q=${encodeURIComponent(searchTerm)}`;
             } else {
-                emptyState.style.display = 'none';
-                controls.style.display = 'flex';
-                container.style.display = 'grid';
+                window.location.href = 'search.html';
             }
-        }
-
-        // Buy item handler
-        function buyItem(id) {
-            alert('Purchase feature coming soon! (This is a demo)');
-        }
-
-        // Message seller handler
-        function messageItem(id) {
-            alert('Messaging feature coming soon! (This is a demo)');
-        }
-
-        // Initial render
-        renderWatchlist();
+        };
     </script>
 </body>
 </html>

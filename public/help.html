@@ -52,7 +52,48 @@
         }
 
         .top-bar-btn:hover {
-            background: #ffffff;
+            background: #f0f0f0;
+        }
+
+        /* Dropdown Menu Styles */
+        .user-menu-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 180px;
+            margin-top: 0px;
+            z-index: 1000;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 10px 16px;
+            color: #333;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f5f5f5;
+        }
+
+        .user-menu-container:hover .dropdown-menu {
+            display: block;
         }
 
         .main-header {
@@ -345,14 +386,14 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <a href="index.html" class="top-bar-btn">Home</a>
-                <a href="sign-in.html" class="top-bar-btn" id="user-greeting">Hi! Sign in</a>
-                <a href="chat.html" class="top-bar-btn">Help & Contact</a>
+                <span id="user-menu-wrapper">
+                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                </span>
+                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
             </div>
             <div>
-                <a href="sell.html" class="top-bar-btn">Sell</a>
-                <a href="watchlist.html" class="top-bar-btn">Watchlist</a>
-                <a href="settings.html" class="top-bar-btn">Settings</a>
+                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
+                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
             </div>
         </div>
     </div>
@@ -493,6 +534,14 @@
                         Please contact our support team immediately via the contact form below or email wrestleswap@gmail.com. We will investigate the issue and work with you to find a resolution, which may include a refund or replacement.
                     </div>
                 </div>
+                                 <div class="faq-item" data-category="selling">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>How do I collect money from sales?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Create a Stripe Express account prompted in the "sell" section, this is a secure way to receive payments directly to your bank account. Once your item sells, the funds will be transferred to your Stripe account minus any applicable fees.
+                </div>
             </div>
 
             <!-- Contact Card -->
@@ -572,14 +621,28 @@
         const auth = getAuth(app);
 
         onAuthStateChanged(auth, (user) => {
-            const greeting = document.getElementById('user-greeting');
+            const menuWrapper = document.getElementById('user-menu-wrapper');
+
             if (user) {
+                // User is signed in - show dropdown menu
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                greeting.textContent = `Hi, ${firstName}!`;
-                greeting.href = 'profile.html';
+
+                // Create the dropdown menu HTML
+                menuWrapper.innerHTML = `
+                    <div class="user-menu-container">
+                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                        <div class="dropdown-menu">
+                            <a href="watchlist.html">Watchlist</a>
+                            <a href="my-orders.html">Your Orders</a>
+                            <a href="listings-manager.html">Your Listings</a>
+                        </div>
+                    </div>
+                `;
             } else {
-                greeting.textContent = 'Hi! Sign in';
-                greeting.href = 'sign-in.html';
+                // User is not signed in - show simple sign-in button
+                menuWrapper.innerHTML = `
+                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                `;
             }
         });
     </script>

@@ -53,6 +53,47 @@
             background: #f0f0f0;
         }
 
+        /* Dropdown Menu Styles */
+        .user-menu-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 180px;
+            margin-top: 0px;
+            z-index: 1000;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 10px 16px;
+            color: #333;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f5f5f5;
+        }
+
+        .user-menu-container:hover .dropdown-menu {
+            display: block;
+        }
+
         /* Main Header */
         .main-header {
             background-color: #fff;
@@ -362,15 +403,14 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='profile.html'">Hi! Sign in</button>
-                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Help & Contact</button>
-                <button class="top-bar-btn" onclick="window.location.href='listings-manager.html'">Your listings</button>
-                <button class="top-bar-btn" onclick="window.location.href='Sign-in.html'">Sign in page-subtitle</button>
-                <button class="top-bar-btn" onclick="window.location.href='my-orders.html'">My orders</button>
+                <!-- User Menu Container - This will be updated by JavaScript -->
+                <span id="user-menu-wrapper">
+                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                </span>
+                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
             </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
-                <button class="top-bar-btn" onclick="window.location.href='watchlist.html'">Watchlist</button>
                 <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
             </div>
         </div>
@@ -389,14 +429,7 @@
                         placeholder="Search for wrestling shoes, singlets, gear..."
                         onkeypress="if(event.key==='Enter') performSearch()"
                     >
-                    <select class="category-select" id="category-select">
-                        <option value="">All Categories</option>
-                        <option value="shoes">Wrestling Shoes</option>
-                        <option value="singlet">Singlets</option>
-                        <option value="jackets">Jackets</option>
-                        <option value="shirt">Shirts</option>
-                        <option value="bag">Bags</option>
-                    </select>
+
                 </div>
                 <button class="search-btn" onclick="performSearch()">Search</button>
             </div>
@@ -517,17 +550,30 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Handle user greeting
+        // Handle user greeting with dropdown for signed-in users
         onAuthStateChanged(auth, (user) => {
-            const greeting = document.getElementById('user-greeting');
+            const menuWrapper = document.getElementById('user-menu-wrapper');
 
             if (user) {
+                // User is signed in - show dropdown menu
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                greeting.textContent = `Hi, ${firstName}!`;
-                greeting.onclick = () => window.location.href = 'profile.html';
+                
+                // Create the dropdown menu HTML
+                menuWrapper.innerHTML = `
+                    <div class="user-menu-container">
+                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                        <div class="dropdown-menu">
+                            <a href="watchlist.html">Watchlist</a>
+                            <a href="my-orders.html">Your Orders</a>
+                            <a href="listings-manager.html">Your Listings</a>
+                        </div>
+                    </div>
+                `;
             } else {
-                greeting.textContent = 'Hi! Sign in';
-                greeting.onclick = () => window.location.href = 'sign-in.html';
+                // User is not signed in - show simple sign-in button
+                menuWrapper.innerHTML = `
+                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                `;
             }
         });
 
