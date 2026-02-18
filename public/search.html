@@ -38,62 +38,6 @@
             margin: 0 10px;
         }
 
-        .top-bar-btn {
-            padding: 4px 16px;
-            margin: 0 5px;
-            cursor: pointer;
-            border: 0px solid #ccc;
-            background: #f7f7f7;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #000;
-        }
-
-        .top-bar-btn:hover {
-            background: #e5e5e5;
-        }
-
-        /* Dropdown Menu Styles */
-        .user-menu-container {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background-color: white;
-            border: 1px solid #e5e5e5;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            min-width: 180px;
-            margin-top: 0px;
-            z-index: 1000;
-        }
-
-        .dropdown-menu a {
-            display: block;
-            padding: 10px 16px;
-            color: #333;
-            text-decoration: none;
-            font-size: 13px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .dropdown-menu a:last-child {
-            border-bottom: none;
-        }
-
-        .dropdown-menu a:hover {
-            background-color: #f5f5f5;
-        }
-
-        .user-menu-container:hover .dropdown-menu {
-            display: block;
-        }
-
         .main-header {
             background-color: #fff;
             padding: 12px 0;
@@ -207,6 +151,16 @@
 
         .filter-option label {
             cursor: pointer;
+        }
+
+        .size-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 16px;
+        }
+
+        .size-grid .filter-option {
+            margin: 4px 0;
         }
 
         .price-inputs {
@@ -427,14 +381,12 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <span id="user-menu-wrapper">
-                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
-                </span>
-                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
+                <a href="sign-in.html" id="user-greeting" style="cursor: pointer;">Hi! Sign in</a>
+                <a href="help.html">Help & Contact</a>
             </div>
             <div>
-                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
-                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
+                <a href="sell.html">Sell</a>
+                <a href="watchlist.html">Watchlist</a>
             </div>
         </div>
     </div>
@@ -474,8 +426,8 @@
                     <label for="singlets">Singlets</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="jackets" onchange="filterProducts()">
-                    <label for="jackets">Jackets</label>
+                    <input type="checkbox" id="warmups" onchange="filterProducts()">
+                    <label for="warmups">Warm-ups</label>
                 </div>
                 <div class="filter-option">
                     <input type="checkbox" id="shirts" onchange="filterProducts()">
@@ -490,57 +442,130 @@
             <!-- Shoe Size Filter -->
             <div class="filter-section" id="size-filter" style="display: none;">
                 <div class="filter-title">Shoe Size</div>
+                <div class="size-grid">
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-2" onchange="filterProducts()">
+                        <label for="size-2">2</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-2.5" onchange="filterProducts()">
+                        <label for="size-2.5">2.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-3" onchange="filterProducts()">
+                        <label for="size-3">3</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-3.5" onchange="filterProducts()">
+                        <label for="size-3.5">3.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-4" onchange="filterProducts()">
+                        <label for="size-4">4</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-4.5" onchange="filterProducts()">
+                        <label for="size-4.5">4.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-5" onchange="filterProducts()">
+                        <label for="size-5">5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-5.5" onchange="filterProducts()">
+                        <label for="size-5.5">5.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-6" onchange="filterProducts()">
+                        <label for="size-6">6</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-6.5" onchange="filterProducts()">
+                        <label for="size-6.5">6.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-7" onchange="filterProducts()">
+                        <label for="size-7">7</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-7.5" onchange="filterProducts()">
+                        <label for="size-7.5">7.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-8" onchange="filterProducts()">
+                        <label for="size-8">8</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-8.5" onchange="filterProducts()">
+                        <label for="size-8.5">8.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-9" onchange="filterProducts()">
+                        <label for="size-9">9</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-9.5" onchange="filterProducts()">
+                        <label for="size-9.5">9.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-10" onchange="filterProducts()">
+                        <label for="size-10">10</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-10.5" onchange="filterProducts()">
+                        <label for="size-10.5">10.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-11" onchange="filterProducts()">
+                        <label for="size-11">11</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-11.5" onchange="filterProducts()">
+                        <label for="size-11.5">11.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-12" onchange="filterProducts()">
+                        <label for="size-12">12</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-12.5" onchange="filterProducts()">
+                        <label for="size-12.5">12.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-13" onchange="filterProducts()">
+                        <label for="size-13">13</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-13.5" onchange="filterProducts()">
+                        <label for="size-13.5">13.5</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="checkbox" id="size-14" onchange="filterProducts()">
+                        <label for="size-14">14</label>
+                    </div>
+                </div>
+            </div>
+            <div class="filter-section">
+                <div class="filter-title">Size</div>
                 <div class="filter-option">
-                    <input type="checkbox" id="size-5" onchange="filterProducts()">
-                    <label for="size-5">5</label>
+                    <input type="checkbox" id="X-small" onchange="filterProducts()">
+                    <label for="X-small">X-Small</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="size-5.5" onchange="filterProducts()">
-                    <label for="size-5.5">5.5</label>
+                    <input type="checkbox" id="small" onchange="filterProducts()">
+                    <label for="small">Small</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="size-6" onchange="filterProducts()">
-                    <label for="size-6">6</label>
+                    <input type="checkbox" id="medium" onchange="filterProducts()">
+                    <label for="medium">Medium</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="size-6.5" onchange="filterProducts()">
-                    <label for="size-6.5">6.5</label>
+                    <input type="checkbox" id="large" onchange="filterProducts()">
+                    <label for="large">Large</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="size-7" onchange="filterProducts()">
-                    <label for="size-7">7</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="size-7.5" onchange="filterProducts()">
-                    <label for="size-7.5">7.5</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="size-8" onchange="filterProducts()">
-                    <label for="size-8">8</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="size-9" onchange="filterProducts()">
-                    <label for="size-9">9</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="size-9.5" onchange="filterProducts()">
-                    <label for="size-9.5">9.5</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="size-10" onchange="filterProducts()">
-                    <label for="size-10">10</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="size-10.5" onchange="filterProducts()">
-                    <label for="size-10.5">10.5</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="size-11" onchange="filterProducts()">
-                    <label for="size-11">11</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="size-12" onchange="filterProducts()">
-                    <label for="size-12">12</label>
+                    <input type="checkbox" id="X-large" onchange="filterProducts()">
+                    <label for="X-large">X-Large</label>
                 </div>
             </div>
 
@@ -657,30 +682,16 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // User greeting with dropdown
+        // User greeting
         onAuthStateChanged(auth, (user) => {
-            const menuWrapper = document.getElementById('user-menu-wrapper');
-
+            const greeting = document.getElementById('user-greeting');
             if (user) {
-                // User is signed in - show dropdown menu
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-
-                // Create the dropdown menu HTML
-                menuWrapper.innerHTML = `
-                    <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
-                        <div class="dropdown-menu">
-                            <a href="watchlist.html">Watchlist</a>
-                            <a href="my-orders.html">Your Orders</a>
-                            <a href="listings-manager.html">Your Listings</a>
-                        </div>
-                    </div>
-                `;
+                greeting.textContent = `Hi, ${firstName}!`;
+                greeting.href = 'profile.html';
             } else {
-                // User is not signed in - show simple sign-in button
-                menuWrapper.innerHTML = `
-                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
-                `;
+                greeting.textContent = 'Hi! Sign in';
+                greeting.href = 'sign-in.html';
             }
         });
 
@@ -741,8 +752,7 @@
                         shipping: getShippingDisplay(data),
                         icon: getCategoryIcon(data.category),
                         images: data.images || [],
-                        sold: data.sold || false,
-                        sellerName: data.sellerName || 'Unknown Seller'
+                        sold: data.sold || false
                     });
                 });
                 
@@ -775,7 +785,7 @@
             const icons = {
                 'shoes': '👟',
                 'singlets': '🤼',
-                'jackets': '🧥',
+                'warmups': '🧥',
                 'shirts': '👕',
                 'bottoms': '🩳',
                 'accessories': '🎒',
@@ -838,7 +848,7 @@
 
             // Filter by category
             const selectedCategories = [];
-            ['shoes', 'singlets', 'jackets', 'shirts', 'bottoms'].forEach(cat => {
+            ['shoes', 'singlets', 'warmups', 'shirts', 'bottoms'].forEach(cat => {
                 if (document.getElementById(cat)?.checked) {
                     selectedCategories.push(cat);
                 }
@@ -849,7 +859,7 @@
 
             // Filter by shoe size
             const selectedSizes = [];
-            ['size-5', 'size-5.5', 'size-6', 'size-6.5', 'size-7', 'size-7.5', 'size-8', 'size-9', 'size-9.5', 'size-10', 'size-10.5', 'size-11', 'size-12'].forEach(sizeId => {
+            ['size-2', 'size-2.5', 'size-3', 'size-3.5', 'size-4', 'size-4.5', 'size-5', 'size-5.5', 'size-6', 'size-6.5', 'size-7', 'size-7.5', 'size-8', 'size-8.5', 'size-9', 'size-9.5', 'size-10', 'size-10.5', 'size-11', 'size-11.5', 'size-12', 'size-12.5', 'size-13', 'size-13.5', 'size-14'].forEach(sizeId => {
                 if (document.getElementById(sizeId)?.checked) {
                     const size = sizeId.replace('size-', '');
                     selectedSizes.push(size);
@@ -944,7 +954,7 @@
                             <div class="product-details">
                                 <div class="product-name">${product.name}</div>
                                 <div class="product-price">$${product.price.toFixed(2)}</div>
-                                <div class="product-seller">${product.sellerName}</div>
+                                <div class="seller-name">${product.sellerName}</div>
                                 <div class="product-condition">${formatCondition(product.condition)}</div>
                             </div>
                         </div>

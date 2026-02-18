@@ -288,6 +288,10 @@
         window.query = query;
         window.limit = limit;
         window.getDocs = getDocs;
+
+        // Signal that Firebase is ready
+        window.firebaseReady = true;
+        window.dispatchEvent(new Event('firebaseReady'));
     </script>
     
     <script>
@@ -599,6 +603,7 @@
         function updateWatchlistCount() {
             const watchlist = getWatchlist();
             const badge = document.getElementById('watchlist-count');
+            if (!badge) return; // Element doesn't exist on this page
             if (watchlist.length > 0) {
                 badge.textContent = watchlist.length;
                 badge.style.display = 'inline-block';
@@ -788,10 +793,19 @@
         // ============================================
         // INITIALIZE PAGE
         // ============================================
-        
-        window.addEventListener('DOMContentLoaded', function() {
+
+        function initializePage() {
             updateWatchlistCount();
             loadProductData();
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            // Check if Firebase is already ready, otherwise wait for it
+            if (window.firebaseReady) {
+                initializePage();
+            } else {
+                window.addEventListener('firebaseReady', initializePage);
+            }
         });
     </script>
 </body>

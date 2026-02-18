@@ -38,64 +38,8 @@
             margin: 0 10px;
         }
 
-        .top-bar-btn {
-            padding: 4px 16px;
-            margin: 0 5px;
-            cursor: pointer;
-            border: 0px solid #ccc;
-            background: #f7f7f7;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #000;
-        }
-
-        .top-bar-btn:hover {
-            background: #e5e5e5;
-        }
-
-        /* Dropdown Menu Styles */
-        .user-menu-container {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background-color: white;
-            border: 1px solid #e5e5e5;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            min-width: 180px;
-            margin-top: 0px;
-            z-index: 1000;
-        }
-
-        .dropdown-menu a {
-            display: block;
-            padding: 10px 16px;
-            color: #333;
-            text-decoration: none;
-            font-size: 13px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .dropdown-menu a:last-child {
-            border-bottom: none;
-        }
-
-        .dropdown-menu a:hover {
-            background-color: #f5f5f5;
-        }
-
-        .user-menu-container:hover .dropdown-menu {
-            display: block;
-        }
-
         .main-header {
-            background-color: #fff;
+            background-color: #f7f7f7;
             padding: 12px 0;
             border-bottom: 1px solid #e5e5e5;
         }
@@ -395,14 +339,13 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <span id="user-menu-wrapper">
-                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
-                </span>
-                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
+                <a href="sign-in.html" id="user-greeting">Hi! Sign in</a>
+                <a href="help.html">Help & Contact</a>
             </div>
             <div>
-                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
-                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
+                <a href="sell.html">Sell</a>
+                <a href="watchlist.html">Watchlist</a>
+                <a href="cart.html">Cart</a>
             </div>
         </div>
     </div>
@@ -561,9 +504,8 @@
                         <span style="color: #ffa500;">⚠ Not Connected</span>
                     </span>
                     <br>
-                    <a href="stripe-express-prompt.html" class="btn btn-primary" id="stripe-connect-btn" style="margin-top: 10px; display: none; text-decoration: none;">
+                    <button class="btn btn-primary" id="stripe-connect-btn" style="margin-top: 10px; display: none;">
                         Connect Stripe Account
-                    </a>
                     <button class="btn btn-secondary" id="stripe-manage-btn" style="margin-top: 10px; display: none;">
                         Manage Account
                     </button>
@@ -848,12 +790,11 @@
 
         // Check authentication and load user data
         onAuthStateChanged(auth, async (user) => {
-            const menuWrapper = document.getElementById('user-menu-wrapper');
+            const greeting = document.getElementById('user-greeting');
 
             if (!user) {
-                menuWrapper.innerHTML = `
-                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
-                `;
+                greeting.textContent = 'Hi! Sign in';
+                greeting.href = 'sign-in.html';
                 alert('Please sign in to access settings');
                 window.location.href = 'sign-in.html';
                 return;
@@ -861,18 +802,10 @@
 
             currentUser = user;
 
-            // Update greeting with dropdown
+            // Update greeting
             const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-            menuWrapper.innerHTML = `
-                <div class="user-menu-container">
-                    <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
-                    <div class="dropdown-menu">
-                        <a href="watchlist.html">Watchlist</a>
-                        <a href="my-orders.html">Your Orders</a>
-                        <a href="listings-manager.html">Your Listings</a>
-                    </div>
-                </div>
-            `;
+            greeting.textContent = `Hi, ${firstName}!`;
+            greeting.href = 'profile.html';
 
             // Display account info
             document.getElementById('user-email').textContent = user.email;
@@ -971,6 +904,13 @@
                 console.log('Error loading seller stats:', error);
             }
         }
+
+        // Connect to Stripe
+        document.getElementById('stripe-connect-btn').addEventListener('click', async function() {
+            // This would redirect to your Stripe Connect onboarding
+            // For now, we'll show an alert
+            window.location.href = 'http://localhost:3000'; // Your Stripe onboarding page
+        });
 
         // Manage Stripe account
         document.getElementById('stripe-manage-btn').addEventListener('click', function() {

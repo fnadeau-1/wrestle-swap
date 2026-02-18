@@ -1,11 +1,15 @@
 {
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
+    "@sendgrid/mail": "^8.1.6",
     "@stripe/react-stripe-js": "^5.4.0",
     "@stripe/stripe-js": "^8.5.2",
+    "@trycourier/courier": "^7.3.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "firebase": "^12.6.0",
+    "firebase-admin": "^13.6.1",
+    "firebase-functions": "^7.0.5",
     "lucide-react": "^0.562.0",
     "node-fetch": "^2.6.7",
     "shippo": "^2.15.0",

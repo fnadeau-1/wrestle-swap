@@ -11,90 +11,10 @@
             box-sizing: border-box;
         }
 
-        /* Top Bar */
-        .top-bar {
-            background-color: #f7f7f7;
-            border-bottom: 1px solid #e5e5e5;
-            padding: 8px 0;
-            font-size: 12px;
-        }
-
-        .top-bar-content {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .top-bar-btn {
-            padding: 4px 16px;
-            margin: 0 5px;
-            cursor: pointer;
-            border: 0px solid #ccc;
-            background: #f7f7f7;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #000;
-        }
-
-        .top-bar-btn:hover {
-            background: #e5e5e5;
-        }
-
-        .user-menu-container {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background-color: white;
-            border: 1px solid #e5e5e5;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            min-width: 180px;
-            margin-top: 0px;
-            z-index: 1000;
-        }
-
-        .dropdown-menu a {
-            display: block;
-            padding: 10px 16px;
-            color: #333;
-            text-decoration: none;
-            font-size: 13px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .dropdown-menu a:last-child {
-            border-bottom: none;
-        }
-
-        .dropdown-menu a:hover {
-            background-color: #f5f5f5;
-        }
-
-        .user-menu-container:hover .dropdown-menu {
-            display: block;
-        }
-
         body {
             font-family: Arial, sans-serif;
             background: #f5f5f5;
             padding-bottom: 50px;
-        }
-
-        .navbar {
-            background: linear-gradient(135deg, #c41e3a 0%, #8b1528 100%);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .logo {
@@ -119,6 +39,42 @@
 
         .nav-links a:hover {
             background: rgba(255,255,255,0.2);
+        }
+               /* Header */
+        .top-bar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 8px 0;
+            font-size: 12px;
+        }
+
+        .top-bar-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .top-bar a {
+            color: #020000;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        
+        .top-bar-btn {
+            padding: 4px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 0px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #000;
+        }
+
+        .top-bar-btn:hover {
+            background: #f0f0f0;
         }
 
         .container {
@@ -500,12 +456,13 @@
     </style>
 </head>
 <body>
-    <!-- Top Bar -->
+        <!-- Top Bar -->
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
+                <!-- User Menu Container - This will be updated by JavaScript -->
                 <span id="user-menu-wrapper">
-                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='index.html'">Home</button>
                 </span>
                 <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
             </div>
@@ -515,17 +472,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Navigation -->
-    <nav class="navbar">
-        <a href="index.html" class="logo">Wrestle Swap</a>
-        <div class="nav-links">
-            <a href="index.html">Home</a>
-            <a href="search.html">Marketplace</a>
-            <a href="listings-manager.html">My Listings</a>
-        </div>
-    </nav>
-
     <!-- Loading State -->
     <div class="loading" id="loadingState">
         <div class="spinner"></div>
@@ -638,27 +584,7 @@
 
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
-            const menuWrapper = document.getElementById('user-menu-wrapper');
-
-            if (user) {
-                // Update header with dropdown
-                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                menuWrapper.innerHTML = `
-                    <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
-                        <div class="dropdown-menu">
-                            <a href="watchlist.html">Watchlist</a>
-                            <a href="my-orders.html">Your Orders</a>
-                            <a href="listings-manager.html">Your Listings</a>
-                        </div>
-                    </div>
-                `;
-            } else {
-                menuWrapper.innerHTML = `
-                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
-                `;
-            }
-
+            
             if (!user && !profileUserId) {
                 // Not logged in and no user specified
                 window.location.href = 'sign-in.html';
@@ -689,50 +615,34 @@
                     allProducts.push({ id: doc.id, ...doc.data() });
                 });
 
-                // Fetch seller ratings for this user
-                const sellerRatingsQuery = await db.collection('sellerRatings')
-                    .where('sellerId', '==', userId)
-                    .get();
-
-                const sellerRatings = [];
-                sellerRatingsQuery.forEach(doc => {
-                    sellerRatings.push({ id: doc.id, ...doc.data() });
-                });
-
                 // Calculate stats
                 const soldProducts = allProducts.filter(p => p.sold);
                 const activeProducts = allProducts.filter(p => !p.sold && p.active);
                 
-                // Get product reviews from sold products
-                const productReviews = soldProducts
+                // Get reviews from sold products
+                const reviews = soldProducts
                     .filter(p => p.review)
                     .map(p => ({ ...p.review, productName: p.title, productId: p.id }));
 
-                // Calculate seller rating average
-                const totalSellerReviews = sellerRatings.length;
-                const averageSellerRating = totalSellerReviews > 0 
-                    ? sellerRatings.reduce((sum, r) => sum + r.rating, 0) / totalSellerReviews 
+                const totalReviews = reviews.length;
+                const averageRating = totalReviews > 0 
+                    ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews 
                     : 0;
-
-                // Use seller ratings for the profile rating display
-                const displayRating = averageSellerRating > 0 ? averageSellerRating : 0;
-                const displayReviewCount = totalSellerReviews;
 
                 // Update profile display
                 displayProfile(userId, {
                     itemsSold: soldProducts.length,
                     activeListings: activeProducts.length,
-                    totalReviews: displayReviewCount,
-                    averageRating: displayRating,
-                    reviews: productReviews,
-                    sellerRatings: sellerRatings
+                    totalReviews: totalReviews,
+                    averageRating: averageRating,
+                    reviews: reviews
                 });
 
                 // Display active products
                 displayProducts(activeProducts);
 
-                // Display reviews (now showing seller ratings instead of product reviews)
-                displaySellerReviews(sellerRatings);
+                // Display reviews
+                displayReviews(reviews);
 
                 // Hide loading, show content
                 document.getElementById('loadingState').style.display = 'none';
@@ -808,6 +718,7 @@
             if (isOwnProfile) {
                 actionButtons.innerHTML = `
                     <a href="listings-manager.html" class="btn btn-primary">View My Listings</a>
+                    <a href="my-orders.html" class="btn btn-primary">View My orders</a>
                     <a href="sell.html" class="btn btn-secondary">Add New Listing</a>
                 `;
             } else {
@@ -886,51 +797,6 @@
                         </div>
                         <p class="review-text">${review.text}</p>
                         ${review.productName ? `<p class="review-product">Product: ${review.productName}</p>` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function displaySellerReviews(sellerRatings) {
-            const container = document.getElementById('reviews-list');
-            const emptyState = document.getElementById('empty-reviews');
-
-            if (sellerRatings.length === 0) {
-                container.style.display = 'none';
-                emptyState.style.display = 'block';
-                return;
-            }
-
-            container.style.display = 'flex';
-            emptyState.style.display = 'none';
-
-            // Sort reviews by date (newest first)
-            sellerRatings.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-            container.innerHTML = sellerRatings.map(rating => {
-                const reviewDate = rating.createdAt 
-                    ? formatRelativeTime(rating.createdAt)
-                    : 'Recently';
-
-                const stars = '★'.repeat(rating.rating) + '☆'.repeat(5 - rating.rating);
-                const initial = (rating.buyerName || 'A')[0].toUpperCase();
-
-                return `
-                    <div class="review-card">
-                        <div class="review-header">
-                            <div class="reviewer-info">
-                                <div class="reviewer-avatar">${initial}</div>
-                                <div>
-                                    <div class="reviewer-name">${rating.buyerName || 'Anonymous'}</div>
-                                    <div class="review-date">${reviewDate}</div>
-                                </div>
-                            </div>
-                            <div class="review-stars">${stars}</div>
-                        </div>
-                        <p class="review-text">${rating.text || 'No written feedback provided.'}</p>
-                        <p class="review-product" style="margin-top: 8px; color: #059669; font-weight: 500;">
-                            ⭐ Seller Rating
-                        </p>
                     </div>
                 `;
             }).join('');
