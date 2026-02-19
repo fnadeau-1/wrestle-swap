@@ -288,25 +288,8 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
-    <script>
-        // Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+    <script type="module">
+        import { auth, db, onAuthStateChanged, collection, query, where, getDocs } from './js/firebase-init.js';
 
         // Get userId from URL parameter
         const urlParams = new URLSearchParams(window.location.search);
@@ -316,7 +299,7 @@
         let isOwnProfile = false;
 
         // Load profile data
-        auth.onAuthStateChanged(async (user) => {
+        onAuthStateChanged(auth, async (user) => {
             currentUser = user;
 
             if (!user && !profileUserId) {
@@ -337,12 +320,11 @@
 
         async function loadUserProfile(userId) {
             try {
-                const productsQuery = await db.collection('products')
-                    .where('userId', '==', userId)
-                    .get();
+                const q = query(collection(db, 'products'), where('userId', '==', userId));
+                const productsSnapshot = await getDocs(q);
 
                 const allProducts = [];
-                productsQuery.forEach(doc => {
+                productsSnapshot.forEach(doc => {
                     allProducts.push({ id: doc.id, ...doc.data() });
                 });
 
