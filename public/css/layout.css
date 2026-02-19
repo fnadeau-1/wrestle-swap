@@ -1,0 +1,392 @@
+/* ===========================================
+   LAYOUT - Header, Footer, Container, Nav
+   =========================================== */
+
+/* ===========================================
+   CONTAINER
+   =========================================== */
+
+.container {
+    max-width: 1280px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.container-narrow {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+/* ===========================================
+   TOP BAR
+   =========================================== */
+
+.top-bar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 8px 0;
+    font-size: 12px;
+}
+
+.top-bar.bg-gray {
+    background-color: #f7f7f7;
+}
+
+.top-bar-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.top-bar a {
+    color: #020000;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+.top-bar a:hover {
+    text-decoration: underline;
+}
+
+/* ===========================================
+   MAIN HEADER
+   =========================================== */
+
+.main-header {
+    background-color: #fff;
+    padding: 12px 0;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.main-header.bg-gray {
+    background-color: #f7f7f7;
+}
+
+.header-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: bold;
+    color: #c41e3a;
+    text-decoration: none;
+}
+
+.logo:hover {
+    text-decoration: none;
+}
+
+.logo-large {
+    font-size: 32px;
+}
+
+.search-container {
+    flex: 1;
+    display: flex;
+    gap: 10px;
+}
+
+.header-links a {
+    color: #333;
+    text-decoration: none;
+    margin-left: 20px;
+    font-size: 14px;
+}
+
+/* ===========================================
+   NAVIGATION BAR
+   =========================================== */
+
+.nav-bar {
+    background-color: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 10px 0;
+}
+
+.nav-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    gap: 24px;
+}
+
+.nav-content a {
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.nav-content a:hover {
+    color: #3665f3;
+    text-decoration: none;
+}
+
+/* ===========================================
+   BREADCRUMB
+   =========================================== */
+
+.breadcrumb {
+    background-color: #fff;
+    padding: 12px 0;
+    border-bottom: 1px solid #e5e5e5;
+    font-size: 13px;
+}
+
+.breadcrumb-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.breadcrumb a {
+    color: #3665f3;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+/* ===========================================
+   BANNER (Home page)
+   =========================================== */
+
+.banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 40px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.banner h1 {
+    font-size: 42px;
+    margin-bottom: 16px;
+    color: white;
+}
+
+.banner p {
+    font-size: 20px;
+    margin-bottom: 24px;
+}
+
+.banner-btn {
+    background-color: white;
+    color: #667eea;
+    border: none;
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.banner-btn:hover {
+    background-color: #f0f0f0;
+}
+
+/* ===========================================
+   FOOTER
+   =========================================== */
+
+.footer {
+    background-color: #fff;
+    border-top: 1px solid #e5e5e5;
+    padding: 40px 0 20px;
+    margin-top: 60px;
+}
+
+.footer-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.footer-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.footer-column h3 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.footer-column a {
+    display: block;
+    color: #707070;
+    text-decoration: none;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.footer-column a:hover {
+    color: #333;
+    text-decoration: underline;
+}
+
+.footer-bottom {
+    text-align: center;
+    color: #707070;
+    font-size: 12px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e5e5;
+}
+
+/* ===========================================
+   SIDEBAR (Search page)
+   =========================================== */
+
+.sidebar {
+    width: 260px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 4px;
+    height: fit-content;
+}
+
+.filter-section {
+    margin-bottom: 24px;
+}
+
+.filter-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.filter-option {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.filter-option input {
+    margin-right: 8px;
+}
+
+.filter-option label {
+    cursor: pointer;
+}
+
+.price-inputs {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.price-inputs input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.apply-btn {
+    background-color: #3665f3;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.apply-btn:hover {
+    background-color: #2348c5;
+}
+
+/* ===========================================
+   RESULTS AREA (Search page)
+   =========================================== */
+
+.results-area {
+    flex: 1;
+}
+
+.results-header {
+    background: #fff;
+    padding: 16px 20px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.results-count {
+    font-size: 16px;
+    color: #333;
+}
+
+.sort-by {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sort-by select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* ===========================================
+   FLEXBOX LAYOUTS
+   =========================================== */
+
+.flex-container {
+    display: flex;
+    gap: 20px;
+}
+
+/* ===========================================
+   RESPONSIVE
+   =========================================== */
+
+@media (max-width: 768px) {
+    .flex-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+
+    .banner h1 {
+        font-size: 28px;
+    }
+
+    .banner p {
+        font-size: 16px;
+    }
+
+    .header-content {
+        flex-wrap: wrap;
+    }
+
+    .search-container {
+        width: 100%;
+        order: 3;
+    }
+}

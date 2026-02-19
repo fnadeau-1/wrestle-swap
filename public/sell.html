@@ -4,119 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>List Your Wrestling Gear | Wrestle Swap</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
     <script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #ffffff;
-        }
-
-        .top-bar {
-            background-color: #ffffff;
-            border-bottom: 1px solid #e6e1e1;
-            padding: 8px 0;
-            font-size: 12px;
-        }
-
-        .top-bar-content {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-
-        .top-bar-btn {
-            padding: 8px 16px;
-            margin: 0 5px;
-            cursor: pointer;
-            border: 0px solid #ffffff;
-            background: #fff;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #000;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .top-bar-btn:hover {
-            background: #e5e5e5;
-        }
-
-        /* Dropdown Menu Styles */
-        .user-menu-container {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background-color: white;
-            border: 1px solid #e5e5e5;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            min-width: 180px;
-            margin-top: 0px;
-            z-index: 1000;
-        }
-
-        .dropdown-menu a {
-            display: block;
-            padding: 10px 16px;
-            color: #333;
-            text-decoration: none;
-            font-size: 13px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .dropdown-menu a:last-child {
-            border-bottom: none;
-        }
-
-        .dropdown-menu a:hover {
-            background-color: #f5f5f5;
-        }
-
-        .user-menu-container:hover .dropdown-menu {
-            display: block;
-        }
-
-        .main-header {
-            background-color: #fff;
-            padding: 12px 0;
-            border-bottom: 1px solid #ffffff;
-        }
-
-        .header-content {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #c41e3a;
-            text-decoration: none;
-        }
-
+        /* Page-specific styles for sell.html */
         .container {
             max-width: 900px;
-            margin: 30px auto;
-            padding: 0 20px;
         }
 
         .page-title {
@@ -195,41 +90,6 @@
             font-weight: bold;
             margin-bottom: 15px;
             color: #333;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #333;
-        }
-
-        .form-input,
-        .form-select,
-        .form-textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            font-family: Arial, sans-serif;
-        }
-
-        .form-input:focus,
-        .form-select:focus,
-        .form-textarea:focus {
-            outline: none;
-            border-color: #3665f3;
-        }
-
-        .form-textarea {
-            min-height: 120px;
-            resize: vertical;
         }
 
         .form-row {
@@ -344,39 +204,6 @@
             margin-top: 30px;
         }
 
-        .btn {
-            padding: 14px 32px;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background-color: #3665f3;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #2348c5;
-        }
-
-        .btn-primary:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        .btn-secondary {
-            background-color: #e5e5e5;
-            color: #333;
-        }
-
-        .btn-secondary:hover {
-            background-color: #d0d0d0;
-        }
-
         .helper-text {
             font-size: 12px;
             color: #707070;
@@ -385,16 +212,6 @@
 
         .required {
             color: #e53238;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .loading.active {
-            display: block;
         }
 
         .recaptcha-container {

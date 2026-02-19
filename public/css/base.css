@@ -1,0 +1,89 @@
+/* ===========================================
+   BASE STYLES - Reset, Typography, Body
+   =========================================== */
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body */
+body {
+    font-family: "Market Sans", Arial, sans-serif;
+    background-color: #f7f7f7;
+    line-height: 1.6;
+}
+
+body.bg-white {
+    background-color: #ffffff;
+}
+
+/* Typography */
+a {
+    color: #3665f3;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #333;
+    font-weight: bold;
+}
+
+/* Page titles */
+.page-title {
+    font-size: 32px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.page-subtitle {
+    font-size: 16px;
+    color: #707070;
+    margin-bottom: 30px;
+}
+
+.section-title {
+    font-size: 24px;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+/* Helper text */
+.helper-text {
+    font-size: 12px;
+    color: #707070;
+    margin-top: 5px;
+}
+
+/* Divider */
+.divider {
+    border-top: 1px solid #e5e5e5;
+    margin: 20px 0;
+}
+
+/* Text colors */
+.text-muted {
+    color: #707070;
+}
+
+.text-success {
+    color: #28a745;
+}
+
+.text-danger {
+    color: #dc3545;
+}
+
+.text-warning {
+    color: #ffa500;
+}
+
+.text-primary {
+    color: #3665f3;
+}

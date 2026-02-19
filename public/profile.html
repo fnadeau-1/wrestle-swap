@@ -4,105 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile | Wrestle Swap</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* Page-specific styles for profile.html */
         body {
-            font-family: Arial, sans-serif;
             background: #f5f5f5;
             padding-bottom: 50px;
-        }
-
-        .logo {
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            text-decoration: none;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 20px;
-        }
-
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            transition: background 0.3s;
-        }
-
-        .nav-links a:hover {
-            background: rgba(255,255,255,0.2);
-        }
-               /* Header */
-        .top-bar {
-            background-color: #ffffff;
-            border-bottom: 1px solid #e5e5e5;
-            padding: 8px 0;
-            font-size: 12px;
-        }
-
-        .top-bar-content {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .top-bar a {
-            color: #020000;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-        
-        .top-bar-btn {
-            padding: 4px 16px;
-            margin: 0 5px;
-            cursor: pointer;
-            border: 0px solid #ccc;
-            background: #fff;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #000;
-        }
-
-        .top-bar-btn:hover {
-            background: #f0f0f0;
         }
 
         .container {
             max-width: 1200px;
             margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            background: white;
-            border-radius: 12px;
-            margin: 30px auto;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #c41e3a;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
         }
 
         .profile-header {
@@ -177,22 +91,6 @@
             margin-bottom: 20px;
         }
 
-        .stars {
-            color: #ffc107;
-            font-size: 24px;
-        }
-
-        .rating-text {
-            font-size: 18px;
-            color: #333;
-            font-weight: bold;
-        }
-
-        .rating-count {
-            font-size: 14px;
-            color: #707070;
-        }
-
         .profile-bio {
             font-size: 16px;
             color: #555;
@@ -206,158 +104,13 @@
             flex-wrap: wrap;
         }
 
-        .badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .badge.verified {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .badge.trusted {
-            background: #e8f5e9;
-            color: #388e3c;
-        }
-
-        .badge.member-since {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-
         .action-buttons {
             display: flex;
             gap: 10px;
             margin-top: 20px;
         }
 
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: #3665f3;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #2348c5;
-        }
-
-        .btn-secondary {
-            background: white;
-            color: #3665f3;
-            border: 2px solid #3665f3;
-        }
-
-        .btn-secondary:hover {
-            background: #f0f0f0;
-        }
-
-        .section {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .items-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .item-card {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
-            cursor: pointer;
-        }
-
-        .item-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .item-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            background: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 60px;
-        }
-
-        .item-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .item-details {
-            padding: 15px;
-        }
-
-        .item-name {
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 8px;
-        }
-
-        .item-price {
-            font-size: 20px;
-            font-weight: bold;
-            color: #c41e3a;
-            margin-bottom: 8px;
-        }
-
-        .item-condition {
-            font-size: 13px;
-            color: #707070;
-            padding: 4px 8px;
-            background: #f5f5f5;
-            border-radius: 4px;
-            display: inline-block;
-        }
-
-        .sold-badge {
-            background: #dc2626;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-left: 8px;
-        }
-
+        /* Reviews */
         .reviews-list {
             display: flex;
             flex-direction: column;
@@ -422,18 +175,6 @@
             font-style: italic;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #707070;
-        }
-
-        .empty-icon {
-            font-size: 60px;
-            margin-bottom: 16px;
-            opacity: 0.3;
-        }
-
         @media (max-width: 768px) {
             .profile-header {
                 flex-direction: column;
@@ -445,10 +186,6 @@
                 justify-content: center;
             }
 
-            .items-grid {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            }
-
             .action-buttons {
                 flex-direction: column;
             }
@@ -456,11 +193,10 @@
     </style>
 </head>
 <body>
-        <!-- Top Bar -->
+    <!-- Top Bar -->
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <!-- User Menu Container - This will be updated by JavaScript -->
                 <span id="user-menu-wrapper">
                     <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='index.html'">Home</button>
                 </span>
@@ -472,6 +208,7 @@
             </div>
         </div>
     </div>
+
     <!-- Loading State -->
     <div class="loading" id="loadingState">
         <div class="spinner"></div>
@@ -485,11 +222,11 @@
             <div class="profile-image" id="profile-image">
                 👤
             </div>
-            
+
             <div class="profile-info">
                 <h1 class="profile-name" id="profile-name">Loading...</h1>
                 <p class="profile-username" id="profile-username">@loading</p>
-                
+
                 <div class="profile-stats">
                     <div class="stat">
                         <div class="stat-number" id="items-sold">0</div>
@@ -578,20 +315,15 @@
         let currentUser = null;
         let isOwnProfile = false;
 
-        // ============================================
-        // LOAD PROFILE DATA
-        // ============================================
-
+        // Load profile data
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
-            
+
             if (!user && !profileUserId) {
-                // Not logged in and no user specified
                 window.location.href = 'sign-in.html';
                 return;
             }
 
-            // Determine which user's profile to load
             const targetUserId = profileUserId || (user ? user.uid : null);
             isOwnProfile = user && (!profileUserId || profileUserId === user.uid);
 
@@ -605,7 +337,6 @@
 
         async function loadUserProfile(userId) {
             try {
-                // Fetch all products by this user
                 const productsQuery = await db.collection('products')
                     .where('userId', '==', userId)
                     .get();
@@ -615,21 +346,18 @@
                     allProducts.push({ id: doc.id, ...doc.data() });
                 });
 
-                // Calculate stats
                 const soldProducts = allProducts.filter(p => p.sold);
                 const activeProducts = allProducts.filter(p => !p.sold && p.active);
-                
-                // Get reviews from sold products
+
                 const reviews = soldProducts
                     .filter(p => p.review)
                     .map(p => ({ ...p.review, productName: p.title, productId: p.id }));
 
                 const totalReviews = reviews.length;
-                const averageRating = totalReviews > 0 
-                    ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews 
+                const averageRating = totalReviews > 0
+                    ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
                     : 0;
 
-                // Update profile display
                 displayProfile(userId, {
                     itemsSold: soldProducts.length,
                     activeListings: activeProducts.length,
@@ -638,13 +366,9 @@
                     reviews: reviews
                 });
 
-                // Display active products
                 displayProducts(activeProducts);
-
-                // Display reviews
                 displayReviews(reviews);
 
-                // Hide loading, show content
                 document.getElementById('loadingState').style.display = 'none';
                 document.getElementById('profileContainer').style.display = 'block';
 
@@ -655,7 +379,6 @@
         }
 
         function displayProfile(userId, stats) {
-            // Get user info from auth or construct from userId
             let displayName = 'User';
             let email = '';
             let photoURL = null;
@@ -665,13 +388,10 @@
                 email = currentUser.email;
                 photoURL = currentUser.photoURL;
             } else {
-                // For other users, we'd typically fetch from a users collection
-                // For now, use generic data
                 displayName = 'Wrestler';
                 email = 'user@example.com';
             }
 
-            // Update profile header
             document.getElementById('profile-name').textContent = displayName;
             document.getElementById('profile-username').textContent = '@' + (email.split('@')[0]);
 
@@ -682,17 +402,15 @@
                 document.getElementById('profile-image').replaceWith(imgElement);
             }
 
-            // Update stats
             document.getElementById('items-sold').textContent = stats.itemsSold;
             document.getElementById('active-listings').textContent = stats.activeListings;
             document.getElementById('total-reviews').textContent = stats.totalReviews;
 
-            // Update rating
             if (stats.totalReviews > 0) {
                 document.getElementById('rating-container').style.display = 'flex';
                 document.getElementById('rating-value').textContent = stats.averageRating.toFixed(1);
                 document.getElementById('rating-count').textContent = `(${stats.totalReviews} review${stats.totalReviews !== 1 ? 's' : ''})`;
-                
+
                 const fullStars = Math.floor(stats.averageRating);
                 const hasHalfStar = stats.averageRating % 1 >= 0.5;
                 let starsHTML = '★'.repeat(fullStars);
@@ -701,10 +419,9 @@
                 document.getElementById('rating-stars').textContent = starsHTML;
             }
 
-            // Update badges
             const badgesContainer = document.getElementById('profile-badges');
             badgesContainer.innerHTML = '';
-            
+
             if (stats.totalReviews >= 10 && stats.averageRating >= 4.5) {
                 badgesContainer.innerHTML += '<span class="badge verified">✓ Verified Seller</span>';
             }
@@ -713,7 +430,6 @@
             }
             badgesContainer.innerHTML += '<span class="badge member-since">📅 Member since 2024</span>';
 
-            // Update action buttons
             const actionButtons = document.getElementById('action-buttons');
             if (isOwnProfile) {
                 actionButtons.innerHTML = `
@@ -772,11 +488,10 @@
             container.style.display = 'flex';
             emptyState.style.display = 'none';
 
-            // Sort reviews by date (newest first)
             reviews.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
             container.innerHTML = reviews.map(review => {
-                const reviewDate = review.createdAt 
+                const reviewDate = review.createdAt
                     ? formatRelativeTime(review.createdAt)
                     : 'Recently';
 

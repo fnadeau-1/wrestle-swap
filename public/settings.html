@@ -4,310 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings | Wrestle Swap</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
+        /* Page-specific styles for settings.html */
+        .top-bar, .main-header {
             background-color: #f7f7f7;
         }
 
-        /* Header */
-        .top-bar {
-            background-color: #f7f7f7;
-            border-bottom: 1px solid #e5e5e5;
-            padding: 8px 0;
-            font-size: 12px;
-        }
-
-        .top-bar-content {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .top-bar a {
-            color: #000;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-
-        .main-header {
-            background-color: #f7f7f7;
-            padding: 12px 0;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .header-content {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #c41e3a;
-            text-decoration: none;
-        }
-
-        /* Main Content */
         .container {
             max-width: 900px;
             margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .page-title {
-            font-size: 32px;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .page-subtitle {
-            font-size: 16px;
-            color: #707070;
-            margin-bottom: 30px;
-        }
-
-        /* Settings Sections */
-        .settings-section {
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .section-title {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #333;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e5e5e5;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-size: 14px;
-            color: #707070;
-            font-weight: 500;
-        }
-
-        .info-value {
-            font-size: 14px;
-            color: #333;
-            font-weight: 600;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #333;
-        }
-
-        .form-input,
-        .form-textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            font-family: Arial, sans-serif;
-        }
-
-        .form-input:focus,
-        .form-textarea:focus {
-            outline: none;
-            border-color: #3665f3;
-        }
-
-        .form-textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .toggle-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .toggle-row:last-child {
-            border-bottom: none;
-        }
-
-        .toggle-info {
-            flex: 1;
-        }
-
-        .toggle-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-        }
-
-        .toggle-description {
-            font-size: 13px;
-            color: #707070;
-        }
-
-        /* Toggle Switch */
-        .toggle-switch {
-            position: relative;
-            width: 50px;
-            height: 26px;
-            flex-shrink: 0;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 26px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background-color: #3665f3;
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(24px);
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background-color: #3665f3;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #2348c5;
-        }
-
-        .btn-secondary {
-            background-color: #e5e5e5;
-            color: #333;
-        }
-
-        .btn-secondary:hover {
-            background-color: #d0d0d0;
-        }
-
-        .btn-danger {
-            background-color: #e53238;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: #c41e24;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .helper-text {
-            font-size: 12px;
-            color: #707070;
-            margin-top: 5px;
-        }
-
-        .success-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .warning-box {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-        }
-
-        .warning-box p {
-            margin: 0;
-            color: #856404;
-            font-size: 14px;
         }
 
         /* Username status styles */
@@ -319,18 +27,6 @@
         }
         #username-status.error {
             color: #dc3545;
-        }
-
-        @media (max-width: 768px) {
-            .info-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
         }
     </style>
 </head>
@@ -506,6 +202,7 @@
                     <br>
                     <button class="btn btn-primary" id="stripe-connect-btn" style="margin-top: 10px; display: none;">
                         Connect Stripe Account
+                    </button>
                     <button class="btn btn-secondary" id="stripe-manage-btn" style="margin-top: 10px; display: none;">
                         Manage Account
                     </button>
@@ -697,7 +394,6 @@
         import { getAuth, onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
             authDomain: "wrestleswap.firebaseapp.com",
@@ -708,28 +404,21 @@
             measurementId: "G-B411WXLF3J"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         let currentUser = null;
-        let currentUsername = null; // Store the user's current username
+        let currentUsername = null;
         let usernameCheckTimeout;
         let isUsernameAvailable = true;
 
-        // Check if username is available (uses 'usernames' collection like sign-in.html)
         async function checkUsernameAvailable(username, currentUserId) {
             try {
-                // Check the usernames collection (same as sign-in.html)
                 const usernameDoc = await getDoc(doc(db, 'usernames', username.toLowerCase()));
-
-                // If document doesn't exist, username is available
                 if (!usernameDoc.exists()) {
                     return true;
                 }
-
-                // If it exists, check if it belongs to the current user (they can keep their own username)
                 const data = usernameDoc.data();
                 return data.userId === currentUserId;
             } catch (error) {
@@ -738,15 +427,12 @@
             }
         }
 
-        // Setup username input listener
         document.getElementById('username').addEventListener('input', function(e) {
             const username = e.target.value.toLowerCase();
             const statusDiv = document.getElementById('username-status');
 
-            // Clear previous timeout
             clearTimeout(usernameCheckTimeout);
 
-            // If empty, clear status
             if (!username) {
                 statusDiv.textContent = '';
                 statusDiv.className = '';
@@ -754,11 +440,9 @@
                 return;
             }
 
-            // Show checking status
             statusDiv.textContent = 'Checking...';
             statusDiv.className = 'checking';
 
-            // Wait for user to stop typing (debounce)
             usernameCheckTimeout = setTimeout(async () => {
                 if (username.length < 3) {
                     statusDiv.textContent = 'Username must be at least 3 characters';
@@ -767,7 +451,6 @@
                     return;
                 }
 
-                // Check for invalid characters (only allow letters, numbers, underscores)
                 if (!/^[a-z0-9_]+$/.test(username)) {
                     statusDiv.textContent = 'Only letters, numbers, and underscores allowed';
                     statusDiv.className = 'error';
@@ -785,10 +468,9 @@
                     statusDiv.textContent = '✗ Already taken';
                     statusDiv.className = 'error';
                 }
-            }, 500); // Wait 500ms after user stops typing
+            }, 500);
         });
 
-        // Check authentication and load user data
         onAuthStateChanged(auth, async (user) => {
             const greeting = document.getElementById('user-greeting');
 
@@ -802,46 +484,39 @@
 
             currentUser = user;
 
-            // Update greeting
             const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
             greeting.textContent = `Hi, ${firstName}!`;
             greeting.href = 'profile.html';
 
-            // Display account info
             document.getElementById('user-email').textContent = user.email;
 
-            // Format member since date
             const memberSince = new Date(user.metadata.creationTime);
-            document.getElementById('member-since').textContent = memberSince.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+            document.getElementById('member-since').textContent = memberSince.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
 
-            // Load profile data from Firestore
             try {
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
-                    
-                    // Profile data
+
                     document.getElementById('username').value = userData.username || '';
                     currentUsername = userData.username || '';
                     if (currentUsername) {
-                        isUsernameAvailable = true; // Their current username is valid
+                        isUsernameAvailable = true;
                     }
                     document.getElementById('display-name').value = userData.displayName || '';
                     document.getElementById('location').value = userData.location || '';
                     document.getElementById('bio').value = userData.bio || '';
 
-                    // Stripe account status
                     if (userData.stripeAccountId) {
                         document.getElementById('stripe-status').innerHTML = '<span style="color: #28a745;">✓ Connected</span>';
                         document.getElementById('stripe-account-id').textContent = userData.stripeAccountId;
                         document.getElementById('stripe-manage-btn').style.display = 'inline-block';
                         document.getElementById('stripe-warning').style.display = 'none';
-                        
-                        // Show payout/charge status if available
+
                         if (userData.stripePayoutsEnabled) {
                             document.getElementById('payouts-enabled').innerHTML = '<span style="color: #28a745;">✓ Yes</span>';
                         }
@@ -853,7 +528,6 @@
                         document.getElementById('stripe-warning').style.display = 'block';
                     }
 
-                    // Seller preferences
                     if (userData.sellerSettings) {
                         document.getElementById('auto-respond').checked = userData.sellerSettings.autoRespond || false;
                         document.getElementById('vacation-mode').checked = userData.sellerSettings.vacationMode || false;
@@ -863,7 +537,6 @@
                         document.getElementById('auto-response-message').value = userData.sellerSettings.autoResponseMessage || '';
                     }
 
-                    // Load seller stats
                     await loadSellerStats(user.uid);
                 }
             } catch (error) {
@@ -871,13 +544,11 @@
             }
         });
 
-        // Load seller statistics
         async function loadSellerStats(userId) {
             try {
-                // Get user's listings
                 const listingsQuery = query(collection(db, 'listings'), where('sellerId', '==', userId));
                 const listingsSnapshot = await getDocs(listingsQuery);
-                
+
                 let totalListings = 0;
                 let activeListings = 0;
                 let soldItems = 0;
@@ -886,7 +557,7 @@
                 listingsSnapshot.forEach((doc) => {
                     const listing = doc.data();
                     totalListings++;
-                    
+
                     if (listing.status === 'active') {
                         activeListings++;
                     } else if (listing.status === 'sold') {
@@ -905,20 +576,14 @@
             }
         }
 
-        // Connect to Stripe
         document.getElementById('stripe-connect-btn').addEventListener('click', async function() {
-            // This would redirect to your Stripe Connect onboarding
-            // For now, we'll show an alert
-            window.location.href = 'http://localhost:3000'; // Your Stripe onboarding page
+            window.location.href = 'http://localhost:3000';
         });
 
-        // Manage Stripe account
         document.getElementById('stripe-manage-btn').addEventListener('click', function() {
-            // This would open Stripe Express dashboard
             alert('This would open your Stripe Express dashboard where you can manage your account, view payouts, and update banking information.');
         });
 
-        // Save profile
         document.getElementById('profile-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -928,7 +593,6 @@
             const bio = document.getElementById('bio').value;
             const errorMsg = document.getElementById('profile-error');
 
-            // Validate username
             if (!username) {
                 errorMsg.textContent = 'Username is required';
                 errorMsg.style.display = 'block';
@@ -947,7 +611,6 @@
                 return;
             }
 
-            // Check availability one more time before saving (in case someone took it)
             const available = await checkUsernameAvailable(username, currentUser.uid);
             if (!available) {
                 errorMsg.textContent = 'Username is already taken. Please choose another.';
@@ -958,21 +621,17 @@
             }
 
             try {
-                // If username changed, update the usernames collection
                 if (username !== currentUsername) {
-                    // Delete old username reservation (if exists)
                     if (currentUsername) {
                         await deleteDoc(doc(db, 'usernames', currentUsername));
                     }
 
-                    // Reserve new username
                     await setDoc(doc(db, 'usernames', username), {
                         userId: currentUser.uid,
                         createdAt: new Date().toISOString()
                     });
                 }
 
-                // Update user profile
                 await setDoc(doc(db, 'users', currentUser.uid), {
                     username: username,
                     displayName: displayName,
@@ -982,10 +641,8 @@
                     updatedAt: serverTimestamp()
                 }, { merge: true });
 
-                // Update stored username
                 currentUsername = username;
 
-                // Show success
                 errorMsg.style.display = 'none';
                 const successMsg = document.getElementById('profile-success');
                 successMsg.style.display = 'block';
@@ -999,7 +656,6 @@
             }
         });
 
-        // Save seller settings
         document.getElementById('save-seller-settings').addEventListener('click', async function() {
             try {
                 const sellerSettings = {
@@ -1016,7 +672,6 @@
                     updatedAt: serverTimestamp()
                 }, { merge: true });
 
-                // Show success
                 const successMsg = document.getElementById('seller-success');
                 successMsg.style.display = 'block';
                 setTimeout(() => {
@@ -1030,7 +685,6 @@
             }
         });
 
-        // Change password
         document.getElementById('password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -1038,7 +692,6 @@
             const newPassword = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
 
-            // Validate
             if (newPassword.length < 6) {
                 const errorMsg = document.getElementById('password-error');
                 errorMsg.textContent = 'New password must be at least 6 characters';
@@ -1054,18 +707,15 @@
             }
 
             try {
-                // Re-authenticate user
                 const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
                 await reauthenticateWithCredential(currentUser, credential);
 
-                // Update password
                 await updatePassword(currentUser, newPassword);
 
-                // Show success
                 const successMsg = document.getElementById('password-success');
                 successMsg.style.display = 'block';
                 document.getElementById('password-form').reset();
-                
+
                 setTimeout(() => {
                     successMsg.style.display = 'none';
                 }, 3000);
@@ -1081,7 +731,6 @@
             }
         });
 
-        // Make functions global
         window.signOutUser = async function() {
             if (confirm('Are you sure you want to sign out?')) {
                 try {

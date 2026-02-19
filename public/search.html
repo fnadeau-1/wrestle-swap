@@ -4,153 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search Results | Wrestle Swap</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
+        /* Page-specific styles for search.html */
+        .top-bar, .main-header {
             background-color: #f7f7f7;
         }
 
-        /* Header */
-        .top-bar {
-            background-color: #f7f7f7;
-            border-bottom: 1px solid #e5e5e5;
-            padding: 8px 0;
-            font-size: 12px;
+        .top-bar-btn {
+            background: #f7f7f7;
         }
 
-        .top-bar-content {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
+        .top-bar-btn:hover {
+            background: #e5e5e5;
         }
 
-        .top-bar a {
-            color: #000;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-
-        .main-header {
-            background-color: #fff;
-            padding: 12px 0;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .header-content {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #c41e3a;
-            text-decoration: none;
-        }
-
-        .search-container {
-            flex: 1;
-            display: flex;
-            gap: 10px;
-        }
-
-        .search-box {
-            flex: 1;
-            display: flex;
-            border: 2px solid #3665f3;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            outline: none;
-            font-size: 14px;
-        }
-
-        .search-btn {
-            background-color: #3665f3;
-            color: white;
-            border: none;
-            padding: 0 24px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        /* Breadcrumb */
-        .breadcrumb {
-            background-color: #fff;
-            padding: 12px 0;
-            border-bottom: 1px solid #e5e5e5;
-            font-size: 13px;
-        }
-
-        .breadcrumb-content {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .breadcrumb a {
-            color: #3665f3;
-            text-decoration: none;
-        }
-
-        /* Main Content */
         .container {
-            max-width: 1280px;
-            margin: 20px auto;
-            padding: 0 20px;
             display: flex;
             gap: 20px;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 260px;
-            background: #fff;
-            padding: 20px;
-            border-radius: 4px;
-            height: fit-content;
-        }
-
-        .filter-section {
-            margin-bottom: 24px;
-        }
-
-        .filter-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .filter-option {
-            margin: 8px 0;
-            font-size: 14px;
-        }
-
-        .filter-option input {
-            margin-right: 8px;
-        }
-
-        .filter-option label {
-            cursor: pointer;
         }
 
         .size-grid {
@@ -163,72 +36,7 @@
             margin: 4px 0;
         }
 
-        .price-inputs {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .price-inputs input {
-            width: 100%;
-            padding: 6px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .apply-btn {
-            background-color: #3665f3;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 8px;
-            font-size: 13px;
-        }
-
-        /* Results Area */
-        .results-area {
-            flex: 1;
-        }
-
-        .results-header {
-            background: #fff;
-            padding: 16px 20px;
-            border-radius: 4px;
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .results-count {
-            font-size: 16px;
-            color: #333;
-        }
-
-        .sort-by {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .sort-by select {
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        /* Product Grid */
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 16px;
-        }
-
+        /* Product item for search results */
         .product-item {
             background: #fff;
             border: 1px solid #e5e5e5;
@@ -245,19 +53,6 @@
 
         .product-item.sold {
             opacity: 0.7;
-        }
-
-        .sold-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #dc2626;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            z-index: 10;
         }
 
         .product-img {
@@ -288,72 +83,6 @@
             height: 40px;
             overflow: hidden;
             line-height: 1.4;
-        }
-
-        .product-price {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 4px;
-        }
-
-        .product-seller {
-            font-size: 12px;
-            color: #707070;
-        }
-
-        .product-condition {
-            font-size: 12px;
-            color: #707070;
-            margin-top: 4px;
-        }
-
-        /* Loading */
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            background: #fff;
-            border-radius: 8px;
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3665f3;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* No Results */
-        .no-results {
-            background: #fff;
-            padding: 60px 40px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .no-results-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-            opacity: 0.3;
-        }
-
-        .no-results-title {
-            font-size: 24px;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .no-results-text {
-            font-size: 16px;
-            color: #707070;
-            margin-bottom: 20px;
         }
 
         .no-results-suggestions {
@@ -443,152 +172,51 @@
             <div class="filter-section" id="size-filter" style="display: none;">
                 <div class="filter-title">Shoe Size</div>
                 <div class="size-grid">
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-2" onchange="filterProducts()">
-                        <label for="size-2">2</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-2.5" onchange="filterProducts()">
-                        <label for="size-2.5">2.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-3" onchange="filterProducts()">
-                        <label for="size-3">3</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-3.5" onchange="filterProducts()">
-                        <label for="size-3.5">3.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-4" onchange="filterProducts()">
-                        <label for="size-4">4</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-4.5" onchange="filterProducts()">
-                        <label for="size-4.5">4.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-5" onchange="filterProducts()">
-                        <label for="size-5">5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-5.5" onchange="filterProducts()">
-                        <label for="size-5.5">5.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-6" onchange="filterProducts()">
-                        <label for="size-6">6</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-6.5" onchange="filterProducts()">
-                        <label for="size-6.5">6.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-7" onchange="filterProducts()">
-                        <label for="size-7">7</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-7.5" onchange="filterProducts()">
-                        <label for="size-7.5">7.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-8" onchange="filterProducts()">
-                        <label for="size-8">8</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-8.5" onchange="filterProducts()">
-                        <label for="size-8.5">8.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-9" onchange="filterProducts()">
-                        <label for="size-9">9</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-9.5" onchange="filterProducts()">
-                        <label for="size-9.5">9.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-10" onchange="filterProducts()">
-                        <label for="size-10">10</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-10.5" onchange="filterProducts()">
-                        <label for="size-10.5">10.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-11" onchange="filterProducts()">
-                        <label for="size-11">11</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-11.5" onchange="filterProducts()">
-                        <label for="size-11.5">11.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-12" onchange="filterProducts()">
-                        <label for="size-12">12</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-12.5" onchange="filterProducts()">
-                        <label for="size-12.5">12.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-13" onchange="filterProducts()">
-                        <label for="size-13">13</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-13.5" onchange="filterProducts()">
-                        <label for="size-13.5">13.5</label>
-                    </div>
-                    <div class="filter-option">
-                        <input type="checkbox" id="size-14" onchange="filterProducts()">
-                        <label for="size-14">14</label>
-                    </div>
-                </div>
-            </div>
-            <div class="filter-section">
-                <div class="filter-title">Size</div>
-                <div class="filter-option">
-                    <input type="checkbox" id="X-small" onchange="filterProducts()">
-                    <label for="X-small">X-Small</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="small" onchange="filterProducts()">
-                    <label for="small">Small</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="medium" onchange="filterProducts()">
-                    <label for="medium">Medium</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="large" onchange="filterProducts()">
-                    <label for="large">Large</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="X-large" onchange="filterProducts()">
-                    <label for="X-large">X-Large</label>
+                    <div class="filter-option"><input type="checkbox" id="size-2" onchange="filterProducts()"><label for="size-2">2</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-2.5" onchange="filterProducts()"><label for="size-2.5">2.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-3" onchange="filterProducts()"><label for="size-3">3</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-3.5" onchange="filterProducts()"><label for="size-3.5">3.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-4" onchange="filterProducts()"><label for="size-4">4</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-4.5" onchange="filterProducts()"><label for="size-4.5">4.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-5" onchange="filterProducts()"><label for="size-5">5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-5.5" onchange="filterProducts()"><label for="size-5.5">5.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-6" onchange="filterProducts()"><label for="size-6">6</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-6.5" onchange="filterProducts()"><label for="size-6.5">6.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-7" onchange="filterProducts()"><label for="size-7">7</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-7.5" onchange="filterProducts()"><label for="size-7.5">7.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-8" onchange="filterProducts()"><label for="size-8">8</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-8.5" onchange="filterProducts()"><label for="size-8.5">8.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-9" onchange="filterProducts()"><label for="size-9">9</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-9.5" onchange="filterProducts()"><label for="size-9.5">9.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-10" onchange="filterProducts()"><label for="size-10">10</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-10.5" onchange="filterProducts()"><label for="size-10.5">10.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-11" onchange="filterProducts()"><label for="size-11">11</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-11.5" onchange="filterProducts()"><label for="size-11.5">11.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-12" onchange="filterProducts()"><label for="size-12">12</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-12.5" onchange="filterProducts()"><label for="size-12.5">12.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-13" onchange="filterProducts()"><label for="size-13">13</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-13.5" onchange="filterProducts()"><label for="size-13.5">13.5</label></div>
+                    <div class="filter-option"><input type="checkbox" id="size-14" onchange="filterProducts()"><label for="size-14">14</label></div>
                 </div>
             </div>
 
             <div class="filter-section">
-                <div class="filter-title">Condition</div>
-                <div class="filter-option">
-                    <input type="checkbox" id="new" onchange="filterProducts()">
-                    <label for="new">New</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="likenew" onchange="filterProducts()">
-                    <label for="likenew">Used - Like New</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="good" onchange="filterProducts()">
-                    <label for="good">Used - Good</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="Fair" onchange="filterProducts()">
-                    <label for="Fair">Used - Fair</label>
-                </div>
+                <div class="filter-title">Size</div>
+                <div class="filter-option"><input type="checkbox" id="X-small" onchange="filterProducts()"><label for="X-small">X-Small</label></div>
+                <div class="filter-option"><input type="checkbox" id="small" onchange="filterProducts()"><label for="small">Small</label></div>
+                <div class="filter-option"><input type="checkbox" id="medium" onchange="filterProducts()"><label for="medium">Medium</label></div>
+                <div class="filter-option"><input type="checkbox" id="large" onchange="filterProducts()"><label for="large">Large</label></div>
+                <div class="filter-option"><input type="checkbox" id="X-large" onchange="filterProducts()"><label for="X-large">X-Large</label></div>
             </div>
-            
+
+            <div class="filter-section">
+                <div class="filter-title">Condition</div>
+                <div class="filter-option"><input type="checkbox" id="new" onchange="filterProducts()"><label for="new">New</label></div>
+                <div class="filter-option"><input type="checkbox" id="likenew" onchange="filterProducts()"><label for="likenew">Used - Like New</label></div>
+                <div class="filter-option"><input type="checkbox" id="good" onchange="filterProducts()"><label for="good">Used - Good</label></div>
+                <div class="filter-option"><input type="checkbox" id="Fair" onchange="filterProducts()"><label for="Fair">Used - Fair</label></div>
+            </div>
+
             <div class="filter-section">
                 <div class="filter-title">Price</div>
                 <div class="price-inputs">
@@ -600,22 +228,10 @@
 
             <div class="filter-section">
                 <div class="filter-title">Brand</div>
-                <div class="filter-option">
-                    <input type="checkbox" id="asics" onchange="filterProducts()">
-                    <label for="asics">ASICS</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="adidas" onchange="filterProducts()">
-                    <label for="adidas">Adidas</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="nike" onchange="filterProducts()">
-                    <label for="nike">Nike</label>
-                </div>
-                <div class="filter-option">
-                    <input type="checkbox" id="rudis" onchange="filterProducts()">
-                    <label for="rudis">Rudis</label>
-                </div>
+                <div class="filter-option"><input type="checkbox" id="asics" onchange="filterProducts()"><label for="asics">ASICS</label></div>
+                <div class="filter-option"><input type="checkbox" id="adidas" onchange="filterProducts()"><label for="adidas">Adidas</label></div>
+                <div class="filter-option"><input type="checkbox" id="nike" onchange="filterProducts()"><label for="nike">Nike</label></div>
+                <div class="filter-option"><input type="checkbox" id="rudis" onchange="filterProducts()"><label for="rudis">Rudis</label></div>
             </div>
         </aside>
 
@@ -720,27 +336,25 @@
         async function loadProductsFromFirestore() {
             try {
                 console.log('Loading products from Firestore...');
-                
+
                 // Get only active products
                 const q = window.query(
                     window.collection(window.firestoreDB, 'products'),
                     window.where('active', '==', true)
                 );
-                
+
                 const querySnapshot = await window.getDocs(q);
-                
+
                 allProducts = [];
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    
-                    // Skip sold products - don't show them in search results at all
+
+                    // Skip sold products
                     if (data.sold === true) {
                         console.log('Skipping sold product:', data.title);
                         return;
                     }
-                    
-                    console.log('Product loaded:', data.title, 'Active:', data.active);
-                    
+
                     allProducts.push({
                         id: doc.id,
                         name: data.title,
@@ -755,19 +369,19 @@
                         sold: data.sold || false
                     });
                 });
-                
+
                 console.log(`Loaded ${allProducts.length} available products from Firestore`);
                 currentProducts = [...allProducts];
-                
+
                 // Hide loading, show content
                 document.getElementById('loading-state').style.display = 'none';
                 document.getElementById('results-header').style.display = 'flex';
-                
+
                 filterProducts();
-                
+
             } catch (error) {
                 console.error('Error loading products:', error);
-                document.getElementById('loading-state').innerHTML = 
+                document.getElementById('loading-state').innerHTML =
                     '<p style="color: #dc2626;">Error loading products. Please refresh the page.</p>';
             }
         }
@@ -800,7 +414,7 @@
             document.getElementById('search-input').value = searchQuery;
             document.getElementById('search-query-breadcrumb').textContent = searchQuery ? `"${searchQuery}"` : 'All Items';
             document.getElementById('no-results-query').textContent = searchQuery;
-            
+
             // Load products from Firestore
             loadProductsFromFirestore();
         }
@@ -817,7 +431,7 @@
         function toggleSizeFilter() {
             const shoesChecked = document.getElementById('shoes')?.checked;
             const sizeFilter = document.getElementById('size-filter');
-            
+
             if (shoesChecked) {
                 sizeFilter.style.display = 'block';
             } else {
@@ -841,7 +455,7 @@
 
             // Filter by search query
             if (searchQuery) {
-                filtered = filtered.filter(p => 
+                filtered = filtered.filter(p =>
                     p.name.toLowerCase().includes(searchQuery.toLowerCase())
                 );
             }
@@ -943,10 +557,10 @@
                     const imageDisplay = product.images && product.images.length > 0
                         ? `<img src="${product.images[0]}" alt="${product.name}">`
                         : product.icon;
-                    
+
                     const soldClass = product.sold ? 'sold' : '';
                     const soldBadge = product.sold ? '<div class="sold-badge">SOLD</div>' : '';
-                    
+
                     return `
                         <div class="product-item ${soldClass}" onclick="window.location.href='productdetail.html?id=${product.id}'">
                             ${soldBadge}

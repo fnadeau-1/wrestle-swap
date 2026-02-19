@@ -4,39 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout | Wrestle Swap</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* Page-specific styles for checkout.html */
         body {
-            font-family: Arial, sans-serif;
             background-color: #f7f7f7;
         }
 
         .top-bar {
-            background-color: #ffffff;
-            border-bottom: 1px solid #e5e5e5;
             padding: 12px 0;
         }
 
         .header-content {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
             justify-content: space-between;
-        }
-
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #c41e3a;
-            text-decoration: none;
         }
 
         .secure-badge {
@@ -50,7 +33,6 @@
         .container {
             max-width: 1200px;
             margin: 40px auto;
-            padding: 0 20px;
             display: grid;
             grid-template-columns: 1fr 450px;
             gap: 30px;
@@ -71,31 +53,6 @@
             border-bottom: 2px solid #e5e5e5;
         }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #333;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #3665f3;
-        }
-
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -104,22 +61,6 @@
 
         .required {
             color: #e53238;
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3665f3;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 8px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         .info-message {
@@ -309,7 +250,7 @@
             border-top: 1px solid #e5e5e5;
         }
 
-        .badge {
+        .checkout-badge {
             font-size: 12px;
             color: #707070;
             display: flex;
@@ -616,10 +557,10 @@
                     </form>
 
                     <div class="security-badges">
-                        <div class="badge">🔒 SSL Encrypted</div>
-                        <div class="badge">💳 Stripe Secure</div>
-                        <div class="badge">✅ PCI Compliant</div>
-                        <div class="badge">📦 Shippo Shipping</div>
+                        <div class="checkout-badge">🔒 SSL Encrypted</div>
+                        <div class="checkout-badge">💳 Stripe Secure</div>
+                        <div class="checkout-badge">✅ PCI Compliant</div>
+                        <div class="checkout-badge">📦 Shippo Shipping</div>
                     </div>
                 </div>
 

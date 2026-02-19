@@ -4,124 +4,355 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Details | Wrestle Swap</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background-color: #f7f7f7; }
-        .top-bar { background-color: #f7f7f7; border-bottom: 1px solid #e5e5e5; padding: 8px 0; font-size: 12px; }
-        .top-bar-content { max-width: 1280px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; }
-        .top-bar a { color: #000; text-decoration: none; margin: 0 10px; }
-        .top-bar-btn { padding: 4px 16px; margin: 0 5px; cursor: pointer; border: 0px solid #ccc; background: #f7f7f7; border-radius: 4px; font-size: 12px; color: #000; }
-        .top-bar-btn:hover { background: #e5e5e5; }
-        .user-menu-container { position: relative; display: inline-block; }
-        .dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background-color: white; border: 1px solid #e5e5e5; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 180px; margin-top: 0px; z-index: 1000; }
-        .dropdown-menu a { display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
-        .dropdown-menu a:last-child { border-bottom: none; }
-        .dropdown-menu a:hover { background-color: #f5f5f5; }
-        .user-menu-container:hover .dropdown-menu { display: block; }
-        .main-header { background-color: #fff; padding: 12px 0; border-bottom: 1px solid #e5e5e5; }
-        .header-content { max-width: 1280px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; gap: 20px; }
-        .logo { font-size: 28px; font-weight: bold; color: #c41e3a; text-decoration: none; }
-        .breadcrumb { background-color: #fff; padding: 12px 0; border-bottom: 1px solid #e5e5e5; font-size: 13px; }
-        .breadcrumb-content { max-width: 1280px; margin: 0 auto; padding: 0 20px; }
-        .breadcrumb a { color: #3665f3; text-decoration: none; }
-        .container { max-width: 1280px; margin: 30px auto; padding: 0 20px; }
-        .product-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; background: #fff; padding: 30px; border-radius: 8px; }
-        .image-gallery { display: flex; flex-direction: column; gap: 15px; }
-        .main-image-container { 
-            width: 100%; 
-            height: 500px; 
-            background: #f0f0f0; 
-            border-radius: 8px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            overflow: hidden; 
-            border: 1px solid #e5e5e5; 
+        /* Page-specific styles for productdetail.html */
+        .top-bar-btn {
+            background: #f7f7f7;
         }
 
-        .main-image { 
-            max-width: 100%; 
-            max-height: 100%; 
-            object-fit: contain; 
+        .top-bar-btn:hover {
+            background: #e5e5e5;
         }
 
-        .main-image img { 
-            max-width: 100%; 
-            max-height: 100%; 
-            object-fit: contain; 
+        .product-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+        }
+
+        .image-gallery {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .main-image-container {
+            width: 100%;
+            height: 500px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid #e5e5e5;
+        }
+
+        .main-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .main-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
             display: block;
         }
-        .main-image.emoji { font-size: 200px; cursor: zoom-in; }
-        .thumbnail-container { display: flex; gap: 10px; overflow-x: auto; }
-        .thumbnail { width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; overflow: hidden; }
-        .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
-        .thumbnail.emoji { font-size: 32px; }
-        .thumbnail.active { border-color: #3665f3; }
-        .thumbnail:hover { border-color: #3665f3; }
-        .product-info { display: flex; flex-direction: column; }
-        .product-title { font-size: 28px; margin-bottom: 10px; color: #333; }
-        .product-condition { font-size: 14px; color: #707070; margin-bottom: 5px; }
-        .product-rating { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .stars { color: #ffa500; font-size: 16px; }
-        .rating-count { color: #3665f3; font-size: 14px; text-decoration: none; }
-        .rating-count:hover { text-decoration: underline; }
-        .divider { border-top: 1px solid #e5e5e5; margin: 20px 0; }
-        .price-section { margin-bottom: 25px; }
-        .price { font-size: 36px; font-weight: bold; color: #333; margin-bottom: 5px; }
-        .shipping { font-size: 14px; color: #28a745; font-weight: 500; }
-        .option-section { margin-bottom: 25px; }
-        .option-label { font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #333; }
-        .action-buttons { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
-        .btn { padding: 16px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
-        .btn-primary { background-color: #3665f3; color: white; }
-        .btn-primary:hover { background-color: #2348c5; }
-        .btn-secondary { background-color: #fff; color: #333; border: 2px solid #333; }
-        .btn-secondary:hover { background-color: #f0f0f0; }
-        .wishlist-btn { display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .wishlist-btn.in-watchlist { background-color: #e3f2fd; border-color: #3665f3; color: #3665f3; }
-        .details-section { margin-top: 25px; }
-        .details-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; }
-        .details-grid { display: grid; grid-template-columns: 150px 1fr; gap: 12px; font-size: 14px; }
-        .detail-label { color: #707070; }
-        .detail-value { color: #333; font-weight: 500; }
-        .description { line-height: 1.6; color: #333; margin-top: 15px; white-space: pre-wrap; }
-        .seller-section { background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 25px; }
-        .seller-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .seller-name { font-size: 16px; font-weight: bold; color: #333; }
-        .seller-rating { font-size: 14px; color: #28a745; }
-        .contact-seller-btn { width: 100%; padding: 12px; background: #fff; border: 2px solid #3665f3; color: #3665f3; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        .contact-seller-btn:hover { background: #e3f2fd; }
-        .related-section { margin-top: 60px; }
-        .section-title { font-size: 24px; font-weight: bold; margin-bottom: 25px; color: #333; }
-        .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
-        .related-item { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; cursor: pointer; transition: box-shadow 0.2s; }
-        .related-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .related-image { width: 100%; height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
-        .related-image img { width: 100%; height: 100%; object-fit: cover; }
-        .related-image.emoji { font-size: 60px; }
-        .related-info { padding: 15px; }
-        .related-name { font-size: 14px; color: #333; margin-bottom: 8px; height: 40px; overflow: hidden; }
-        .related-price { font-size: 18px; font-weight: bold; color: #333; }
-        .toast { position: fixed; bottom: 30px; right: 30px; background: #333; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; animation: slideIn 0.3s ease-out; display: flex; align-items: center; gap: 12px; max-width: 400px; }
-        .toast.success { background: #28a745; }
-        .toast.error { background: #dc3545; }
-        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
-        .toast.hiding { animation: slideOut 0.3s ease-out forwards; }
-        .cart-badge { display: inline-block; background: #c41e3a; color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; font-weight: bold; margin-left: 4px; }
-        .shipping-rate { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; background: white; border: 2px solid #e5e5e5; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-        .shipping-rate:hover { border-color: #3665f3; background: #f8f9ff; }
-        .shipping-rate.selected { border-color: #3665f3; background: #e3f2fd; }
-        .shipping-rate-info { flex: 1; }
-        .shipping-rate-name { font-weight: bold; font-size: 14px; color: #333; margin-bottom: 3px; }
-        .shipping-rate-details { font-size: 12px; color: #707070; }
-        .shipping-rate-price { font-size: 18px; font-weight: bold; color: #3665f3; }
-        .shipping-loading { text-align: center; padding: 20px; color: #707070; }
-        .shipping-error { padding: 12px; background: #fee; border: 1px solid #fcc; border-radius: 4px; color: #c00; font-size: 13px; }
-        .loading { text-align: center; padding: 50px; font-size: 20px; color: #707070; }
-        .error-message { text-align: center; padding: 50px; font-size: 18px; color: #c00; }
-        .sold-badge { background: #dc3545; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; font-weight: bold; margin-bottom: 15px; }
-        @media (max-width: 968px) { .product-layout { grid-template-columns: 1fr; } .main-image-container { height: 400px; } .toast { bottom: 20px; right: 20px; left: 20px; max-width: none; } }
+
+        .main-image.emoji {
+            font-size: 200px;
+            cursor: zoom-in;
+        }
+
+        .thumbnail-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+        }
+
+        .thumbnail {
+            width: 80px;
+            height: 80px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .thumbnail.emoji {
+            font-size: 32px;
+        }
+
+        .thumbnail.active,
+        .thumbnail:hover {
+            border-color: #3665f3;
+        }
+
+        .product-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .price-section {
+            margin-bottom: 25px;
+        }
+
+        .price {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .shipping {
+            font-size: 14px;
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .option-section {
+            margin-bottom: 25px;
+        }
+
+        .option-label {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .wishlist-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .wishlist-btn.in-watchlist {
+            background-color: #e3f2fd;
+            border-color: #3665f3;
+            color: #3665f3;
+        }
+
+        .details-section {
+            margin-top: 25px;
+        }
+
+        .details-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .detail-label {
+            color: #707070;
+        }
+
+        .detail-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .description {
+            line-height: 1.6;
+            color: #333;
+            margin-top: 15px;
+            white-space: pre-wrap;
+        }
+
+        .seller-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 25px;
+        }
+
+        .seller-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .seller-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .seller-rating {
+            font-size: 14px;
+            color: #28a745;
+        }
+
+        .contact-seller-btn {
+            width: 100%;
+            padding: 12px;
+            background: #fff;
+            border: 2px solid #3665f3;
+            color: #3665f3;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .contact-seller-btn:hover {
+            background: #e3f2fd;
+        }
+
+        .related-section {
+            margin-top: 60px;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .related-item {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+
+        .related-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .related-image {
+            width: 100%;
+            height: 200px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .related-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .related-image.emoji {
+            font-size: 60px;
+        }
+
+        .related-info {
+            padding: 15px;
+        }
+
+        .related-name {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+            height: 40px;
+            overflow: hidden;
+        }
+
+        .related-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .shipping-rate {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            border: 2px solid #e5e5e5;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .shipping-rate:hover {
+            border-color: #3665f3;
+            background: #f8f9ff;
+        }
+
+        .shipping-rate.selected {
+            border-color: #3665f3;
+            background: #e3f2fd;
+        }
+
+        .shipping-rate-info {
+            flex: 1;
+        }
+
+        .shipping-rate-name {
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .shipping-rate-details {
+            font-size: 12px;
+            color: #707070;
+        }
+
+        .shipping-rate-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #3665f3;
+        }
+
+        .shipping-loading {
+            text-align: center;
+            padding: 20px;
+            color: #707070;
+        }
+
+        .shipping-error {
+            padding: 12px;
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 4px;
+            color: #c00;
+            font-size: 13px;
+        }
+
+        @media (max-width: 968px) {
+            .product-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .main-image-container {
+                height: 400px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -139,24 +370,26 @@
             </div>
         </div>
     </div>
+
     <div class="main-header">
         <div class="header-content">
             <a href="index.html" class="logo">Wrestle Swap</a>
         </div>
     </div>
+
     <div class="breadcrumb">
         <div class="breadcrumb-content">
-            <a href="index.html">Home</a> > 
-            <a href="search.html">Products</a> > 
+            <a href="index.html">Home</a> >
+            <a href="search.html">Products</a> >
             <strong id="breadcrumb-title">Loading...</strong>
         </div>
     </div>
-    
+
     <!-- Loading state -->
     <div id="loading" class="container">
         <div class="loading">⏳ Loading product details...</div>
     </div>
-    
+
     <!-- Error state -->
     <div id="error" class="container" style="display: none;">
         <div class="error-message">
@@ -165,7 +398,7 @@
             <a href="index.html" style="color: #3665f3;">Return to Home</a>
         </div>
     </div>
-    
+
     <!-- Main product content -->
     <div id="product-content" class="container" style="display: none;">
         <div class="product-layout">
@@ -181,7 +414,7 @@
                 <div id="sold-badge-container"></div>
                 <h1 class="product-title" id="product-title">Loading...</h1>
                 <div class="product-condition" id="product-condition"></div>
-                <div class="product-rating">
+                <div class="product-rating" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                     <span class="stars" id="product-stars">★★★★★</span>
                     <a href="#" class="rating-count" id="product-reviews">(0 reviews)</a>
                 </div>
@@ -198,9 +431,9 @@
                 <div class="option-section" id="shipping-section" style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
                     <div class="option-label">📦 Calculate Shipping Cost</div>
                     <div style="margin-bottom: 15px;">
-                        <input type="text" id="shipping-zip" placeholder="Enter your ZIP code" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;" maxlength="5" />
+                        <input type="text" id="shipping-zip" placeholder="Enter your ZIP code" class="form-input" maxlength="5" />
                     </div>
-                    <button onclick="calculateShipping()" style="width: 100%; padding: 12px; background: #3665f3; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Get Shipping Rates</button>
+                    <button onclick="calculateShipping()" class="btn btn-primary" style="width: 100%;">Get Shipping Rates</button>
                     <div id="shipping-results" style="margin-top: 15px;"></div>
                 </div>
                 <div class="action-buttons" id="action-buttons">
@@ -234,13 +467,13 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, collection, query, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
+
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
             authDomain: "wrestleswap.firebaseapp.com",
@@ -250,11 +483,11 @@
             appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
             measurementId: "G-B411WXLF3J"
         };
-        
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
+
         let currentUser = null;
         onAuthStateChanged(auth, (user) => {
             const menuWrapper = document.getElementById('user-menu-wrapper');
@@ -277,8 +510,7 @@
                 `;
             }
         });
-        
-        // Make Firebase available globally
+
         window.firebaseAuth = auth;
         window.firebaseDb = db;
         window.getCurrentUser = () => currentUser;
@@ -289,94 +521,70 @@
         window.limit = limit;
         window.getDocs = getDocs;
 
-        // Signal that Firebase is ready
         window.firebaseReady = true;
         window.dispatchEvent(new Event('firebaseReady'));
     </script>
-    
+
     <script>
-        // ============================================
-        // GLOBAL VARIABLES
-        // ============================================
-        
         let currentProduct = null;
         let selectedShippingRate = null;
-        
-        // ============================================
-        // GET PRODUCT ID FROM URL
-        // ============================================
-        
+
         function getProductIdFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');
         }
-        
-        // ============================================
-        // LOAD PRODUCT FROM FIRESTORE
-        // ============================================
-        
+
         async function loadProductData() {
             const productId = getProductIdFromURL();
-            
+
             if (!productId) {
                 showError();
                 return;
             }
-            
+
             try {
-                // Get product from Firestore
                 const productRef = window.doc(window.firebaseDb, 'products', productId);
                 const productSnap = await window.getDoc(productRef);
-                
+
                 if (!productSnap.exists()) {
                     showError();
                     return;
                 }
-                
-                // Get product data
+
                 const product = {
                     id: productSnap.id,
                     ...productSnap.data()
                 };
-                
+
                 currentProduct = product;
                 displayProduct(product);
                 loadRelatedProducts(product);
                 checkWatchlistStatus();
-                
+
             } catch (error) {
                 console.error('Error loading product:', error);
                 showError();
             }
         }
-        
-        // ============================================
-        // DISPLAY PRODUCT
-        // ============================================
-        
+
         function displayProduct(product) {
             document.title = `${product.name || 'Product'} | Wrestle Swap`;
             document.getElementById('breadcrumb-title').textContent = product.name || 'Product';
             document.getElementById('product-title').textContent = product.name || product.title || 'Product';
             document.getElementById('product-condition').textContent = product.condition ? `Condition: ${product.condition}` : '';
             document.getElementById('product-price').textContent = `$${(product.price || 0).toFixed(2)}`;
-            
-            // Check if item is sold
+
             if (product.sold) {
                 document.getElementById('sold-badge-container').innerHTML = '<div class="sold-badge">🚫 SOLD OUT</div>';
-                // Disable buy button
                 document.getElementById('action-buttons').innerHTML = `
                     <button class="btn btn-primary" disabled style="background: #ccc; cursor: not-allowed;">Item Sold</button>
                     <p style="text-align: center; color: #707070; font-size: 14px;">This item has been purchased and is no longer available.</p>
                 `;
-                // Hide shipping calculator
                 document.getElementById('shipping-section').style.display = 'none';
             }
-            
-            // Location - Fixed to use the correct field from sell page
+
             if (product.zipCode) {
                 document.getElementById('product-location').textContent = product.zipCode;
-                // You can optionally add city/state if available
                 const locationDetails = [];
                 if (product.city) locationDetails.push(product.city);
                 if (product.state) locationDetails.push(product.state);
@@ -386,28 +594,24 @@
                     document.getElementById('product-location-state').textContent = 'Ships from seller location';
                 }
             } else if (product.location) {
-                // Fallback to old location field if zipCode doesn't exist
                 document.getElementById('product-location').textContent = product.location;
                 document.getElementById('product-location-state').textContent = product.locationState || 'Ships from seller';
             } else {
                 document.getElementById('product-location').textContent = 'Not specified';
                 document.getElementById('product-location-state').textContent = 'Contact seller for details';
             }
-            
-            // Rating (default to 5 stars if not specified)
+
             const stars = product.rating || 5;
             const reviewCount = product.reviewCount || 0;
             const starsHtml = '★'.repeat(stars) + '☆'.repeat(5 - stars);
             document.getElementById('product-stars').textContent = starsHtml;
             document.getElementById('product-reviews').textContent = `(${reviewCount} reviews)`;
-            
-            // Images
+
             const mainImageEl = document.getElementById('main-image');
             const thumbnailContainer = document.getElementById('thumbnail-container');
             thumbnailContainer.innerHTML = '';
-            
+
             if (product.images && product.images.length > 0) {
-                // Has images
                 const firstImage = product.images[0];
                 if (isImageURL(firstImage)) {
                     mainImageEl.className = 'main-image';
@@ -416,24 +620,22 @@
                     mainImageEl.className = 'main-image emoji';
                     mainImageEl.textContent = firstImage;
                 }
-                
-                // Thumbnails
+
                 product.images.forEach((img, index) => {
                     const thumb = document.createElement('div');
                     thumb.className = 'thumbnail' + (index === 0 ? ' active' : '');
-                    
+
                     if (isImageURL(img)) {
                         thumb.innerHTML = `<img src="${img}" alt="Product image ${index + 1}">`;
                     } else {
                         thumb.className += ' emoji';
                         thumb.textContent = img;
                     }
-                    
+
                     thumb.onclick = () => changeImage(index);
                     thumbnailContainer.appendChild(thumb);
                 });
             } else if (product.image) {
-                // Single image
                 if (isImageURL(product.image)) {
                     mainImageEl.className = 'main-image';
                     mainImageEl.innerHTML = `<img src="${product.image}" alt="${product.name}">`;
@@ -442,8 +644,7 @@
                     mainImageEl.textContent = product.image;
                 }
             }
-            
-            // Product details
+
             let detailsHtml = '';
             if (product.brand) detailsHtml += `<div class="detail-label">Brand:</div><div class="detail-value">${product.brand}</div>`;
             if (product.model) detailsHtml += `<div class="detail-label">Model:</div><div class="detail-value">${product.model}</div>`;
@@ -451,26 +652,14 @@
             if (product.size) detailsHtml += `<div class="detail-label">Size:</div><div class="detail-value">${product.size}</div>`;
             if (product.condition) detailsHtml += `<div class="detail-label">Condition:</div><div class="detail-value">${product.condition}</div>`;
             if (product.category) detailsHtml += `<div class="detail-label">Category:</div><div class="detail-value">${product.category}</div>`;
-            
+
             document.getElementById('product-details').innerHTML = detailsHtml;
-            
-            // Description
+
             const description = product.description || 'No description available.';
             document.getElementById('product-description').innerHTML = `<strong>Description:</strong><br><br>${description}`;
-            
-            // Seller info - FIXED to display actual username with better field checking
+
             let sellerDisplayName = 'Anonymous Seller';
-            
-            console.log('Product seller data:', {
-                sellerUsername: product.sellerUsername,
-                sellerName: product.sellerName,
-                sellerEmail: product.sellerEmail,
-                sellerId: product.sellerId,
-                username: product.username,
-                displayName: product.displayName
-            });
-            
-            // Try different possible username fields in order of preference
+
             if (product.sellerUsername && product.sellerUsername.trim() !== '') {
                 sellerDisplayName = product.sellerUsername;
             } else if (product.username && product.username.trim() !== '') {
@@ -480,49 +669,39 @@
             } else if (product.sellerName && product.sellerName.trim() !== '') {
                 sellerDisplayName = product.sellerName;
             } else if (product.sellerEmail && product.sellerEmail.trim() !== '') {
-                // If only email available, show part of it
                 const emailParts = product.sellerEmail.split('@');
                 sellerDisplayName = emailParts[0];
             } else if (product.sellerId && product.sellerId.trim() !== '') {
-                // Last resort - show seller ID (shortened)
                 sellerDisplayName = `User_${product.sellerId.substring(0, 8)}`;
             }
-            
-            console.log('Final seller display name:', sellerDisplayName);
+
             document.getElementById('seller-name').textContent = `Sold by: ${sellerDisplayName}`;
-            
-            // Show content, hide loading
+
             document.getElementById('loading').style.display = 'none';
             document.getElementById('product-content').style.display = 'block';
         }
-        
+
         function isImageURL(str) {
             return str && (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:image'));
         }
-        
+
         function showError() {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error').style.display = 'block';
         }
-        
-        // ============================================
-        // LOAD RELATED PRODUCTS FROM FIRESTORE
-        // ============================================
-        
+
         async function loadRelatedProducts(currentProduct) {
             const relatedContainer = document.getElementById('related-products');
-            
+
             try {
-                // Get products, excluding sold ones
                 const productsRef = window.collection(window.firebaseDb, 'products');
                 let q = window.query(productsRef, window.limit(10));
-                
+
                 const querySnapshot = await window.getDocs(q);
                 const products = [];
-                
+
                 querySnapshot.forEach((doc) => {
                     const productData = doc.data();
-                    // Exclude current product and sold products
                     if (doc.id !== currentProduct.id && !productData.sold) {
                         products.push({
                             id: doc.id,
@@ -530,24 +709,23 @@
                         });
                     }
                 });
-                
-                // Display up to 4
+
                 const related = products.slice(0, 4);
-                
+
                 relatedContainer.innerHTML = '';
                 related.forEach(product => {
                     const item = document.createElement('div');
                     item.className = 'related-item';
                     item.onclick = () => window.location.href = `productdetail.html?id=${product.id}`;
-                    
-                    const imageHtml = product.image 
-                        ? (isImageURL(product.image) 
-                            ? `<img src="${product.image}" alt="${product.name}">` 
+
+                    const imageHtml = product.image
+                        ? (isImageURL(product.image)
+                            ? `<img src="${product.image}" alt="${product.name}">`
                             : product.image)
                         : '📦';
-                    
+
                     const imageClass = isImageURL(product.image) ? '' : 'emoji';
-                    
+
                     item.innerHTML = `
                         <div class="related-image ${imageClass}">${imageHtml}</div>
                         <div class="related-info">
@@ -557,22 +735,18 @@
                     `;
                     relatedContainer.appendChild(item);
                 });
-                
+
             } catch (error) {
                 console.error('Error loading related products:', error);
             }
         }
-        
-        // ============================================
-        // IMAGE GALLERY
-        // ============================================
-        
+
         function changeImage(index) {
             if (!currentProduct || !currentProduct.images) return;
-            
+
             const mainImageEl = document.getElementById('main-image');
             const img = currentProduct.images[index];
-            
+
             if (isImageURL(img)) {
                 mainImageEl.className = 'main-image';
                 mainImageEl.innerHTML = `<img src="${img}" alt="${currentProduct.name}">`;
@@ -580,30 +754,26 @@
                 mainImageEl.className = 'main-image emoji';
                 mainImageEl.textContent = img;
             }
-            
+
             document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
                 thumb.classList.toggle('active', i === index);
             });
         }
-        
-        // ============================================
-        // WATCHLIST
-        // ============================================
-        
+
         function getWatchlist() {
             const watchlist = localStorage.getItem('wrestleSwapWatchlist');
             return watchlist ? JSON.parse(watchlist) : [];
         }
-        
+
         function saveWatchlist(watchlist) {
             localStorage.setItem('wrestleSwapWatchlist', JSON.stringify(watchlist));
             updateWatchlistCount();
         }
-        
+
         function updateWatchlistCount() {
             const watchlist = getWatchlist();
             const badge = document.getElementById('watchlist-count');
-            if (!badge) return; // Element doesn't exist on this page
+            if (!badge) return;
             if (watchlist.length > 0) {
                 badge.textContent = watchlist.length;
                 badge.style.display = 'inline-block';
@@ -611,7 +781,7 @@
                 badge.style.display = 'none';
             }
         }
-        
+
         function checkWatchlistStatus() {
             if (!currentProduct) return;
             const watchlist = getWatchlist();
@@ -622,7 +792,7 @@
                 document.getElementById('watchlist-text').textContent = 'In Watchlist';
             }
         }
-        
+
         function showToast(message, type = 'success') {
             const existingToast = document.querySelector('.toast');
             if (existingToast) existingToast.remove();
@@ -635,21 +805,15 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
-        
-        // ============================================
-        // BUY NOW - Goes directly to checkout
-        // ============================================
-        
+
         function buyNow() {
             if (!currentProduct) return;
-            
-            // Check if item is sold
+
             if (currentProduct.sold) {
                 showToast('This item has already been sold', 'error');
                 return;
             }
-            
-            // Store the current product in sessionStorage for checkout page
+
             const checkoutData = {
                 id: currentProduct.id,
                 name: currentProduct.name || currentProduct.title,
@@ -659,15 +823,10 @@
                 shippingCost: selectedShippingRate ? selectedShippingRate.price : 0
             };
 
-            console.log('Saving to checkout - Product ID:', currentProduct.id);
-            console.log('Full checkout data:', checkoutData);
-
             sessionStorage.setItem('checkoutProduct', JSON.stringify(checkoutData));
-
-            // Redirect to checkout
             window.location.href = 'checkout.html';
         }
-        
+
         function toggleWatchlist() {
             if (!currentProduct) return;
             const watchlist = getWatchlist();
@@ -687,34 +846,30 @@
             }
             saveWatchlist(watchlist);
         }
-        
-        // ============================================
-        // SHIPPING CALCULATOR
-        // ============================================
-        
+
         async function calculateShipping() {
             const zipInput = document.getElementById('shipping-zip');
             const resultsDiv = document.getElementById('shipping-results');
             const zipCode = zipInput.value.trim();
-            
+
             if (!zipCode || zipCode.length !== 5 || !/^\d{5}$/.test(zipCode)) {
                 resultsDiv.innerHTML = '<div class="shipping-error">Please enter a valid 5-digit ZIP code</div>';
                 return;
             }
-            
+
             resultsDiv.innerHTML = '<div class="shipping-loading">⏳ Calculating shipping rates...</div>';
-            
+
             try {
                 const response = await fetch('/.netlify/functions/get-shipping-rates', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ zipCode: zipCode })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to get rates');
                 }
-                
+
                 const rates = await response.json();
                 if (rates && rates.length > 0) {
                     displayShippingRates(rates);
@@ -726,16 +881,16 @@
                 resultsDiv.innerHTML = `<div class="shipping-error">Unable to calculate shipping</div>`;
             }
         }
-        
+
         function displayShippingRates(rates) {
             const resultsDiv = document.getElementById('shipping-results');
             const sortedRates = rates.filter(r => r.shipping_amount && r.shipping_amount.amount).sort((a, b) => a.shipping_amount.amount - b.shipping_amount.amount).slice(0, 5);
-            
+
             if (sortedRates.length === 0) {
                 resultsDiv.innerHTML = '<div class="shipping-error">No available shipping options</div>';
                 return;
             }
-            
+
             let html = '<div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #333;">Available Shipping:</div>';
             sortedRates.forEach((rate, index) => {
                 const price = rate.shipping_amount.amount;
@@ -754,7 +909,7 @@
             });
             resultsDiv.innerHTML = html;
         }
-        
+
         function selectShippingRate(rateId, price) {
             selectedShippingRate = { id: rateId, price: price };
             document.querySelectorAll('.shipping-rate').forEach(el => el.classList.remove('selected'));
@@ -762,7 +917,7 @@
             updatePriceWithShipping(price);
             showToast(`Shipping selected: $${price.toFixed(2)}`);
         }
-        
+
         function updatePriceWithShipping(shippingCost) {
             if (!currentProduct) return;
             const priceElement = document.querySelector('.price');
@@ -770,11 +925,7 @@
             const totalPrice = originalPrice + shippingCost;
             priceElement.innerHTML = `$${originalPrice.toFixed(2)}<span style="font-size: 14px; color: #707070; font-weight: normal; display: block; margin-top: 5px;">+ $${shippingCost.toFixed(2)} shipping = $${totalPrice.toFixed(2)} total</span>`;
         }
-        
-        // ============================================
-        // CONTACT SELLER
-        // ============================================
-        
+
         function contactSeller() {
             const user = window.getCurrentUser();
             if (!user) {
@@ -785,14 +936,9 @@
                 return;
             }
             if (!currentProduct) return;
-            
+
             showToast('Opening message with seller...', 'success');
-            // Implement your messaging logic here
         }
-        
-        // ============================================
-        // INITIALIZE PAGE
-        // ============================================
 
         function initializePage() {
             updateWatchlistCount();
@@ -800,7 +946,6 @@
         }
 
         window.addEventListener('DOMContentLoaded', function() {
-            // Check if Firebase is already ready, otherwise wait for it
             if (window.firebaseReady) {
                 initializePage();
             } else {
