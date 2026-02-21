@@ -718,16 +718,77 @@
                 <span class="modal-close" onclick="closeCancelModal()">&times;</span>
                 <h2 class="modal-title">Cancel Order</h2>
             </div>
-            
-            <p style="margin-bottom: 24px;">Are you sure you want to cancel this order? This action cannot be undone.</p>
-            
-            <div class="alert-box warning">
+
+            <p style="margin-bottom: 16px;">Are you sure you want to cancel this order? This action cannot be undone.</p>
+
+            <div class="alert-box" style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
+                <strong style="color: #dc2626;">5% Cancellation Fee</strong>
+                <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">
+                    A 5% cancellation fee will be deducted from your refund to cover processing costs.
+                </p>
+                <p id="cancelFeeDetails" style="margin: 8px 0 0 0; color: #333; font-size: 14px; font-weight: 600;"></p>
+            </div>
+
+            <div class="alert-box warning" style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
                 <strong>Note:</strong> Refunds typically take 5-7 business days to process back to your original payment method.
             </div>
-            
+
             <div class="modal-actions">
                 <button class="btn btn-danger" id="confirmCancelBtn" onclick="confirmCancelOrder()">Yes, Cancel Order</button>
                 <button class="btn btn-secondary" onclick="closeCancelModal()">Keep Order</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refund Request Modal (for shipped items) -->
+    <div class="modal" id="refundRequestModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-close" onclick="closeRefundRequestModal()">&times;</span>
+                <h2 class="modal-title">Request Refund</h2>
+            </div>
+
+            <p style="margin-bottom: 16px;">This item has already been shipped. To request a refund, you'll need to return the item to the seller.</p>
+
+            <div style="background: #e0f2fe; border-left: 4px solid #0284c7; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
+                <strong style="color: #0284c7;">Refund Process:</strong>
+                <ol style="margin: 8px 0 0 20px; color: #666; font-size: 14px;">
+                    <li>Submit your refund request with a reason</li>
+                    <li>Seller will review and approve/deny within 48 hours</li>
+                    <li>If approved, return the item to the seller</li>
+                    <li>Once seller receives item, refund is processed (minus 5% fee)</li>
+                </ol>
+            </div>
+
+            <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
+                <strong style="color: #dc2626;">5% Refund Fee</strong>
+                <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">
+                    A 5% fee will be deducted from your refund to cover processing costs.
+                </p>
+                <p id="refundFeeDetails" style="margin: 8px 0 0 0; color: #333; font-size: 14px; font-weight: 600;"></p>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">Reason for Refund <span style="color: #dc2626;">*</span></label>
+                <select id="refundReason" class="form-input" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">Select a reason...</option>
+                    <option value="not_as_described">Item not as described</option>
+                    <option value="damaged">Item arrived damaged</option>
+                    <option value="wrong_item">Wrong item received</option>
+                    <option value="doesnt_fit">Doesn't fit</option>
+                    <option value="changed_mind">Changed my mind</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">Additional Details</label>
+                <textarea id="refundDetails" class="form-textarea" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 80px;" placeholder="Please provide any additional details about your refund request..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="submitRefundRequestBtn" onclick="submitRefundRequest()">Submit Refund Request</button>
+                <button class="btn btn-secondary" onclick="closeRefundRequestModal()">Cancel</button>
             </div>
         </div>
     </div>
@@ -871,11 +932,28 @@
                             <button class="btn btn-primary" onclick="openOrderModal('${order.id}')">
                                 View Details
                             </button>
-                            ${!order.cancelled && !order.delivered ? `
-                                <button class="btn btn-danger" onclick="openCancelModal('${order.id}')">
-                                    Cancel
-                                </button>
-                            ` : ''}
+                            ${(() => {
+                                // Determine which button to show based on order status
+                                const isShipped = order.trackingNumber || order.shipped || order.labelCreated;
+                                const isCancelled = order.cancelled;
+                                const isDelivered = order.delivered;
+                                const hasRefundRequest = order.refundRequested;
+
+                                if (isCancelled) {
+                                    return '<span style="color: #dc2626; font-size: 12px;">Cancelled</span>';
+                                } else if (hasRefundRequest) {
+                                    return '<span style="color: #f59e0b; font-size: 12px;">Refund Requested</span>';
+                                } else if (isDelivered) {
+                                    // Delivered - can contact support if item wasn't as expected
+                                    return `<button class="btn btn-secondary" onclick="window.location.href='help.html?subject=Order Issue&orderId=${order.id}'">Contact Support</button>`;
+                                } else if (isShipped) {
+                                    // Shipped but not delivered - no cancellation or refund option
+                                    return '<span style="color: #2563eb; font-size: 12px;">In Transit</span>';
+                                } else {
+                                    // Not shipped yet - can cancel
+                                    return `<button class="btn btn-danger" onclick="openCancelModal('${order.id}')">Cancel Order</button>`;
+                                }
+                            })()}
                         </div>
                     </div>
                 </div>
@@ -1129,11 +1207,21 @@
                     </div>
 
                     <div class="modal-actions">
-                        ${!order.cancelled && !order.delivered ? `
-                            <button class="btn btn-danger" onclick="openCancelModal('${orderId}')">
-                                Cancel Order
-                            </button>
-                        ` : ''}
+                        ${(() => {
+                            const isShipped = order.trackingNumber || order.shipped || order.labelCreated;
+                            if (order.cancelled) {
+                                return ''; // No actions for cancelled orders
+                            } else if (order.delivered) {
+                                // Delivered - show contact support option
+                                return `<a href="help.html?subject=Order Issue&orderId=${orderId}" class="btn btn-secondary">Contact Support</a>`;
+                            } else if (isShipped) {
+                                // Shipped but not delivered - no cancel option
+                                return '';
+                            } else {
+                                // Not shipped - can cancel
+                                return `<button class="btn btn-danger" onclick="openCancelModal('${orderId}')">Cancel Order</button>`;
+                            }
+                        })()}
                         <button class="btn btn-secondary" onclick="closeOrderModal()">
                             Close
                         </button>
@@ -1170,41 +1258,183 @@
         // CANCEL ORDER FUNCTIONALITY
         // ============================================
 
+        const CANCEL_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/cancelOrder';
         let orderToCancel = null;
+        let orderToCancelData = null;
 
-        function openCancelModal(orderId) {
+        async function openCancelModal(orderId) {
             orderToCancel = orderId;
             closeOrderModal(); // Close details modal if open
+
+            // Fetch order details to calculate fee
+            try {
+                const orderDoc = await db.collection('products').doc(orderId).get();
+                if (orderDoc.exists) {
+                    orderToCancelData = orderDoc.data();
+                    const orderTotal = orderToCancelData.price || 0;
+                    const cancellationFee = (orderTotal * 0.05).toFixed(2);
+                    const refundAmount = (orderTotal * 0.95).toFixed(2);
+
+                    document.getElementById('cancelFeeDetails').innerHTML = `
+                        Order Total: $${orderTotal.toFixed(2)}<br>
+                        Cancellation Fee (5%): -$${cancellationFee}<br>
+                        <span style="color: #059669;">You'll receive: $${refundAmount}</span>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error fetching order details:', error);
+            }
+
             document.getElementById('cancelModal').classList.add('active');
         }
 
         function closeCancelModal() {
             orderToCancel = null;
+            orderToCancelData = null;
             document.getElementById('cancelModal').classList.remove('active');
         }
 
         async function confirmCancelOrder() {
-            if (!orderToCancel) return;
+            if (!orderToCancel || !orderToCancelData) return;
 
             const cancelBtn = document.getElementById('confirmCancelBtn');
             const originalText = cancelBtn.textContent;
-            cancelBtn.textContent = 'Cancelling...';
+            cancelBtn.textContent = 'Processing refund...';
             cancelBtn.disabled = true;
 
             try {
+                // Call the Cloud Function to process refund
+                const response = await fetch(CANCEL_ORDER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        paymentIntentId: orderToCancelData.soldOrderId,
+                        productId: orderToCancel,
+                        reason: 'requested_by_customer',
+                        cancelledBy: 'buyer',
+                        shippoTransactionId: orderToCancelData.shippoTransactionId || null
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to process cancellation');
+                }
+
+                // Update local status
                 await db.collection('products').doc(orderToCancel).update({
                     cancelled: true,
                     cancelledAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    cancelledTimestamp: Date.now()
+                    cancelledTimestamp: Date.now(),
+                    refundId: result.refundId,
+                    refundAmount: result.refundAmount,
+                    cancellationFee: result.cancellationFee
                 });
 
                 closeCancelModal();
                 await renderOrders();
-                showInfo('Order cancelled successfully! Refund will be processed within 5-7 business days.');
+                showInfo(result.message || 'Order cancelled successfully! Refund will be processed within 5-7 business days.');
             } catch (error) {
                 showError('Failed to cancel order: ' + error.message);
                 cancelBtn.textContent = originalText;
                 cancelBtn.disabled = false;
+            }
+        }
+
+        // ============================================
+        // REFUND REQUEST FUNCTIONALITY (for shipped items)
+        // ============================================
+
+        let orderToRefund = null;
+        let orderToRefundData = null;
+
+        async function openRefundRequestModal(orderId) {
+            orderToRefund = orderId;
+            closeOrderModal(); // Close details modal if open
+
+            // Fetch order details to calculate fee
+            try {
+                const orderDoc = await db.collection('products').doc(orderId).get();
+                if (orderDoc.exists) {
+                    orderToRefundData = orderDoc.data();
+                    const orderTotal = orderToRefundData.price || 0;
+                    const refundFee = (orderTotal * 0.05).toFixed(2);
+                    const refundAmount = (orderTotal * 0.95).toFixed(2);
+
+                    document.getElementById('refundFeeDetails').innerHTML = `
+                        Order Total: $${orderTotal.toFixed(2)}<br>
+                        Refund Fee (5%): -$${refundFee}<br>
+                        <span style="color: #059669;">You'll receive: $${refundAmount}</span>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error fetching order details:', error);
+            }
+
+            // Reset form
+            document.getElementById('refundReason').value = '';
+            document.getElementById('refundDetails').value = '';
+            document.getElementById('refundRequestModal').classList.add('active');
+        }
+
+        function closeRefundRequestModal() {
+            orderToRefund = null;
+            orderToRefundData = null;
+            document.getElementById('refundRequestModal').classList.remove('active');
+        }
+
+        async function submitRefundRequest() {
+            if (!orderToRefund || !orderToRefundData) return;
+
+            const reason = document.getElementById('refundReason').value;
+            const details = document.getElementById('refundDetails').value;
+
+            if (!reason) {
+                showError('Please select a reason for your refund request');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitRefundRequestBtn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Submitting...';
+            submitBtn.disabled = true;
+
+            try {
+                const user = auth.currentUser;
+
+                // Create refund request in Firestore
+                await db.collection('refundRequests').add({
+                    productId: orderToRefund,
+                    orderId: orderToRefundData.soldOrderId,
+                    buyerId: user.uid,
+                    buyerEmail: user.email,
+                    sellerId: orderToRefundData.userId,
+                    productTitle: orderToRefundData.title,
+                    productPrice: orderToRefundData.price,
+                    reason: reason,
+                    details: details,
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    trackingNumber: orderToRefundData.trackingNumber || null
+                });
+
+                // Update product to mark refund as requested
+                await db.collection('products').doc(orderToRefund).update({
+                    refundRequested: true,
+                    refundRequestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    refundReason: reason
+                });
+
+                closeRefundRequestModal();
+                await renderOrders();
+                showInfo('Refund request submitted! The seller will review your request within 48 hours.');
+            } catch (error) {
+                showError('Failed to submit refund request: ' + error.message);
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         }
 
@@ -1465,6 +1695,10 @@
 
         document.getElementById('cancelModal').addEventListener('click', function(e) {
             if (e.target === this) closeCancelModal();
+        });
+
+        document.getElementById('refundRequestModal').addEventListener('click', function(e) {
+            if (e.target === this) closeRefundRequestModal();
         });
     </script>
 </body>

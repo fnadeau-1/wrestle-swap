@@ -612,12 +612,41 @@
             <div class="modal-header">
                 <h2 class="modal-title">Confirm Deletion</h2>
             </div>
-            
+
             <p style="margin-bottom: 24px;">Are you sure you want to remove this listing? This action cannot be undone.</p>
-            
+
             <div class="modal-actions">
                 <button class="btn btn-danger" id="deleteBtn" onclick="confirmDelete()">Delete Listing</button>
                 <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seller Cancel Order Modal -->
+    <div class="modal" id="sellerCancelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-close" onclick="closeSellerCancelModal()">&times;</span>
+                <h2 class="modal-title">Cancel Sale</h2>
+            </div>
+
+            <p style="margin-bottom: 16px;">Are you sure you want to cancel this sale? The buyer will receive a refund.</p>
+
+            <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
+                <strong style="color: #dc2626;">5% Cancellation Fee</strong>
+                <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">
+                    A 5% cancellation fee will be deducted from the buyer's refund. This fee goes to the platform.
+                </p>
+                <p id="sellerCancelFeeDetails" style="margin: 8px 0 0 0; color: #333; font-size: 14px; font-weight: 600;"></p>
+            </div>
+
+            <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
+                <strong>Important:</strong> If you've already shipped the item, do not cancel. Contact support instead.
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-danger" id="confirmSellerCancelBtn" onclick="confirmSellerCancel()">Yes, Cancel Sale</button>
+                <button class="btn btn-secondary" onclick="closeSellerCancelModal()">Keep Sale</button>
             </div>
         </div>
     </div>
@@ -752,12 +781,41 @@
 
             // Different actions based on sold status
             let actionsHtml;
-            if (listing.sold) {
-                // SOLD ITEM - Show button to view shipping details
+            const isShipped = listing.trackingNumber || listing.shipped || listing.labelCreated;
+            const hasRefundRequest = listing.refundRequested;
+
+            if (listing.sold && !listing.cancelled) {
+                if (hasRefundRequest) {
+                    // REFUND REQUESTED - Show pending status
+                    actionsHtml = `
+                        <a href="${fulfillmentLink}" class="btn btn-primary" style="text-align: center;">
+                            📦 View Order
+                        </a>
+                        <span style="color: #f59e0b; font-weight: 600; font-size: 12px;">Refund Requested</span>
+                    `;
+                } else if (isShipped) {
+                    // SHIPPED ITEM - No cancel option, only view details
+                    actionsHtml = `
+                        <a href="${fulfillmentLink}" class="btn btn-primary" style="text-align: center;">
+                            📦 View Shipment
+                        </a>
+                        <span style="color: #059669; font-size: 12px;">Shipped</span>
+                    `;
+                } else {
+                    // SOLD BUT NOT SHIPPED - Can still cancel
+                    actionsHtml = `
+                        <a href="${fulfillmentLink}" class="btn btn-primary" style="text-align: center;">
+                            📦 Ship Order
+                        </a>
+                        <button class="btn btn-danger" onclick="event.stopPropagation(); openSellerCancelModal('${listing.id}', ${listing.price || 0}, '${listing.soldOrderId || ''}')">
+                            Cancel Sale
+                        </button>
+                    `;
+                }
+            } else if (listing.cancelled) {
+                // CANCELLED ITEM
                 actionsHtml = `
-                    <a href="${fulfillmentLink}" class="btn btn-primary" style="text-align: center; flex: 1;">
-                        📦 View Shipping Details
-                    </a>
+                    <span style="color: #dc2626; font-weight: 600;">Order Cancelled</span>
                 `;
             } else {
                 // AVAILABLE ITEM - Show edit/toggle/delete buttons
@@ -981,6 +1039,93 @@
         }
 
         // ============================================
+        // SELLER CANCEL ORDER FUNCTIONALITY
+        // ============================================
+
+        const CANCEL_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/cancelOrder';
+        let saleToCancel = null;
+        let saleToCancelPrice = 0;
+        let saleToCancelOrderId = null;
+
+        function openSellerCancelModal(listingId, price, orderId) {
+            saleToCancel = listingId;
+            saleToCancelPrice = price;
+            saleToCancelOrderId = orderId;
+
+            // Calculate fee details
+            const cancellationFee = (price * 0.05).toFixed(2);
+            const buyerRefund = (price * 0.95).toFixed(2);
+
+            document.getElementById('sellerCancelFeeDetails').innerHTML = `
+                Order Total: $${price.toFixed(2)}<br>
+                Cancellation Fee (5%): $${cancellationFee}<br>
+                Buyer will receive: $${buyerRefund}
+            `;
+
+            document.getElementById('sellerCancelModal').classList.add('active');
+        }
+
+        function closeSellerCancelModal() {
+            saleToCancel = null;
+            saleToCancelPrice = 0;
+            saleToCancelOrderId = null;
+            document.getElementById('sellerCancelModal').classList.remove('active');
+        }
+
+        async function confirmSellerCancel() {
+            if (!saleToCancel) return;
+
+            const cancelBtn = document.getElementById('confirmSellerCancelBtn');
+            const originalText = cancelBtn.textContent;
+            cancelBtn.textContent = 'Processing...';
+            cancelBtn.disabled = true;
+
+            try {
+                // Get listing data for shippo transaction ID
+                const listingDoc = await db.collection('products').doc(saleToCancel).get();
+                const listingData = listingDoc.exists ? listingDoc.data() : {};
+
+                // Call the Cloud Function to process refund
+                const response = await fetch(CANCEL_ORDER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        paymentIntentId: saleToCancelOrderId || listingData.soldOrderId,
+                        productId: saleToCancel,
+                        reason: 'requested_by_customer',
+                        cancelledBy: 'seller',
+                        shippoTransactionId: listingData.shippoTransactionId || null
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to process cancellation');
+                }
+
+                // Update local status
+                await db.collection('products').doc(saleToCancel).update({
+                    sold: false,
+                    cancelled: true,
+                    cancelledAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    cancelledBy: 'seller',
+                    refundId: result.refundId
+                });
+
+                closeSellerCancelModal();
+                await renderListings();
+                showInfo(result.message || 'Sale cancelled. Buyer has been refunded (minus 5% cancellation fee).');
+            } catch (error) {
+                showError('Failed to cancel sale: ' + error.message);
+                cancelBtn.textContent = originalText;
+                cancelBtn.disabled = false;
+            }
+        }
+
+        // ============================================
         // INITIALIZATION
         // ============================================
 
@@ -1028,6 +1173,10 @@
 
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) closeDeleteModal();
+        });
+
+        document.getElementById('sellerCancelModal').addEventListener('click', function(e) {
+            if (e.target === this) closeSellerCancelModal();
         });
     </script>
 </body>

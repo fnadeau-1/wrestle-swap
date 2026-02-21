@@ -41,7 +41,6 @@
             <div>
                 <a href="sell.html">Sell</a>
                 <a href="watchlist.html">Watchlist</a>
-                <a href="cart.html">Cart</a>
             </div>
         </div>
     </div>
@@ -327,6 +326,57 @@
 
                 <button type="button" class="btn btn-primary" id="save-seller-settings">Save Seller Settings</button>
             </div>
+
+            <!-- Shipping Address -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e5e5;">
+                <h3 style="font-size: 18px; margin-bottom: 15px;">Shipping Address</h3>
+                <p class="helper-text" style="margin-bottom: 20px;">This is the address your items will ship from. Required to sell items.</p>
+
+                <div class="success-message" id="shipping-success">Shipping address saved successfully!</div>
+                <div class="error-message" id="shipping-error"></div>
+
+                <form id="shipping-address-form">
+                    <div class="form-group">
+                        <label class="form-label">Full Name <span style="color: #dc3545;">*</span></label>
+                        <input type="text" class="form-input" id="shipping-name" placeholder="Your full name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Street Address <span style="color: #dc3545;">*</span></label>
+                        <input type="text" class="form-input" id="shipping-street1" placeholder="123 Main Street" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Apartment, Suite, etc.</label>
+                        <input type="text" class="form-input" id="shipping-street2" placeholder="Apt 4B (optional)">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label class="form-label">City <span style="color: #dc3545;">*</span></label>
+                            <input type="text" class="form-input" id="shipping-city" placeholder="New York" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">State <span style="color: #dc3545;">*</span></label>
+                            <input type="text" class="form-input" id="shipping-state" placeholder="NY" maxlength="2" style="text-transform: uppercase;" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">ZIP Code <span style="color: #dc3545;">*</span></label>
+                            <input type="text" class="form-input" id="shipping-zip" placeholder="10001" maxlength="10" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" id="shipping-phone" placeholder="(555) 123-4567">
+                        <p class="helper-text">Optional - May be used by shipping carriers for delivery</p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Shipping Address</button>
+                </form>
+            </div>
         </div>
 
         <!-- Notification Settings -->
@@ -537,6 +587,18 @@
                         document.getElementById('auto-response-message').value = userData.sellerSettings.autoResponseMessage || '';
                     }
 
+                    // Load shipping address
+                    if (userData.shippingAddress) {
+                        const addr = userData.shippingAddress;
+                        document.getElementById('shipping-name').value = addr.name || '';
+                        document.getElementById('shipping-street1').value = addr.street1 || '';
+                        document.getElementById('shipping-street2').value = addr.street2 || '';
+                        document.getElementById('shipping-city').value = addr.city || '';
+                        document.getElementById('shipping-state').value = addr.state || '';
+                        document.getElementById('shipping-zip').value = addr.zip || '';
+                        document.getElementById('shipping-phone').value = addr.phone || '';
+                    }
+
                     await loadSellerStats(user.uid);
                 }
             } catch (error) {
@@ -681,6 +743,63 @@
             } catch (error) {
                 const errorMsg = document.getElementById('seller-error');
                 errorMsg.textContent = 'Error updating seller settings: ' + error.message;
+                errorMsg.style.display = 'block';
+            }
+        });
+
+        // Save Shipping Address
+        document.getElementById('shipping-address-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const errorMsg = document.getElementById('shipping-error');
+            const successMsg = document.getElementById('shipping-success');
+            errorMsg.style.display = 'none';
+
+            const shippingAddress = {
+                name: document.getElementById('shipping-name').value.trim(),
+                street1: document.getElementById('shipping-street1').value.trim(),
+                street2: document.getElementById('shipping-street2').value.trim(),
+                city: document.getElementById('shipping-city').value.trim(),
+                state: document.getElementById('shipping-state').value.trim().toUpperCase(),
+                zip: document.getElementById('shipping-zip').value.trim(),
+                phone: document.getElementById('shipping-phone').value.trim(),
+                country: 'US'
+            };
+
+            // Validate required fields
+            if (!shippingAddress.name || !shippingAddress.street1 || !shippingAddress.city || !shippingAddress.state || !shippingAddress.zip) {
+                errorMsg.textContent = 'Please fill in all required fields';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // Validate state format
+            if (shippingAddress.state.length !== 2) {
+                errorMsg.textContent = 'State must be 2-letter abbreviation (e.g., NY, CA)';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // Validate ZIP format
+            if (!/^\d{5}(-\d{4})?$/.test(shippingAddress.zip)) {
+                errorMsg.textContent = 'Please enter a valid ZIP code (e.g., 10001 or 10001-1234)';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            try {
+                await setDoc(doc(db, 'users', currentUser.uid), {
+                    shippingAddress: shippingAddress,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+
+                successMsg.style.display = 'block';
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 3000);
+
+            } catch (error) {
+                errorMsg.textContent = 'Error saving shipping address: ' + error.message;
                 errorMsg.style.display = 'block';
             }
         });

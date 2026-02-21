@@ -820,6 +820,8 @@
                 price: currentProduct.price || 0,
                 condition: currentProduct.condition,
                 image: currentProduct.image || (currentProduct.images && currentProduct.images[0]) || '📦',
+                category: currentProduct.category,
+                userId: currentProduct.userId, // Seller's user ID for Stripe Connect
                 shippingCost: selectedShippingRate ? selectedShippingRate.price : 0
             };
 

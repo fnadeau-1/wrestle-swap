@@ -9,7 +9,7 @@ const db = admin.firestore();
 // Define secrets
 const stripeSecret = defineSecret("STRIPE_SKEY");
 const shippoSecret = defineSecret("SHIPPO_API_KEY");
-const recaptchaApiKey = defineSecret("RECAPTCHA_API_KEY");
+// const recaptchaApiKey = defineSecret("RECAPTCHA_API_KEY"); // Uncomment after setting secret
 
 // --- DELETE SOLD PRODUCTS ---
 exports.deleteSoldProducts = onRequest({ cors: true }, async (req, res) => {
@@ -49,7 +49,11 @@ exports.deleteSoldProducts = onRequest({ cors: true }, async (req, res) => {
   }
 });
 
-// --- STRIPE PAYMENT INTENT ---
+// Platform fee percentage (10% of product price only)
+const PLATFORM_FEE_PERCENT = 0.10;
+
+// --- STRIPE PAYMENT INTENT WITH CONNECT ---
+// Shipping costs go to platform, product price (minus 10% fee) goes to seller
 exports.createPaymentIntent = onRequest(
   { cors: true, secrets: [stripeSecret] },
   async (req, res) => {
@@ -59,27 +63,207 @@ exports.createPaymentIntent = onRequest(
 
     try {
       const stripe = require('stripe')(stripeSecret.value());
-      const { amount, currency = 'usd' } = req.body;
+      const {
+        amount,  // Total amount (product + shipping + tax) in cents
+        productAmount = 0,  // Product price only in cents
+        shippingAmount = 0,  // Shipping cost in cents
+        taxAmount = 0,  // Tax in cents
+        currency = 'usd',
+        sellerStripeAccountId,
+        productId
+      } = req.body;
 
       if (!amount) {
         return res.status(400).json({ error: 'Amount is required' });
       }
 
-      console.log('Creating payment intent for amount:', amount, 'currency:', currency);
+      console.log('Creating payment intent:');
+      console.log('  Total amount:', amount);
+      console.log('  Product amount:', productAmount);
+      console.log('  Shipping amount:', shippingAmount);
+      console.log('  Tax amount:', taxAmount);
+      console.log('  Seller Stripe Account ID:', sellerStripeAccountId);
 
-      const paymentIntent = await stripe.paymentIntents.create({
+      // Build payment intent options
+      const paymentIntentOptions = {
         amount: amount,
         currency: currency,
         automatic_payment_methods: { enabled: true },
-      });
+      };
+
+      // If seller has a connected Stripe account, use destination charges
+      if (sellerStripeAccountId && productAmount > 0) {
+        // Platform keeps:
+        // 1. 10% of product price (platform fee)
+        // 2. 100% of shipping (to pay for labels)
+        // 3. Tax (collected for the platform)
+
+        const platformFeeOnProduct = Math.round(productAmount * PLATFORM_FEE_PERCENT);
+        const sellerReceives = productAmount - platformFeeOnProduct;
+
+        // Application fee = total amount - what seller receives
+        // This includes: platform fee + shipping + tax
+        const applicationFeeAmount = amount - sellerReceives;
+
+        console.log('Using Stripe Connect - destination charge');
+        console.log('  Platform fee (10% of product):', platformFeeOnProduct);
+        console.log('  Shipping (kept by platform):', shippingAmount);
+        console.log('  Tax (kept by platform):', taxAmount);
+        console.log('  Total application fee:', applicationFeeAmount);
+        console.log('  Seller receives:', sellerReceives);
+
+        // Add Stripe Connect parameters
+        paymentIntentOptions.application_fee_amount = applicationFeeAmount;
+        paymentIntentOptions.transfer_data = {
+          destination: sellerStripeAccountId,
+        };
+
+        // Add metadata for tracking
+        paymentIntentOptions.metadata = {
+          productId: productId || 'unknown',
+          sellerAccountId: sellerStripeAccountId,
+          productAmount: productAmount,
+          shippingAmount: shippingAmount,
+          taxAmount: taxAmount,
+          platformFee: platformFeeOnProduct,
+          sellerReceives: sellerReceives,
+        };
+      } else {
+        console.log('No seller Stripe account - payment goes to platform');
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
 
       console.log('Payment intent created:', paymentIntent.id);
 
       return res.status(200).json({
         clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
       });
     } catch (error) {
       console.error('Stripe Error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// Cancellation fee percentage (5%)
+const CANCELLATION_FEE_PERCENT = 0.05;
+
+// --- CANCEL ORDER / REFUND ---
+exports.cancelOrder = onRequest(
+  { cors: true, secrets: [stripeSecret, shippoSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') {
+      return res.status(204).send('');
+    }
+
+    try {
+      const stripe = require('stripe')(stripeSecret.value());
+      const {
+        paymentIntentId,
+        productId,
+        reason = 'requested_by_customer',
+        cancelledBy = 'buyer', // 'buyer' or 'seller'
+        shippoTransactionId = null
+      } = req.body;
+
+      if (!paymentIntentId) {
+        return res.status(400).json({ error: 'Payment Intent ID is required' });
+      }
+
+      console.log('Processing cancellation:');
+      console.log('  Payment Intent:', paymentIntentId);
+      console.log('  Product ID:', productId);
+      console.log('  Cancelled by:', cancelledBy);
+      console.log('  Reason:', reason);
+
+      // Get the payment intent to find the charge
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+      if (!paymentIntent.latest_charge) {
+        return res.status(400).json({ error: 'No charge found for this payment' });
+      }
+
+      const chargeId = paymentIntent.latest_charge;
+      const originalAmount = paymentIntent.amount;
+
+      // Calculate 5% cancellation fee
+      const cancellationFee = Math.round(originalAmount * CANCELLATION_FEE_PERCENT);
+      const refundAmount = originalAmount - cancellationFee;
+
+      console.log('  Original amount:', originalAmount);
+      console.log('  Cancellation fee (5%):', cancellationFee);
+      console.log('  Refund amount:', refundAmount);
+
+      // Create partial refund (minus 5% cancellation fee)
+      const refund = await stripe.refunds.create({
+        charge: chargeId,
+        amount: refundAmount,
+        reason: reason,
+        metadata: {
+          productId: productId || 'unknown',
+          cancelledBy: cancelledBy,
+          cancellationFee: cancellationFee,
+          originalAmount: originalAmount
+        }
+      });
+
+      console.log('Refund created:', refund.id);
+
+      // Try to void the Shippo shipping label if provided
+      let labelVoided = false;
+      if (shippoTransactionId) {
+        try {
+          const shippoKey = shippoSecret.value();
+          const voidResponse = await fetch(`https://api.goshippo.com/transactions/${shippoTransactionId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `ShippoToken ${shippoKey}`,
+            }
+          });
+
+          if (voidResponse.ok) {
+            labelVoided = true;
+            console.log('Shipping label voided successfully');
+          } else {
+            console.log('Could not void shipping label - may already be used');
+          }
+        } catch (labelError) {
+          console.error('Error voiding shipping label:', labelError);
+        }
+      }
+
+      // Update product status in Firestore
+      if (productId) {
+        try {
+          await db.collection('products').doc(productId).update({
+            sold: false,
+            soldAt: null,
+            soldTimestamp: null,
+            soldOrderId: null,
+            cancelledAt: new Date(),
+            cancelledBy: cancelledBy,
+            cancellationReason: reason,
+            refundId: refund.id
+          });
+          console.log('Product status updated - marked as available');
+        } catch (dbError) {
+          console.error('Error updating product status:', dbError);
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        refundId: refund.id,
+        refundAmount: refundAmount,
+        cancellationFee: cancellationFee,
+        labelVoided: labelVoided,
+        message: `Order cancelled. Refunded $${(refundAmount / 100).toFixed(2)} (5% cancellation fee of $${(cancellationFee / 100).toFixed(2)} retained)`
+      });
+
+    } catch (error) {
+      console.error('Cancellation Error:', error);
       return res.status(500).json({ error: error.message });
     }
   }
@@ -389,6 +573,9 @@ exports.checkSellerStatus = onRequest(
 );
 
 // --- RECAPTCHA ENTERPRISE: Verify Token ---
+// NOTE: Uncomment this function after setting RECAPTCHA_API_KEY secret:
+// firebase functions:secrets:set RECAPTCHA_API_KEY
+/*
 exports.verifyRecaptcha = onRequest(
   { cors: true, secrets: [recaptchaApiKey] },
   async (req, res) => {
@@ -488,3 +675,4 @@ exports.verifyRecaptcha = onRequest(
     }
   }
 );
+*/
