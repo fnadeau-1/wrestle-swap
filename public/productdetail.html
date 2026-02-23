@@ -209,21 +209,6 @@
             color: #28a745;
         }
 
-        .contact-seller-btn {
-            width: 100%;
-            padding: 12px;
-            background: #fff;
-            border: 2px solid #3665f3;
-            color: #3665f3;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .contact-seller-btn:hover {
-            background: #e3f2fd;
-        }
-
         .related-section {
             margin-top: 60px;
         }
@@ -456,7 +441,6 @@
                         <div class="seller-name" id="seller-name">Sold by: Loading...</div>
                         <div class="seller-rating" id="seller-rating">⭐ New seller</div>
                     </div>
-                    <button class="contact-seller-btn" onclick="contactSeller()">Contact Seller</button>
                 </div>
             </div>
         </div>
@@ -504,6 +488,10 @@
                         </div>
                     </div>
                 `;
+                // Re-check if this is user's own product after auth state changes
+                if (window.currentProduct) {
+                    window.checkIfOwnProduct(window.currentProduct);
+                }
             } else {
                 menuWrapper.innerHTML = `
                     <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
@@ -523,6 +511,13 @@
 
         window.firebaseReady = true;
         window.dispatchEvent(new Event('firebaseReady'));
+
+        // Re-check own product status when auth changes and product is loaded
+        onAuthStateChanged(auth, (user) => {
+            if (user && window.currentProduct && window.checkIfOwnProduct) {
+                window.checkIfOwnProduct(window.currentProduct);
+            }
+        });
     </script>
 
     <script>
@@ -557,6 +552,7 @@
                 };
 
                 currentProduct = product;
+                window.currentProduct = product;
                 displayProduct(product);
                 loadRelatedProducts(product);
                 checkWatchlistStatus();
@@ -582,6 +578,9 @@
                 `;
                 document.getElementById('shipping-section').style.display = 'none';
             }
+
+            // Check if this is the user's own product
+            checkIfOwnProduct(product);
 
             if (product.zipCode) {
                 document.getElementById('product-location').textContent = product.zipCode;
@@ -806,8 +805,30 @@
             }, 3000);
         }
 
+        function checkIfOwnProduct(product) {
+            const user = window.getCurrentUser();
+            if (user && product.userId && user.uid === product.userId && !product.sold) {
+                // This is the user's own product - disable buying
+                document.getElementById('action-buttons').innerHTML = `
+                    <button class="btn btn-primary" disabled style="background: #ccc; cursor: not-allowed;">This is Your Listing</button>
+                    <p style="text-align: center; color: #707070; font-size: 14px;">You cannot purchase your own item.</p>
+                    <a href="listings-manager.html" class="btn btn-secondary" style="text-decoration: none; text-align: center;">Manage Your Listings</a>
+                `;
+                document.getElementById('shipping-section').style.display = 'none';
+            }
+        }
+        // Expose to window for auth state listener
+        window.checkIfOwnProduct = checkIfOwnProduct;
+
         function buyNow() {
             if (!currentProduct) return;
+
+            // Check if user is trying to buy their own product
+            const user = window.getCurrentUser();
+            if (user && currentProduct.userId && user.uid === currentProduct.userId) {
+                showToast('You cannot purchase your own item', 'error');
+                return;
+            }
 
             if (currentProduct.sold) {
                 showToast('This item has already been sold', 'error');
@@ -849,6 +870,36 @@
             saveWatchlist(watchlist);
         }
 
+        // Cloud Function URL for shipping rates
+        const SHIPPO_RATES_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/shippoGetRates';
+
+        // Fallback address if seller hasn't set one
+        const FALLBACK_FROM_ADDRESS = {
+            name: 'Wrestle Swap',
+            street1: '123 Wrestling Way',
+            city: 'Chicago',
+            state: 'IL',
+            zip: '60601',
+            country: 'US'
+        };
+
+        async function getSellerAddress(sellerId) {
+            try {
+                const userRef = window.doc(window.firebaseDb, 'users', sellerId);
+                const userSnap = await window.getDoc(userRef);
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    if (userData.shippingAddress && userData.shippingAddress.street1) {
+                        return userData.shippingAddress;
+                    }
+                }
+                return null;
+            } catch (error) {
+                console.error('Error fetching seller address:', error);
+                return null;
+            }
+        }
+
         async function calculateShipping() {
             const zipInput = document.getElementById('shipping-zip');
             const resultsDiv = document.getElementById('shipping-results');
@@ -859,65 +910,101 @@
                 return;
             }
 
+            if (!currentProduct) {
+                resultsDiv.innerHTML = '<div class="shipping-error">Product not loaded</div>';
+                return;
+            }
+
             resultsDiv.innerHTML = '<div class="shipping-loading">⏳ Calculating shipping rates...</div>';
 
             try {
-                const response = await fetch('/.netlify/functions/get-shipping-rates', {
+                // Get seller's shipping address
+                let fromAddress = FALLBACK_FROM_ADDRESS;
+                if (currentProduct.userId) {
+                    const sellerAddress = await getSellerAddress(currentProduct.userId);
+                    if (sellerAddress) {
+                        fromAddress = sellerAddress;
+                    }
+                }
+
+                // Call Cloud Function for shipping rates
+                const response = await fetch(SHIPPO_RATES_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ zipCode: zipCode })
+                    body: JSON.stringify({
+                        fromAddress: fromAddress,
+                        toAddress: {
+                            name: 'Customer',
+                            street1: '123 Main St',
+                            city: 'Anytown',
+                            state: 'US',
+                            zip: zipCode,
+                            country: 'US'
+                        },
+                        parcel: {
+                            length: '10',
+                            width: '8',
+                            height: '4',
+                            weight: '1',
+                            distance_unit: 'in',
+                            mass_unit: 'lb'
+                        }
+                    })
                 });
 
                 if (!response.ok) {
                     throw new Error('Failed to get rates');
                 }
 
-                const rates = await response.json();
-                if (rates && rates.length > 0) {
-                    displayShippingRates(rates);
+                const data = await response.json();
+                if (data.rates && data.rates.length > 0) {
+                    displayCheapestRate(data.rates);
                 } else {
-                    resultsDiv.innerHTML = '<div class="shipping-error">No shipping rates available</div>';
+                    resultsDiv.innerHTML = '<div class="shipping-error">No shipping rates available for this location</div>';
                 }
             } catch (error) {
                 console.error('Shipping error:', error);
-                resultsDiv.innerHTML = `<div class="shipping-error">Unable to calculate shipping</div>`;
+                resultsDiv.innerHTML = `<div class="shipping-error">Unable to calculate shipping. Please try again.</div>`;
             }
         }
 
-        function displayShippingRates(rates) {
+        function displayCheapestRate(rates) {
             const resultsDiv = document.getElementById('shipping-results');
-            const sortedRates = rates.filter(r => r.shipping_amount && r.shipping_amount.amount).sort((a, b) => a.shipping_amount.amount - b.shipping_amount.amount).slice(0, 5);
 
-            if (sortedRates.length === 0) {
+            // Filter valid rates and sort by price to get cheapest
+            const validRates = rates.filter(r => r.amount && parseFloat(r.amount) > 0);
+            if (validRates.length === 0) {
                 resultsDiv.innerHTML = '<div class="shipping-error">No available shipping options</div>';
                 return;
             }
 
-            let html = '<div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #333;">Available Shipping:</div>';
-            sortedRates.forEach((rate, index) => {
-                const price = rate.shipping_amount.amount;
-                const days = rate.delivery_days || 'N/A';
-                const carrier = rate.carrier_friendly_name || rate.carrier_id || 'Carrier';
-                const service = rate.service_type || 'Standard';
-                html += `
-                    <div class="shipping-rate" onclick="selectShippingRate('${rate.rate_id || index}', ${price})">
-                        <div class="shipping-rate-info">
-                            <div class="shipping-rate-name">${carrier} - ${service}</div>
-                            <div class="shipping-rate-details">${days !== 'N/A' ? `Est: ${days} business days` : 'Delivery varies'}</div>
-                        </div>
-                        <div class="shipping-rate-price">$${price.toFixed(2)}</div>
-                    </div>
-                `;
-            });
-            resultsDiv.innerHTML = html;
-        }
+            // Sort by price and get cheapest
+            validRates.sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount));
+            const cheapestRate = validRates[0];
 
-        function selectShippingRate(rateId, price) {
-            selectedShippingRate = { id: rateId, price: price };
-            document.querySelectorAll('.shipping-rate').forEach(el => el.classList.remove('selected'));
-            event.currentTarget.classList.add('selected');
+            const price = parseFloat(cheapestRate.amount);
+            const days = cheapestRate.estimated_days || cheapestRate.delivery_days || 'N/A';
+            const carrier = cheapestRate.provider || cheapestRate.carrier || 'USPS';
+            const service = cheapestRate.servicelevel?.name || cheapestRate.service_type || 'Standard';
+
+            // Auto-select the cheapest rate
+            selectedShippingRate = {
+                id: cheapestRate.object_id || cheapestRate.rate_id,
+                price: price
+            };
+
+            const html = `
+                <div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #333;">Estimated Shipping:</div>
+                <div class="shipping-rate selected">
+                    <div class="shipping-rate-info">
+                        <div class="shipping-rate-name">${carrier} - ${service}</div>
+                        <div class="shipping-rate-details">${days !== 'N/A' ? `Est: ${days} business days` : 'Delivery time varies'}</div>
+                    </div>
+                    <div class="shipping-rate-price">$${price.toFixed(2)}</div>
+                </div>
+            `;
+            resultsDiv.innerHTML = html;
             updatePriceWithShipping(price);
-            showToast(`Shipping selected: $${price.toFixed(2)}`);
         }
 
         function updatePriceWithShipping(shippingCost) {
@@ -926,20 +1013,6 @@
             const originalPrice = currentProduct.price || 0;
             const totalPrice = originalPrice + shippingCost;
             priceElement.innerHTML = `$${originalPrice.toFixed(2)}<span style="font-size: 14px; color: #707070; font-weight: normal; display: block; margin-top: 5px;">+ $${shippingCost.toFixed(2)} shipping = $${totalPrice.toFixed(2)} total</span>`;
-        }
-
-        function contactSeller() {
-            const user = window.getCurrentUser();
-            if (!user) {
-                showToast('Please sign in to message sellers', 'error');
-                setTimeout(() => {
-                    window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.href);
-                }, 1500);
-                return;
-            }
-            if (!currentProduct) return;
-
-            showToast('Opening message with seller...', 'success');
         }
 
         function initializePage() {
