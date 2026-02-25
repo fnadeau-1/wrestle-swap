@@ -289,6 +289,15 @@
     </style>
 </head>
 <body>
+    <!-- Auth required notice (shown when accessing checkout without signing in) -->
+    <div id="auth-notice" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:35px 30px; max-width:380px; width:90%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+            <div style="font-size:48px; margin-bottom:15px;">🔒</div>
+            <h2 style="font-size:22px; color:#333; margin-bottom:10px;">Sign In Required</h2>
+            <p style="font-size:14px; color:#707070; line-height:1.5;">You need to be signed in to complete a purchase. Redirecting you to sign in...</p>
+        </div>
+    </div>
+
     <!-- Header -->
     <div class="top-bar">
         <div class="header-content">
@@ -307,6 +316,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -320,7 +330,17 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // Redirect to sign-in if not authenticated
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                const notice = document.getElementById('auth-notice');
+                if (notice) notice.style.display = 'flex';
+                setTimeout(() => { window.location.href = 'sign-in.html'; }, 2500);
+            }
+        });
 
         // Make Firebase available globally
         window.firebaseDb = db;
@@ -328,6 +348,7 @@
         window.getDoc = getDoc;
         window.doc = doc;
         window.serverTimestamp = serverTimestamp;
+        window.getIdToken = async () => auth.currentUser ? auth.currentUser.getIdToken() : null;
 
         // Function to get seller's Stripe account ID
         window.getSellerStripeAccountId = async function(sellerId) {
@@ -387,6 +408,7 @@
         // ============================================
         const SHIPPO_GET_RATES_URL = 'https://shippogetrates-kebvkf67ma-uc.a.run.app';
         const SHIPPO_CREATE_LABEL_URL = 'https://shippocreatelabel-kebvkf67ma-uc.a.run.app';
+        const COMPLETE_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/completeOrder';
 
         // Fallback "from" address (only used if seller has no address)
         const FALLBACK_FROM_ADDRESS = {
@@ -889,48 +911,47 @@
         }
 
         // ============================================
-        // MARK PRODUCT AS SOLD IN FIRESTORE
+        // COMPLETE ORDER VIA CLOUD FUNCTION
         // ============================================
-        
-        async function markProductAsSold(productId, shippingInfo = null, orderId = null) {
+
+        async function completeOrder(productId, paymentIntentId, shippingInfo = null) {
             try {
-                const updateData = {
-                    sold: true,
-                    soldAt: window.serverTimestamp(),
-                    soldTimestamp: Date.now()
-                };
+                const idToken = await window.getIdToken();
+                if (!idToken) throw new Error('Not authenticated');
 
-                // Add order ID if available
-                if (orderId) {
-                    updateData.soldOrderId = orderId;
-                }
+                const body = { productId, paymentIntentId };
 
-                // Add shipping info if available
                 if (shippingInfo) {
-                    updateData.shippingLabel = shippingInfo.label_url;
-                    updateData.trackingNumber = shippingInfo.tracking_number;
-                    updateData.trackingUrl = shippingInfo.tracking_url_provider;
-                    
-                    // Save package dimensions from the globally stored parcel object
-                    if (usedParcelDimensions) {
-                        updateData.packageDimensions = {
-                            length: usedParcelDimensions.length,
-                            width: usedParcelDimensions.width,
-                            height: usedParcelDimensions.height,
-                            weight: usedParcelDimensions.weight,
-                            unit: usedParcelDimensions.distance_unit,
-                            weightUnit: usedParcelDimensions.mass_unit
-                        };
-                    }
+                    body.shippingInfo = shippingInfo;
                 }
 
-                const productRef = window.doc(window.firebaseDb, 'products', productId);
-                await window.updateDoc(productRef, updateData);
-                
-                console.log('Product marked as sold:', productId);
+                if (usedParcelDimensions) {
+                    body.packageDimensions = {
+                        length: usedParcelDimensions.length,
+                        width: usedParcelDimensions.width,
+                        height: usedParcelDimensions.height,
+                        weight: usedParcelDimensions.weight,
+                        unit: usedParcelDimensions.distance_unit,
+                        weightUnit: usedParcelDimensions.mass_unit
+                    };
+                }
+
+                const response = await fetch(COMPLETE_ORDER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Failed to complete order');
+
+                console.log('Order completed via Cloud Function:', productId);
                 return true;
             } catch (error) {
-                console.error('Error marking product as sold:', error);
+                console.error('Error completing order:', error);
                 return false;
             }
         }
@@ -1006,33 +1027,19 @@
 
                     console.log('Step 2: Creating Payment Intent...');
 
-                    // Convert amounts to cents
-                    const amountInCents = Math.round(total * 100);
-                    const productAmountInCents = Math.round(subtotal * 100);
-                    const shippingAmountInCents = Math.round(shippingCost * 100);
-                    const taxAmountInCents = Math.round(tax * 100);
-
-                    console.log('Payment breakdown:');
-                    console.log('  Product:', productAmountInCents, 'cents');
-                    console.log('  Shipping:', shippingAmountInCents, 'cents (goes to platform)');
-                    console.log('  Tax:', taxAmountInCents, 'cents');
-                    console.log('  Total:', amountInCents, 'cents');
-
-                    // Create Payment Intent with Stripe Connect if seller has account
-                    // Shipping and tax go to platform, product price (minus 10%) goes to seller
+                    // Send only productId and shippingCost — the Cloud Function fetches
+                    // the real product price from Firestore and calculates tax server-side.
+                    // Never send amounts from the frontend where they could be tampered with.
                     const response = await fetch('https://createpaymentintent-kebvkf67ma-uc.a.run.app', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            amount: amountInCents,
-                            productAmount: productAmountInCents,
-                            shippingAmount: shippingAmountInCents,
-                            taxAmount: taxAmountInCents,
+                            productId: checkoutProduct.id,
+                            shippingCost: shippingCost,
                             currency: 'usd',
-                            sellerStripeAccountId: sellerStripeAccountId,
-                            productId: checkoutProduct.id
+                            sellerStripeAccountId: sellerStripeAccountId
                         })
                     });
 
@@ -1104,12 +1111,12 @@
                             alert('Payment successful! Note: Shipping label creation failed - we will create it manually and email it to you.');
                         }
                         
-                        // Step 5: Mark product as sold in Firestore
-                        console.log('Step 5: Marking product as sold...');
-                        const soldSuccess = await markProductAsSold(
-                            checkoutProduct.id, 
-                            shippingInfo,
-                            result.paymentIntent.id  // Pass the order ID
+                        // Step 5: Complete order via Cloud Function (verifies payment + marks sold)
+                        console.log('Step 5: Completing order via Cloud Function...');
+                        const soldSuccess = await completeOrder(
+                            checkoutProduct.id,
+                            result.paymentIntent.id,
+                            shippingInfo
                         );
                         
                         if (soldSuccess) {

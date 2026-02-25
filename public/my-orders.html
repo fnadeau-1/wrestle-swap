@@ -1303,18 +1303,18 @@
             cancelBtn.disabled = true;
 
             try {
-                // Call the Cloud Function to process refund
+                // Get Firebase ID token to prove identity to the Cloud Function
+                const idToken = await auth.currentUser.getIdToken();
+
                 const response = await fetch(CANCEL_ORDER_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
                     },
                     body: JSON.stringify({
                         paymentIntentId: orderToCancelData.soldOrderId,
-                        productId: orderToCancel,
-                        reason: 'requested_by_customer',
-                        cancelledBy: 'buyer',
-                        shippoTransactionId: orderToCancelData.shippoTransactionId || null
+                        productId: orderToCancel
                     })
                 });
 
@@ -1324,16 +1324,7 @@
                     throw new Error(result.error || 'Failed to process cancellation');
                 }
 
-                // Update local status
-                await db.collection('products').doc(orderToCancel).update({
-                    cancelled: true,
-                    cancelledAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    cancelledTimestamp: Date.now(),
-                    refundId: result.refundId,
-                    refundAmount: result.refundAmount,
-                    cancellationFee: result.cancellationFee
-                });
-
+                // Firestore update is handled by the Cloud Function via Admin SDK
                 closeCancelModal();
                 await renderOrders();
                 showInfo(result.message || 'Order cancelled successfully! Refund will be processed within 5-7 business days.');

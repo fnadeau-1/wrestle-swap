@@ -63,77 +63,76 @@ exports.createPaymentIntent = onRequest(
 
     try {
       const stripe = require('stripe')(stripeSecret.value());
-      const {
-        amount,  // Total amount (product + shipping + tax) in cents
-        productAmount = 0,  // Product price only in cents
-        shippingAmount = 0,  // Shipping cost in cents
-        taxAmount = 0,  // Tax in cents
-        currency = 'usd',
-        sellerStripeAccountId,
-        productId
-      } = req.body;
+      // Never trust amounts or sellerStripeAccountId from the frontend
+      const { currency = 'usd', productId, shippingCost = 0 } = req.body;
 
-      if (!amount) {
-        return res.status(400).json({ error: 'Amount is required' });
+      if (!productId) {
+        return res.status(400).json({ error: 'productId is required' });
       }
 
-      console.log('Creating payment intent:');
-      console.log('  Total amount:', amount);
-      console.log('  Product amount:', productAmount);
-      console.log('  Shipping amount:', shippingAmount);
-      console.log('  Tax amount:', taxAmount);
-      console.log('  Seller Stripe Account ID:', sellerStripeAccountId);
+      // --- SERVER-SIDE PRICE VALIDATION ---
+      // Fetch real price from Firestore — never trust the frontend
+      const productDoc = await db.collection('products').doc(productId).get();
+      if (!productDoc.exists) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      const productData = productDoc.data();
+      if (productData.sold) {
+        return res.status(400).json({ error: 'This item has already been sold' });
+      }
 
-      // Build payment intent options
+      const productPriceInCents = Math.round((productData.price || 0) * 100);
+      const shippingInCents = Math.max(0, Math.round((shippingCost || 0) * 100));
+      const taxInCents = Math.round(productPriceInCents * 0.08);
+      const amount = productPriceInCents + shippingInCents + taxInCents;
+
+      // Look up seller's Stripe account from Firestore — never trust the frontend
+      let sellerStripeAccountId = null;
+      if (productData.userId) {
+        const sellerDoc = await db.collection('users').doc(productData.userId).get();
+        if (sellerDoc.exists && sellerDoc.data().stripeAccountId) {
+          sellerStripeAccountId = sellerDoc.data().stripeAccountId;
+        }
+      }
+
+      console.log('Server-verified payment breakdown:');
+      console.log('  Product (from Firestore):', productPriceInCents, 'cents');
+      console.log('  Shipping:', shippingInCents, 'cents');
+      console.log('  Tax:', taxInCents, 'cents');
+      console.log('  Total:', amount, 'cents');
+      console.log('  Seller Stripe Account (from Firestore):', sellerStripeAccountId);
+
+      // Build payment intent options — always attach productId to metadata
       const paymentIntentOptions = {
-        amount: amount,
-        currency: currency,
+        amount,
+        currency,
         automatic_payment_methods: { enabled: true },
+        metadata: { productId },
       };
 
-      // If seller has a connected Stripe account, use destination charges
-      if (sellerStripeAccountId && productAmount > 0) {
-        // Platform keeps:
-        // 1. 10% of product price (platform fee)
-        // 2. 100% of shipping (to pay for labels)
-        // 3. Tax (collected for the platform)
-
-        const platformFeeOnProduct = Math.round(productAmount * PLATFORM_FEE_PERCENT);
-        const sellerReceives = productAmount - platformFeeOnProduct;
-
-        // Application fee = total amount - what seller receives
-        // This includes: platform fee + shipping + tax
+      if (sellerStripeAccountId && productPriceInCents > 0) {
+        const platformFeeOnProduct = Math.round(productPriceInCents * PLATFORM_FEE_PERCENT);
+        const sellerReceives = productPriceInCents - platformFeeOnProduct;
         const applicationFeeAmount = amount - sellerReceives;
 
         console.log('Using Stripe Connect - destination charge');
         console.log('  Platform fee (10% of product):', platformFeeOnProduct);
-        console.log('  Shipping (kept by platform):', shippingAmount);
-        console.log('  Tax (kept by platform):', taxAmount);
         console.log('  Total application fee:', applicationFeeAmount);
         console.log('  Seller receives:', sellerReceives);
 
-        // Add Stripe Connect parameters
         paymentIntentOptions.application_fee_amount = applicationFeeAmount;
-        paymentIntentOptions.transfer_data = {
-          destination: sellerStripeAccountId,
-        };
-
-        // Add metadata for tracking
+        paymentIntentOptions.transfer_data = { destination: sellerStripeAccountId };
         paymentIntentOptions.metadata = {
-          productId: productId || 'unknown',
+          productId,
           sellerAccountId: sellerStripeAccountId,
-          productAmount: productAmount,
-          shippingAmount: shippingAmount,
-          taxAmount: taxAmount,
           platformFee: platformFeeOnProduct,
-          sellerReceives: sellerReceives,
+          sellerReceives,
         };
       } else {
         console.log('No seller Stripe account - payment goes to platform');
       }
 
       const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
-
       console.log('Payment intent created:', paymentIntent.id);
 
       return res.status(200).json({
@@ -158,18 +157,45 @@ exports.cancelOrder = onRequest(
       return res.status(204).send('');
     }
 
+    // Verify Firebase ID token — proves who is making the request
+    const authHeader = req.headers.authorization || '';
+    const idToken = authHeader.replace('Bearer ', '');
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     try {
       const stripe = require('stripe')(stripeSecret.value());
       const {
         paymentIntentId,
         productId,
-        reason = 'requested_by_customer',
-        cancelledBy = 'buyer', // 'buyer' or 'seller'
         shippoTransactionId = null
       } = req.body;
 
-      if (!paymentIntentId) {
-        return res.status(400).json({ error: 'Payment Intent ID is required' });
+      if (!paymentIntentId || !productId) {
+        return res.status(400).json({ error: 'paymentIntentId and productId are required' });
+      }
+
+      // Verify the caller is the actual buyer of this order
+      const productDoc = await db.collection('products').doc(productId).get();
+      if (!productDoc.exists) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      const productData = productDoc.data();
+      if (productData.buyerId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'You are not the buyer of this order' });
+      }
+      if (!productData.sold || productData.cancelled) {
+        return res.status(400).json({ error: 'Order is not in a cancellable state' });
+      }
+
+      // Verify the payment intent belongs to this product
+      const piCheck = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (piCheck.metadata.productId !== productId) {
+        return res.status(403).json({ error: 'Payment intent does not match this product' });
       }
 
       console.log('Processing cancellation:');
@@ -676,3 +702,71 @@ exports.verifyRecaptcha = onRequest(
   }
 );
 */
+
+// --- COMPLETE ORDER (marks product sold after server-verified payment) ---
+exports.completeOrder = onRequest(
+  { cors: true, secrets: [stripeSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') {
+      res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      return res.status(204).send('');
+    }
+
+    // Verify Firebase ID token
+    const authHeader = req.headers.authorization || '';
+    const idToken = authHeader.replace('Bearer ', '');
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      const stripe = require('stripe')(stripeSecret.value());
+      const { paymentIntentId, productId, shippingInfo, packageDimensions } = req.body;
+
+      if (!paymentIntentId || !productId) {
+        return res.status(400).json({ error: 'paymentIntentId and productId are required' });
+      }
+
+      // Verify payment actually succeeded with Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (paymentIntent.status !== 'succeeded') {
+        return res.status(400).json({ error: 'Payment has not succeeded' });
+      }
+
+      // Verify this payment intent is for this product
+      if (paymentIntent.metadata.productId !== productId) {
+        return res.status(403).json({ error: 'Payment does not match this product' });
+      }
+
+      const updateData = {
+        sold: true,
+        soldAt: admin.firestore.FieldValue.serverTimestamp(),
+        soldTimestamp: Date.now(),
+        soldOrderId: paymentIntentId,
+        buyerId: decodedToken.uid,  // Store for ownership checks (e.g. cancelOrder)
+      };
+
+      if (shippingInfo) {
+        updateData.shippingLabel = shippingInfo.label_url || null;
+        updateData.trackingNumber = shippingInfo.tracking_number || null;
+        updateData.trackingUrl = shippingInfo.tracking_url_provider || null;
+      }
+
+      if (packageDimensions) {
+        updateData.packageDimensions = packageDimensions;
+      }
+
+      await db.collection('products').doc(productId).update(updateData);
+
+      console.log('Order completed — product:', productId, 'buyer:', decodedToken.uid);
+      return res.status(200).json({ success: true });
+
+    } catch (error) {
+      console.error('completeOrder error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);

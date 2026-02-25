@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In or Register | Wrestle Swap</title>
     <link rel="stylesheet" href="css/base.css">
-    <script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/enterprise.js?render=6LcM51YsAAAAAJIK9J6ztDQhKET0FdHvOBZ9p9Ah" async defer></script>
     <style>
         /* Page-specific styles for sign-in.html */
         body {
@@ -171,12 +171,6 @@
 
         .forgot-password a:hover {
             text-decoration: underline;
-        }
-
-        .recaptcha-container {
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: center;
         }
 
         .submit-btn {
@@ -346,11 +340,6 @@
                         <a href="forgot.html">Forgot password?</a>
                     </div>
 
-                    <!-- reCAPTCHA for Sign In -->
-                    <div class="recaptcha-container">
-                        <div class="g-recaptcha" id="signin-recaptcha" data-sitekey="6LeqLx0sAAAAAMj_mDw1C5KmH4n9G-IyOl3qeYdK"></div>
-                    </div>
-
                     <button type="submit" class="submit-btn">Sign In</button>
                 </form>
 
@@ -407,11 +396,6 @@
                     <div class="checkbox-group">
                         <input type="checkbox" id="agree-terms" required>
                         <label for="agree-terms">I agree to the Terms of Service and Privacy Policy</label>
-                    </div>
-
-                    <!-- reCAPTCHA for Registration -->
-                    <div class="recaptcha-container">
-                        <div class="g-recaptcha" id="register-recaptcha" data-sitekey="6LeqLx0sAAAAAMj_mDw1C5KmH4n9G-IyOl3qeYdK"></div>
                     </div>
 
                     <button type="submit" class="submit-btn">Create Account</button>
@@ -559,81 +543,59 @@
             input.type = input.type === 'password' ? 'text' : 'password';
         }
 
-        // Verify reCAPTCHA Enterprise - now takes a widget ID parameter
-        function verifyRecaptcha(widgetId) {
-            // Get the response from the specific reCAPTCHA widget
-            const response = grecaptcha.enterprise.getResponse(widgetId);
-            if (response.length === 0) {
-                alert('Please complete the reCAPTCHA verification');
-                return false;
-            }
-            return true;
+        const RECAPTCHA_SITE_KEY = '6LcM51YsAAAAAJIK9J6ztDQhKET0FdHvOBZ9p9Ah';
+        const RECAPTCHA_VERIFY_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/verifyRecaptcha';
+
+        async function executeRecaptcha(action) {
+            await new Promise(resolve => grecaptcha.enterprise.ready(resolve));
+            return await grecaptcha.enterprise.execute(RECAPTCHA_SITE_KEY, { action });
         }
 
-        // Reset specific reCAPTCHA Enterprise widget
-        function resetRecaptcha(widgetId) {
+        async function verifyRecaptchaServer(action) {
             try {
-                grecaptcha.enterprise.reset(widgetId);
-            } catch (e) {
-                console.error('Error resetting reCAPTCHA:', e);
+                const token = await executeRecaptcha(action);
+                const response = await fetch(RECAPTCHA_VERIFY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, expectedAction: action })
+                });
+                const result = await response.json();
+                return result.success;
+            } catch (error) {
+                console.error('reCAPTCHA error:', error);
+                return false;
             }
         }
 
         // Google Login for Sign In
-        function googleLogin() {
-            // Verify reCAPTCHA first (widget ID 0 for sign-in form)
-            if (!verifyRecaptcha(0)) {
-                return;
-            }
+        async function googleLogin() {
+            if (popupInProgress) return;
 
-            // Prevent multiple popup requests
-            if (popupInProgress) {
-                console.log('Popup already in progress');
-                return;
-            }
-
-            // Disable the button to prevent double-clicks
             const button = document.getElementById('google-signin-btn');
             button.disabled = true;
             popupInProgress = true;
 
-            const provider = new window.GoogleAuthProvider();
-
-            window.signInWithPopup(window.firebaseAuth, provider)
-                .then((result) => {
-                    const user = result.user;
-                    alert('Sign in successful! Welcome back to Wrestle Swap!');
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    // Only show error if it's not a cancelled popup
-                    if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
-                        alert('Error: ' + error.message);
-                    }
-                    console.error(error);
-                    resetRecaptcha(0); // Reset reCAPTCHA on error
-                })
-                .finally(() => {
-                    // Re-enable the button and reset the flag
-                    button.disabled = false;
-                    popupInProgress = false;
-                });
+            try {
+                await verifyRecaptchaServer('GOOGLE_SIGN_IN');
+                const provider = new window.GoogleAuthProvider();
+                const result = await window.signInWithPopup(window.firebaseAuth, provider);
+                alert('Sign in successful! Welcome back to Wrestle Swap!');
+                window.location.href = 'index.html';
+            } catch (error) {
+                if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
+                    alert('Error: ' + error.message);
+                }
+                console.error(error);
+            } finally {
+                button.disabled = false;
+                popupInProgress = false;
+            }
         }
 
         // Google Register for Registration
         async function googleRegister() {
-            // Verify reCAPTCHA first (widget ID 1 for register form)
-            if (!verifyRecaptcha(1)) {
-                return;
-            }
+            if (popupInProgress) return;
 
-            // Prevent multiple popup requests
-            if (popupInProgress) {
-                console.log('Popup already in progress');
-                return;
-            }
-
-            // Disable the button to prevent double-clicks
             const button = document.getElementById('google-register-btn');
             button.disabled = true;
             popupInProgress = true;
@@ -641,6 +603,7 @@
             const provider = new window.GoogleAuthProvider();
 
             try {
+                await verifyRecaptchaServer('GOOGLE_REGISTER');
                 const result = await window.signInWithPopup(window.firebaseAuth, provider);
                 const user = result.user;
 
@@ -669,46 +632,33 @@
                     alert('Error: ' + error.message);
                 }
                 console.error(error);
-                resetRecaptcha(1); // Reset reCAPTCHA on error
             } finally {
-                // Re-enable the button and reset the flag
                 button.disabled = false;
                 popupInProgress = false;
             }
         }
 
         // Handle Sign In
-        function handleSignIn(event) {
+        async function handleSignIn(event) {
             event.preventDefault();
-            
-            // Verify reCAPTCHA using widget ID 0 (first widget)
-            if (!verifyRecaptcha(0)) {
-                return;
-            }
-            
+
             const email = document.getElementById('signin-email').value;
             const password = document.getElementById('signin-password').value;
-            
-            window.signInWithEmailAndPassword(window.firebaseAuth, email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    alert('Sign in successful! Welcome back to Wrestle Swap!');
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    alert('Error: ' + error.message);
-                    resetRecaptcha(0); // Reset sign-in reCAPTCHA on error
-                });
+
+            await verifyRecaptchaServer('SIGN_IN');
+
+            try {
+                await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
+                alert('Sign in successful! Welcome back to Wrestle Swap!');
+                window.location.href = 'index.html';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
         }
 
         // Handle Registration
         async function handleRegister(event) {
             event.preventDefault();
-            
-            // Verify reCAPTCHA using widget ID 1 (second widget)
-            if (!verifyRecaptcha(1)) {
-                return;
-            }
             
             const name = document.getElementById('register-name').value;
             const email = document.getElementById('register-email').value;
@@ -737,6 +687,8 @@
             }
             
             try {
+                await verifyRecaptchaServer('REGISTER');
+
                 // Create the account
                 const userCredential = await window.createUserWithEmailAndPassword(window.firebaseAuth, email, password);
                 const user = userCredential.user;
@@ -767,7 +719,6 @@
                 window.location.href = 'index.html';
             } catch (error) {
                 alert('Error: ' + error.message);
-                resetRecaptcha(1); // Reset register reCAPTCHA on error
             }
         }
     </script>
