@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Wrestle Swap</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+
+    <style>
+        /* ============================================
+           ADMIN PAGE - Inline Styles
+           ============================================ */
+
+        :root {
+            --color-bg: #f7f7f7;
+            --color-surface: #ffffff;
+            --color-text: #1a1a1a;
+            --color-text-muted: #666666;
+            --color-border: #e5e5e5;
+            --color-accent: #f94545;
+            --color-success: #059669;
+            --color-danger: #dc2626;
+            --color-warning: #d97706;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --radius: 8px;
+        }
+
+        /* ---- Auth gate overlay ---- */
+        #auth-gate {
+            position: fixed;
+            inset: 0;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            font-size: 18px;
+            color: #555;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .gate-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e5e5;
+            border-top-color: #f94545;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ---- Top bar buttons ---- */
+        .top-bar-btn {
+            padding: 4px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 0;
+            background: #f7f7f7;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #000;
+        }
+        .top-bar-btn:hover {
+            background: #e5e5e5;
+        }
+
+        /* ---- Warning banner ---- */
+        .admin-warning-banner {
+            background: #dc2626;
+            color: #fff;
+            text-align: center;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        /* ---- Page layout ---- */
+        .admin-page {
+            max-width: 1280px;
+            margin: 28px auto;
+            padding: 0 20px;
+        }
+
+        .admin-page-header {
+            margin-bottom: 24px;
+        }
+
+        .admin-page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .admin-page-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* ---- Tab switcher ---- */
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            border-bottom: 2px solid #e5e5e5;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            padding: 10px 22px;
+            font-size: 14px;
+            font-weight: 600;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            cursor: pointer;
+            color: #666;
+            border-radius: 4px 4px 0 0;
+            transition: color 0.15s, border-color 0.15s;
+        }
+
+        .tab-btn:hover {
+            color: #1a1a1a;
+            background: #f5f5f5;
+        }
+
+        .tab-btn.active {
+            color: #dc2626;
+            border-bottom-color: #dc2626;
+        }
+
+        /* ---- Tab sections ---- */
+        .tab-section {
+            display: none;
+        }
+        .tab-section.active {
+            display: block;
+        }
+
+        /* ---- Section header row (title + refresh) ---- */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .refresh-btn {
+            padding: 7px 18px;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            color: #333;
+            transition: background 0.15s;
+        }
+
+        .refresh-btn:hover {
+            background: #f5f5f5;
+        }
+
+        /* ---- Loading / empty states ---- */
+        .loading-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #888;
+        }
+
+        .loading-state .spinner {
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            border: 4px solid #e5e5e5;
+            border-top-color: #f94545;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            background: #fff;
+            border-radius: var(--radius);
+            border: 1px solid #e5e5e5;
+            color: #888;
+            font-size: 15px;
+        }
+
+        /* ---- Data table ---- */
+        .table-wrap {
+            background: #fff;
+            border-radius: var(--radius);
+            border: 1px solid #e5e5e5;
+            overflow-x: auto;
+            box-shadow: var(--shadow-sm);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #f9f9f9;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        thead th {
+            text-align: left;
+            padding: 11px 16px;
+            font-weight: 600;
+            color: #444;
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #fafafa;
+        }
+
+        tbody td {
+            padding: 11px 16px;
+            color: #333;
+            vertical-align: middle;
+        }
+
+        /* ---- Status badges ---- */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        .badge-green {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-yellow {
+            background: #fef9c3;
+            color: #92400e;
+        }
+
+        .badge-red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-gray {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        /* ---- Action buttons ---- */
+        .action-btn {
+            padding: 5px 14px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.15s;
+        }
+
+        .action-btn:hover {
+            opacity: 0.85;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-view {
+            background: #3665f3;
+            color: #fff;
+        }
+
+        .btn-unsuspend {
+            background: #059669;
+            color: #fff;
+        }
+
+        .btn-resolve {
+            background: #7c3aed;
+            color: #fff;
+        }
+
+        .btn-resolved-done {
+            background: #e5e5e5;
+            color: #666;
+            cursor: default;
+        }
+
+        /* ---- Truncate long strings ---- */
+        .uid-cell {
+            font-family: monospace;
+            font-size: 11px;
+            max-width: 130px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #555;
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 768px) {
+            .admin-page {
+                padding: 0 12px;
+                margin-top: 16px;
+            }
+            .tab-btn {
+                padding: 8px 14px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Auth gate — shown until admin check completes -->
+    <div id="auth-gate">
+        <div class="gate-spinner"></div>
+        <span>Loading...</span>
+    </div>
+
+    <!-- Top Bar -->
+    <div class="top-bar bg-gray">
+        <div class="top-bar-content">
+            <div>
+                <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help &amp; Contact</button>
+                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
+            </div>
+            <div>
+                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
+                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <a class="logo" href="index.html">Wrestle Swap</a>
+            <span style="font-size:14px; color:#666; margin-left:8px;">Admin Panel</span>
+        </div>
+    </div>
+
+    <!-- Warning Banner -->
+    <div class="admin-warning-banner">
+        Admin Area &mdash; Changes take effect immediately
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-page">
+        <div class="admin-page-header">
+            <h1>Admin Dashboard</h1>
+            <p>Manage orders, sellers, and refund requests for Wrestle Swap.</p>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div class="tab-bar" role="tablist">
+            <button class="tab-btn active" role="tab" onclick="switchTab('orders', this)">Orders</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('sellers', this)">Sellers</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('refunds', this)">Refund Requests</button>
+        </div>
+
+        <!-- ==============================
+             TAB 1: ORDERS
+             ============================== -->
+        <div class="tab-section active" id="tab-orders">
+            <div class="section-header">
+                <span class="section-title">Orders (sold &amp; cancelled)</span>
+                <button class="refresh-btn" onclick="loadOrders()">Refresh</button>
+            </div>
+
+            <div class="loading-state" id="orders-loading">
+                <div class="spinner"></div>
+                <p>Loading orders...</p>
+            </div>
+
+            <div class="empty-state" id="orders-empty" style="display:none;">
+                No orders found.
+            </div>
+
+            <div class="table-wrap" id="orders-table-wrap" style="display:none;">
+                <table id="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Product Title</th>
+                            <th>Price</th>
+                            <th>Buyer UID</th>
+                            <th>Seller UID</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==============================
+             TAB 2: SELLERS
+             ============================== -->
+        <div class="tab-section" id="tab-sellers">
+            <div class="section-header">
+                <span class="section-title">Sellers / Users</span>
+                <button class="refresh-btn" onclick="loadSellers()">Refresh</button>
+            </div>
+
+            <div class="loading-state" id="sellers-loading">
+                <div class="spinner"></div>
+                <p>Loading sellers...</p>
+            </div>
+
+            <div class="empty-state" id="sellers-empty" style="display:none;">
+                No users found.
+            </div>
+
+            <div class="table-wrap" id="sellers-table-wrap" style="display:none;">
+                <table id="sellers-table">
+                    <thead>
+                        <tr>
+                            <th>Display Name</th>
+                            <th>Email</th>
+                            <th>Strikes</th>
+                            <th>Suspended</th>
+                            <th>Stripe Connected</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sellers-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==============================
+             TAB 3: REFUND REQUESTS
+             ============================== -->
+        <div class="tab-section" id="tab-refunds">
+            <div class="section-header">
+                <span class="section-title">Refund Requests</span>
+                <button class="refresh-btn" onclick="loadRefunds()">Refresh</button>
+            </div>
+
+            <div class="loading-state" id="refunds-loading">
+                <div class="spinner"></div>
+                <p>Loading refund requests...</p>
+            </div>
+
+            <div class="empty-state" id="refunds-empty" style="display:none;">
+                No refund requests found.
+            </div>
+
+            <div class="table-wrap" id="refunds-table-wrap" style="display:none;">
+                <table id="refunds-table">
+                    <thead>
+                        <tr>
+                            <th>Product ID</th>
+                            <th>Buyer UID</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="refunds-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div><!-- /.admin-page -->
+
+
+    <!-- Firebase SDK v9.22.0 (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // ============================================
+        // FIREBASE CONFIGURATION
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
+            authDomain: "wrestleswap.firebaseapp.com",
+            projectId: "wrestleswap",
+            storageBucket: "wrestleswap.firebasestorage.app",
+            messagingSenderId: "857051782398",
+            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
+            measurementId: "G-B411WXLF3J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // ============================================
+        // AUTH GATE — verify admin before showing page
+        // ============================================
+        auth.onAuthStateChanged(async function(user) {
+            if (!user) {
+                // Not signed in — redirect
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (!userDoc.exists || userDoc.data().isAdmin !== true) {
+                    // Not an admin — redirect
+                    window.location.href = 'index.html';
+                    return;
+                }
+            } catch (err) {
+                console.error('Admin check failed:', err);
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Admin confirmed — reveal the page and load initial tab
+            document.getElementById('auth-gate').style.display = 'none';
+            loadOrders();
+        });
+
+        // ============================================
+        // TAB SWITCHER
+        // ============================================
+        function switchTab(name, btn) {
+            // Deactivate all tabs and sections
+            document.querySelectorAll('.tab-btn').forEach(function(b) {
+                b.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-section').forEach(function(s) {
+                s.classList.remove('active');
+            });
+
+            btn.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+
+            // Lazy-load data when tab is first opened
+            if (name === 'orders') { loadOrders(); }
+            if (name === 'sellers') { loadSellers(); }
+            if (name === 'refunds') { loadRefunds(); }
+        }
+
+        // ============================================
+        // HELPERS
+        // ============================================
+        function formatDate(ts) {
+            if (!ts) return '—';
+            var d;
+            if (ts && typeof ts.toDate === 'function') {
+                d = ts.toDate();
+            } else if (ts instanceof Date) {
+                d = ts;
+            } else {
+                d = new Date(ts);
+            }
+            if (isNaN(d)) return '—';
+            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function truncate(str, len) {
+            if (!str) return '—';
+            return str.length > len ? str.substring(0, len) + '…' : str;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function showSection(prefix, state) {
+            // state: 'loading' | 'empty' | 'table'
+            var loading = document.getElementById(prefix + '-loading');
+            var empty   = document.getElementById(prefix + '-empty');
+            var wrap    = document.getElementById(prefix + '-table-wrap');
+
+            loading.style.display = state === 'loading' ? 'block' : 'none';
+            empty.style.display   = state === 'empty'   ? 'block' : 'none';
+            wrap.style.display    = state === 'table'   ? 'block' : 'none';
+        }
+
+        // ============================================
+        // TAB 1: ORDERS
+        // ============================================
+        var ordersLoaded = false;
+
+        async function loadOrders() {
+            showSection('orders', 'loading');
+
+            try {
+                // Query: sold==true OR cancelled==true
+                // Firestore doesn't support OR across two fields natively,
+                // so we run two queries and merge.
+                var soldSnap = await db.collection('products')
+                    .where('sold', '==', true)
+                    .orderBy('soldTimestamp', 'desc')
+                    .limit(100)
+                    .get();
+
+                var cancelledSnap = await db.collection('products')
+                    .where('cancelled', '==', true)
+                    .orderBy('soldTimestamp', 'desc')
+                    .limit(100)
+                    .get();
+
+                // Merge and deduplicate by doc id
+                var seenIds = {};
+                var orders = [];
+
+                soldSnap.forEach(function(doc) {
+                    if (!seenIds[doc.id]) {
+                        seenIds[doc.id] = true;
+                        orders.push({ id: doc.id, ...doc.data() });
+                    }
+                });
+
+                cancelledSnap.forEach(function(doc) {
+                    if (!seenIds[doc.id]) {
+                        seenIds[doc.id] = true;
+                        orders.push({ id: doc.id, ...doc.data() });
+                    }
+                });
+
+                // Sort by soldTimestamp desc
+                orders.sort(function(a, b) {
+                    var ta = a.soldTimestamp && a.soldTimestamp.toMillis ? a.soldTimestamp.toMillis() : 0;
+                    var tb = b.soldTimestamp && b.soldTimestamp.toMillis ? b.soldTimestamp.toMillis() : 0;
+                    return tb - ta;
+                });
+
+                if (orders.length === 0) {
+                    showSection('orders', 'empty');
+                    return;
+                }
+
+                var tbody = document.getElementById('orders-tbody');
+                tbody.innerHTML = '';
+
+                orders.forEach(function(order) {
+                    var status = getOrderStatus(order);
+                    var row = document.createElement('tr');
+                    row.innerHTML =
+                        '<td>' + escapeHtml(truncate(order.title || order.name, 40)) + '</td>' +
+                        '<td>' + (order.price != null ? '$' + parseFloat(order.price).toFixed(2) : '—') + '</td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(order.buyerUid || '') + '">' + escapeHtml(order.buyerUid || '—') + '</span></td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(order.userId || order.sellerUid || '') + '">' + escapeHtml(order.userId || order.sellerUid || '—') + '</span></td>' +
+                        '<td>' + status.badge + '</td>' +
+                        '<td>' + formatDate(order.soldTimestamp) + '</td>' +
+                        '<td>' +
+                            '<button class="action-btn btn-view" onclick="window.open(\'productdetail.html?id=' + escapeHtml(order.id) + '\', \'_blank\')">View</button>' +
+                        '</td>';
+                    tbody.appendChild(row);
+                });
+
+                showSection('orders', 'table');
+
+            } catch (err) {
+                console.error('Error loading orders:', err);
+                showSection('orders', 'empty');
+                document.getElementById('orders-empty').textContent = 'Error loading orders: ' + err.message;
+            }
+        }
+
+        function getOrderStatus(order) {
+            if (order.cancelled === true) {
+                return { badge: '<span class="badge badge-red">Cancelled</span>' };
+            }
+            if (order.trackingNumber) {
+                return { badge: '<span class="badge badge-yellow">Shipped</span>' };
+            }
+            return { badge: '<span class="badge badge-green">Active Order</span>' };
+        }
+
+        // ============================================
+        // TAB 2: SELLERS
+        // ============================================
+        async function loadSellers() {
+            showSection('sellers', 'loading');
+
+            try {
+                var snap = await db.collection('users').limit(100).get();
+
+                if (snap.empty) {
+                    showSection('sellers', 'empty');
+                    return;
+                }
+
+                var tbody = document.getElementById('sellers-tbody');
+                tbody.innerHTML = '';
+
+                snap.forEach(function(doc) {
+                    var u = doc.data();
+                    var uid = doc.id;
+                    var suspended = u.sellerSuspended === true;
+                    var strikes = u.sellerCancellationCount != null ? u.sellerCancellationCount : 0;
+                    var stripeConnected = u.stripeAccountId ? 'Yes' : 'No';
+
+                    var suspendedBadge = suspended
+                        ? '<span class="badge badge-red">Suspended</span>'
+                        : '<span class="badge badge-gray">No</span>';
+
+                    var unsuspendBtn = suspended
+                        ? '<button class="action-btn btn-unsuspend" onclick="unsuspendUser(\'' + uid + '\', this)">Unsuspend</button>'
+                        : '';
+
+                    var row = document.createElement('tr');
+                    row.id = 'seller-row-' + uid;
+                    row.innerHTML =
+                        '<td>' + escapeHtml(u.displayName || u.name || '—') + '</td>' +
+                        '<td>' + escapeHtml(u.email || '—') + '</td>' +
+                        '<td>' + strikes + '</td>' +
+                        '<td>' + suspendedBadge + '</td>' +
+                        '<td>' + stripeConnected + '</td>' +
+                        '<td>' + unsuspendBtn + '</td>';
+                    tbody.appendChild(row);
+                });
+
+                showSection('sellers', 'table');
+
+            } catch (err) {
+                console.error('Error loading sellers:', err);
+                showSection('sellers', 'empty');
+                document.getElementById('sellers-empty').textContent = 'Error loading sellers: ' + err.message;
+            }
+        }
+
+        async function unsuspendUser(uid, btn) {
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                await db.collection('users').doc(uid).update({
+                    sellerSuspended: false,
+                    sellerCancellationCount: 0
+                });
+
+                // Refresh that row in the table
+                var row = document.getElementById('seller-row-' + uid);
+                if (row) {
+                    var suspendedCell = row.cells[3];
+                    var actionsCell   = row.cells[5];
+                    var strikesCell   = row.cells[2];
+                    suspendedCell.innerHTML = '<span class="badge badge-gray">No</span>';
+                    strikesCell.textContent = '0';
+                    actionsCell.innerHTML   = '';
+                }
+            } catch (err) {
+                console.error('Error unsuspending user:', err);
+                btn.disabled = false;
+                btn.textContent = 'Unsuspend';
+                alert('Failed to unsuspend user: ' + err.message);
+            }
+        }
+
+        // ============================================
+        // TAB 3: REFUND REQUESTS
+        // ============================================
+        async function loadRefunds() {
+            showSection('refunds', 'loading');
+
+            try {
+                var snap = await db.collection('refundRequests')
+                    .orderBy('createdAt', 'desc')
+                    .limit(50)
+                    .get();
+
+                if (snap.empty) {
+                    showSection('refunds', 'empty');
+                    return;
+                }
+
+                var tbody = document.getElementById('refunds-tbody');
+                tbody.innerHTML = '';
+
+                snap.forEach(function(doc) {
+                    var r = doc.data();
+                    var docId = doc.id;
+                    var isResolved = r.status === 'resolved';
+
+                    var statusBadge = isResolved
+                        ? '<span class="badge badge-gray">Resolved</span>'
+                        : '<span class="badge badge-yellow">Pending</span>';
+
+                    var resolveBtn = isResolved
+                        ? '<button class="action-btn btn-resolved-done" disabled>Resolved</button>'
+                        : '<button class="action-btn btn-resolve" onclick="resolveRefund(\'' + docId + '\', this)">Mark Resolved</button>';
+
+                    var row = document.createElement('tr');
+                    row.id = 'refund-row-' + docId;
+                    row.innerHTML =
+                        '<td><span class="uid-cell" title="' + escapeHtml(r.productId || '') + '">' + escapeHtml(r.productId || '—') + '</span></td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(r.buyerUid || r.userId || '') + '">' + escapeHtml(r.buyerUid || r.userId || '—') + '</span></td>' +
+                        '<td>' + escapeHtml(truncate(r.reason, 60)) + '</td>' +
+                        '<td>' + statusBadge + '</td>' +
+                        '<td>' + formatDate(r.createdAt) + '</td>' +
+                        '<td>' + resolveBtn + '</td>';
+                    tbody.appendChild(row);
+                });
+
+                showSection('refunds', 'table');
+
+            } catch (err) {
+                console.error('Error loading refund requests:', err);
+                showSection('refunds', 'empty');
+                document.getElementById('refunds-empty').textContent = 'Error loading refund requests: ' + err.message;
+            }
+        }
+
+        async function resolveRefund(docId, btn) {
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                await db.collection('refundRequests').doc(docId).update({
+                    status: 'resolved',
+                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Update the row visually
+                var row = document.getElementById('refund-row-' + docId);
+                if (row) {
+                    row.cells[3].innerHTML = '<span class="badge badge-gray">Resolved</span>';
+                    row.cells[5].innerHTML = '<button class="action-btn btn-resolved-done" disabled>Resolved</button>';
+                }
+            } catch (err) {
+                console.error('Error resolving refund request:', err);
+                btn.disabled = false;
+                btn.textContent = 'Mark Resolved';
+                alert('Failed to update refund request: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

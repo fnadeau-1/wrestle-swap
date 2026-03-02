@@ -3,31 +3,35 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper: is the requesting user an admin?
+    function isAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
+
     // Products collection
     match /products/{productId} {
-      // Anyone can read products
       allow read: if true;
-      // Any signed-in user can create a product, unless they are suspended
       allow create: if request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('sellerSuspended', false) == false;
-      // Only the owner can update or delete. sold/cancelled/buyerId set by Cloud Functions via Admin SDK.
-      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
     }
 
     // Users collection
     match /users/{userId} {
-      // Anyone can read the public parts of a user profile (display name, ratings, etc.)
-      // Only the user themselves can read sensitive fields — enforced by restricting full doc reads
-      allow read: if request.auth != null && request.auth.uid == userId
+      allow read: if isAdmin()
+        || (request.auth != null && request.auth.uid == userId)
         || resource.data.keys().hasOnly(['displayName', 'username', 'photoURL', 'createdAt', 'email']);
-      // Users can write to their own doc, but cannot touch penalty/suspension fields
-      // Those are set exclusively by Cloud Functions (Admin SDK bypasses rules)
-      allow write: if request.auth != null
-        && request.auth.uid == userId
-        && !('sellerSuspended' in request.resource.data.diff(resource.data).affectedKeys())
-        && !('sellerCancellationCount' in request.resource.data.diff(resource.data).affectedKeys())
-        && !('sellerPenalties' in request.resource.data.diff(resource.data).affectedKeys());
+      // Admins can write anything (unsuspend sellers, etc.)
+      // Regular users can write their own doc but cannot touch penalty/suspension fields
+      allow write: if isAdmin()
+        || (request.auth != null
+          && request.auth.uid == userId
+          && !('sellerSuspended' in request.resource.data.diff(resource.data).affectedKeys())
+          && !('sellerCancellationCount' in request.resource.data.diff(resource.data).affectedKeys())
+          && !('sellerPenalties' in request.resource.data.diff(resource.data).affectedKeys())
+          && !('isAdmin' in request.resource.data.diff(resource.data).affectedKeys()));
     }
 
     // Usernames collection (for username uniqueness)

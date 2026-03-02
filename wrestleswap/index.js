@@ -7,6 +7,19 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
+// Sanitize and cap string inputs — prevents oversized payloads and injection attempts
+function sanitizeString(val, maxLen = 200) {
+  if (val == null) return null;
+  return String(val).trim().slice(0, maxLen);
+}
+
+// Verify Firebase ID token from Authorization header — returns decodedToken or throws
+async function verifyAuth(req) {
+  const idToken = (req.headers.authorization || '').replace('Bearer ', '');
+  if (!idToken) throw Object.assign(new Error('Missing auth token'), { status: 401 });
+  return admin.auth().verifyIdToken(idToken);
+}
+
 // Fetch a user's email address by UID (used for email notifications)
 async function getUserEmail(uid) {
   if (!uid) return null;
@@ -27,42 +40,25 @@ const sendgridSecret = defineSecret("SENDGRID_API_KEY");
 
 const emails = require('./emails');
 
-// --- DELETE SOLD PRODUCTS ---
-exports.deleteSoldProducts = onRequest({ cors: true }, async (req, res) => {
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('');
+// --- DELETE OLD SOLD PRODUCTS (runs automatically every 30 days) ---
+// Converted from HTTP to scheduled — no public endpoint means no abuse vector
+exports.deleteSoldProducts = onSchedule('every 720 hours', async (event) => {
+  const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
+
+  const snapshot = await db.collection("products")
+    .where("sold", "==", true)
+    .where("soldTimestamp", "<=", ninetyDaysAgo)
+    .get();
+
+  if (snapshot.empty) {
+    console.log('deleteSoldProducts: nothing to delete');
     return;
   }
 
-  try {
-    const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
-
-    const snapshot = await db.collection("products")
-      .where("sold", "==", true)
-      .where("soldTimestamp", "<=", ninetyDaysAgo)
-      .get();
-
-    if (snapshot.empty) {
-      return res.status(200).json({
-        success: true,
-        deletedCount: 0,
-      });
-    }
-
-    const batch = db.batch();
-    snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-    await batch.commit();
-
-    return res.status(200).json({
-      success: true,
-      deletedCount: snapshot.size,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
+  const batch = db.batch();
+  snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
+  console.log(`deleteSoldProducts: removed ${snapshot.size} old sold products`);
 });
 
 // Platform fee percentage (10% of product price only)
@@ -355,15 +351,18 @@ exports.shippingRates = onRequest(
       if (!zipCode || !senderAddress) {
         return res.status(400).json({ error: 'Missing zipCode or senderAddress' });
       }
+      if (!/^\d{5}(-\d{4})?$/.test(String(zipCode).trim())) {
+        return res.status(400).json({ error: 'Invalid zip code format' });
+      }
 
       const shipment = await shippoClient.shipment.create({
         address_from: {
-          name: senderAddress.name || "Seller",
-          street1: senderAddress.street1,
-          city: senderAddress.city,
-          state: senderAddress.state,
-          zip: senderAddress.zip,
-          country: senderAddress.country || "US"
+          name: sanitizeString(senderAddress.name, 100) || "Seller",
+          street1: sanitizeString(senderAddress.street1, 100),
+          city: sanitizeString(senderAddress.city, 100),
+          state: sanitizeString(senderAddress.state, 50),
+          zip: sanitizeString(senderAddress.zip, 20),
+          country: sanitizeString(senderAddress.country, 10) || "US"
         },
         address_to: {
           name: "Buyer",
@@ -499,11 +498,24 @@ exports.shippoGetRates = onRequest(
       if (!addressFrom || !addressTo || !parcel) {
         return res.status(400).json({ error: 'Missing addressFrom, addressTo, or parcel' });
       }
+      if (typeof addressFrom !== 'object' || typeof addressTo !== 'object' || typeof parcel !== 'object') {
+        return res.status(400).json({ error: 'addressFrom, addressTo, and parcel must be objects' });
+      }
+
+      // Sanitize address fields before forwarding to Shippo
+      const cleanAddress = (addr) => ({
+        name:    sanitizeString(addr.name, 100),
+        street1: sanitizeString(addr.street1, 100),
+        city:    sanitizeString(addr.city, 100),
+        state:   sanitizeString(addr.state, 50),
+        zip:     sanitizeString(addr.zip, 20),
+        country: sanitizeString(addr.country, 10) || 'US',
+      });
 
       // Create shipment data for Shippo API
       const shipmentData = {
-        address_from: addressFrom,
-        address_to: addressTo,
+        address_from: cleanAddress(addressFrom),
+        address_to:   cleanAddress(addressTo),
         parcels: [parcel],
         async: false
       };
@@ -554,6 +566,14 @@ exports.shippoCreateLabel = onRequest(
 
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    // Only authenticated sellers can purchase labels
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     try {
@@ -632,12 +652,24 @@ exports.checkSellerStatus = onRequest(
       return;
     }
 
+    // Must be signed in — users can only check their own account
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     try {
       const stripe = require('stripe')(stripeSecret.value());
       const { userId } = req.body;
 
       if (!userId) {
         return res.status(400).json({ error: 'Missing userId' });
+      }
+
+      if (decodedToken.uid !== userId) {
+        return res.status(403).json({ error: 'You can only check your own seller status' });
       }
 
       const userDoc = await db.collection('users').doc(userId).get();

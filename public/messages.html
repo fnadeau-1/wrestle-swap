@@ -300,6 +300,10 @@
             font-size: 18px;
         }
 
+        @keyframes conv-spin {
+            to { transform: rotate(360deg); }
+        }
+
         @media (max-width: 768px) {
             .chat-container {
                 margin: 0;
@@ -335,8 +339,8 @@
                     <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
                 </span>
                 <button class="top-bar-btn" onclick="window.location.href='help.html'">Help &amp; Contact</button>
-            </div>
                 <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
+            </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
                 <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
@@ -384,7 +388,11 @@
                 <h2 class="sidebar-title">Messages</h2>
             </div>
             <div class="conversations-list" id="conversations-list">
-                <!-- Conversations will be loaded here -->
+                <!-- Loading state shown by default until Firestore responds -->
+                <div id="conv-loading-state" style="padding:30px 20px;text-align:center;color:#707070;">
+                    <div style="display:inline-block;width:32px;height:32px;border:3px solid #e5e5e5;border-top-color:#3665f3;border-radius:50%;animation:conv-spin 1s linear infinite;margin-bottom:12px;"></div>
+                    <div style="font-size:14px;">Loading conversations...</div>
+                </div>
             </div>
         </div>
 
@@ -455,7 +463,13 @@
         // Load all conversations for the current user in real-time
         function loadConversations() {
             const conversationsList = document.getElementById('conversations-list');
-            conversationsList.innerHTML = '<div style="padding:20px;color:#999;text-align:center;">Loading...</div>';
+
+            // Show loading state (already rendered in HTML by default)
+            conversationsList.innerHTML = `
+                <div id="conv-loading-state" style="padding:30px 20px;text-align:center;color:#707070;">
+                    <div style="display:inline-block;width:32px;height:32px;border:3px solid #e5e5e5;border-top-color:#3665f3;border-radius:50%;animation:conv-spin 1s linear infinite;margin-bottom:12px;"></div>
+                    <div style="font-size:14px;">Loading conversations...</div>
+                </div>`;
 
             if (unsubscribeConversations) unsubscribeConversations();
 
@@ -468,10 +482,11 @@
             unsubscribeConversations = onSnapshot(q, (snapshot) => {
                 if (snapshot.empty) {
                     conversationsList.innerHTML = `
-                        <div style="padding:30px 20px;text-align:center;color:#999;">
-                            <div style="font-size:40px;margin-bottom:10px;">💬</div>
-                            <div>No messages yet.</div>
-                            <div style="font-size:13px;margin-top:8px;">Browse listings and click "Message Seller" to start a conversation.</div>
+                        <div style="padding:40px 20px;text-align:center;color:#707070;">
+                            <div style="font-size:48px;margin-bottom:12px;opacity:0.4;">💬</div>
+                            <div style="font-size:15px;font-weight:600;color:#333;margin-bottom:8px;">No conversations yet</div>
+                            <div style="font-size:13px;margin-bottom:16px;">Browse items and message a seller to get started.</div>
+                            <a href="search.html" style="display:inline-block;padding:8px 20px;background:#3665f3;color:white;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;">Browse Items</a>
                         </div>`;
                     return;
                 }
@@ -512,7 +527,10 @@
                 }
             }, (error) => {
                 console.error('Error loading conversations:', error);
-                conversationsList.innerHTML = '<div style="padding:20px;color:#dc3545;">Error loading messages. Please refresh.</div>';
+                conversationsList.innerHTML = `
+                    <div style="padding:30px 20px;text-align:center;color:#dc2626;font-size:14px;">
+                        Something went wrong loading your conversations. Please refresh the page.
+                    </div>`;
             });
         }
 

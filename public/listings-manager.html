@@ -511,8 +511,8 @@
                     <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
                 </span>
                 <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
-            </div>
                 <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
+            </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
                 <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
@@ -545,7 +545,12 @@
             </div>
         </div>
 
-        <div class="loading" id="loadingState">
+        <div id="loading-state" style="text-align:center;padding:60px 20px;color:#707070;">
+            <div class="spinner"></div>
+            <p>Loading your listings...</p>
+        </div>
+
+        <div class="loading" id="loadingState" style="display:none;">
             <div class="spinner"></div>
             <p>Loading your listings...</p>
         </div>
@@ -554,9 +559,13 @@
 
         <div class="empty-state" id="emptyState" style="display: none;">
             <div class="empty-state-icon">📦</div>
-            <h2 class="empty-state-title">No listings yet</h2>
-            <p class="empty-state-text">Start by creating your first product listing</p>
-            <a href="sell.html" class="btn btn-primary">Create Listing</a>
+            <h2 class="empty-state-title">You haven't listed anything yet</h2>
+            <p class="empty-state-text">Ready to sell? Create your first listing and reach buyers today.</p>
+            <a href="sell.html" class="btn btn-primary">List an Item</a>
+        </div>
+
+        <div id="errorState" style="display:none;text-align:center;padding:60px 20px;">
+            <p style="color:#dc2626;font-size:1rem;">Something went wrong. Please refresh.</p>
         </div>
     </div>
 
@@ -695,39 +704,33 @@
         // ============================================
         
         async function fetchUserListings() {
-            try {
-                const user = auth.currentUser;
-                
-                if (!user) {
-                    showError('Please sign in to view your listings');
-                    return [];
-                }
+            const user = auth.currentUser;
 
-                console.log('Fetching listings for user:', user.uid);
-
-                const query = db.collection('products').where('userId', '==', user.uid);
-                const snapshot = await query.get();
-                
-                console.log('Found', snapshot.size, 'listings for this user');
-                
-                if (snapshot.empty) {
-                    return [];
-                }
-
-                const listings = [];
-                snapshot.forEach(doc => {
-                    listings.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-
-                return listings;
-            } catch (error) {
-                console.error('Error fetching listings:', error);
-                showError('Failed to load listings: ' + error.message);
+            if (!user) {
+                showError('Please sign in to view your listings');
                 return [];
             }
+
+            console.log('Fetching listings for user:', user.uid);
+
+            const query = db.collection('products').where('userId', '==', user.uid);
+            const snapshot = await query.get();
+
+            console.log('Found', snapshot.size, 'listings for this user');
+
+            if (snapshot.empty) {
+                return [];
+            }
+
+            const listings = [];
+            snapshot.forEach(doc => {
+                listings.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+
+            return listings;
         }
 
         async function updateListing(listingId, data) {
@@ -872,17 +875,28 @@
         }
 
         async function renderListings() {
-            const loadingState = document.getElementById('loadingState');
+            const loadingSpinner = document.getElementById('loading-state');
             const grid = document.getElementById('listingsGrid');
             const emptyState = document.getElementById('emptyState');
+            const errorState = document.getElementById('errorState');
 
-            loadingState.style.display = 'block';
+            // Show loading, hide everything else
+            loadingSpinner.style.display = 'block';
             grid.style.display = 'none';
             emptyState.style.display = 'none';
+            errorState.style.display = 'none';
 
-            const listings = await fetchUserListings();
+            let listings;
+            try {
+                listings = await fetchUserListings();
+            } catch (error) {
+                console.error('Error fetching listings:', error);
+                loadingSpinner.style.display = 'none';
+                errorState.style.display = 'block';
+                return;
+            }
 
-            loadingState.style.display = 'none';
+            loadingSpinner.style.display = 'none';
 
             if (listings.length === 0) {
                 emptyState.style.display = 'block';
@@ -892,7 +906,7 @@
 
             grid.style.display = 'grid';
             grid.innerHTML = listings.map(listing => createListingCard(listing)).join('');
-            
+
             // Calculate stats
             const stats = {
                 totalListings: listings.length,
@@ -1171,7 +1185,7 @@
                     <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
                 `;
 
-                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('loading-state').style.display = 'none';
                 document.getElementById('emptyState').style.display = 'block';
                 document.getElementById('emptyState').innerHTML = `
                     <div class="empty-state-icon">🔒</div>

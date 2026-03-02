@@ -59,26 +59,40 @@
     gap: 10px;
     margin-top: 20px;
 }
-#track-button{
-    background-color: red;
+.track-button {
+    background-color: #c41e3a;
     color: white;
-    border: 1px black;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    line-height: 1.3;
+    font-family: inherit;
+}
+
+.track-button:hover {
+    background-color: #a01830;
 }
 
 /* Top bar buttons */
-.top-bar-btn >#top-bar-btn {
-    padding: 4px 16px;
-    margin: 0 5px;
+.top-bar-btn {
+    padding: 4px 10px;
+    margin: 0 2px;
     cursor: pointer;
     border: 0;
     background: transparent;
     border-radius: 4px;
     font-size: 12px;
-    color: #000;
+    color: #020000;
+    font-family: inherit;
 }
 
 .top-bar-btn:hover {
     background: #f0f0f0;
+    text-decoration: none;
 }
 
 /* ===========================================
@@ -752,7 +766,7 @@ input:checked + .slider:before {
     }
 
     .items-grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     }
 
     .toast {
@@ -760,5 +774,40 @@ input:checked + .slider:before {
         right: 20px;
         left: 20px;
         max-width: none;
+    }
+
+    /* Bigger tap targets for top bar buttons */
+    .top-bar-btn {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    /* Search button easier to tap */
+    .search-btn {
+        padding: 0 16px;
+        font-size: 14px;
+    }
+
+    /* Full-width primary buttons on mobile forms */
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Cards: full-width on very narrow screens */
+    .card {
+        margin-bottom: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .items-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Single column buttons */
+    .btn {
+        font-size: 15px;
+        padding: 11px 20px;
     }
 }
