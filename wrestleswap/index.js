@@ -7,10 +7,25 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
+// Fetch a user's email address by UID (used for email notifications)
+async function getUserEmail(uid) {
+  if (!uid) return null;
+  try {
+    const user = await admin.auth().getUser(uid);
+    return user.email || null;
+  } catch (e) {
+    console.error('getUserEmail error for', uid, e.message);
+    return null;
+  }
+}
+
 // Define secrets
 const stripeSecret = defineSecret("STRIPE_SKEY");
 const shippoSecret = defineSecret("SHIPPO_API_KEY");
+const sendgridSecret = defineSecret("SENDGRID_API_KEY");
 // const recaptchaApiKey = defineSecret("RECAPTCHA_API_KEY"); // Uncomment after setting secret
+
+const emails = require('./emails');
 
 // --- DELETE SOLD PRODUCTS ---
 exports.deleteSoldProducts = onRequest({ cors: true }, async (req, res) => {
@@ -161,7 +176,7 @@ const CANCELLATION_FEE_PERCENT = 0.05;
 
 // --- CANCEL ORDER / REFUND ---
 exports.cancelOrder = onRequest(
-  { cors: true, secrets: [stripeSecret, shippoSecret] },
+  { cors: true, secrets: [stripeSecret, shippoSecret, sendgridSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -275,6 +290,28 @@ exports.cancelOrder = onRequest(
         refundId: refund.id
       });
       console.log('Product status updated - marked as available');
+
+      // Email buyer (refund confirmation) and seller (order cancelled)
+      try {
+        emails.init(sendgridSecret.value());
+        const buyerEmail = await getUserEmail(decodedToken.uid);
+        const sellerEmail = await getUserEmail(productData.userId);
+        const buyerRecord = await admin.auth().getUser(decodedToken.uid);
+        const buyerName = buyerRecord.displayName || buyerRecord.email.split('@')[0];
+        await Promise.all([
+          emails.sendBuyerCancelledToBuyer(buyerEmail, {
+            productName: productData.title || 'your item',
+            refundAmount: (refundAmount / 100).toFixed(2),
+            cancellationFee: (cancellationFee / 100).toFixed(2),
+          }),
+          emails.sendBuyerCancelledToSeller(sellerEmail, {
+            productName: productData.title || 'an item',
+            buyerName,
+          }),
+        ]);
+      } catch (emailErr) {
+        console.error('Email error (cancelOrder):', emailErr.message);
+      }
 
       return res.status(200).json({
         success: true,
@@ -508,7 +545,7 @@ exports.shippoGetRates = onRequest(
 
 // --- SHIPPO: Create Shipping Label ---
 exports.shippoCreateLabel = onRequest(
-  { cors: true, secrets: [shippoSecret] },
+  { cors: true, secrets: [shippoSecret, sendgridSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -521,7 +558,7 @@ exports.shippoCreateLabel = onRequest(
 
     try {
       const shippoKey = shippoSecret.value();
-      const { rateObjectId, labelFileType = 'PDF', async = false } = req.body;
+      const { rateObjectId, labelFileType = 'PDF', async = false, productId: labelProductId } = req.body;
 
       if (!rateObjectId) {
         return res.status(400).json({ error: 'Missing rateObjectId' });
@@ -553,6 +590,26 @@ exports.shippoCreateLabel = onRequest(
 
       const transaction = await response.json();
       console.log('Shippo transaction response:', transaction.status);
+
+      // Email buyer with tracking info if we have a productId and a tracking number
+      if (labelProductId && transaction.tracking_number) {
+        try {
+          emails.init(sendgridSecret.value());
+          const prodDoc = await db.collection('products').doc(labelProductId).get();
+          if (prodDoc.exists) {
+            const prod = prodDoc.data();
+            const buyerEmail = await getUserEmail(prod.buyerId);
+            await emails.sendTrackingToBuyer(buyerEmail, {
+              productName: prod.title || 'your item',
+              trackingNumber: transaction.tracking_number,
+              trackingUrl: transaction.tracking_url_provider || null,
+              carrier: transaction.servicelevel?.name || null,
+            });
+          }
+        } catch (emailErr) {
+          console.error('Email error (shippoCreateLabel):', emailErr.message);
+        }
+      }
 
       return res.status(200).json(transaction);
 
@@ -717,7 +774,7 @@ exports.verifyRecaptcha = onRequest(
 
 // --- COMPLETE ORDER (marks product sold after server-verified payment) ---
 exports.completeOrder = onRequest(
-  { cors: true, secrets: [stripeSecret] },
+  { cors: true, secrets: [stripeSecret, sendgridSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -772,8 +829,24 @@ exports.completeOrder = onRequest(
       }
 
       await db.collection('products').doc(productId).update(updateData);
-
       console.log('Order completed — product:', productId, 'buyer:', decodedToken.uid);
+
+      // Email seller: new order notification
+      try {
+        emails.init(sendgridSecret.value());
+        const freshProduct = await db.collection('products').doc(productId).get();
+        const prod = freshProduct.data();
+        const sellerEmail = await getUserEmail(prod.userId);
+        const buyerRecord = await admin.auth().getUser(decodedToken.uid);
+        const buyerName = buyerRecord.displayName || buyerRecord.email.split('@')[0];
+        await emails.sendOrderPlacedSeller(sellerEmail, {
+          productName: prod.title || 'your item',
+          buyerName,
+        });
+      } catch (emailErr) {
+        console.error('Email error (completeOrder):', emailErr.message);
+      }
+
       return res.status(200).json({ success: true });
 
     } catch (error) {
@@ -785,7 +858,7 @@ exports.completeOrder = onRequest(
 
 // --- SELLER CANCEL ORDER (full refund to buyer, strike against seller) ---
 exports.sellerCancelOrder = onRequest(
-  { cors: true, secrets: [stripeSecret] },
+  { cors: true, secrets: [stripeSecret, sendgridSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -898,6 +971,30 @@ exports.sellerCancelOrder = onRequest(
         ? `Order cancelled. The buyer has been fully refunded. You have reached ${SELLER_STRIKES_LIMIT} cancellations and your selling privileges have been suspended.`
         : `Order cancelled. The buyer has been fully refunded. Strike ${newCount} of ${SELLER_STRIKES_LIMIT} — you have ${strikesRemaining} strike${strikesRemaining !== 1 ? 's' : ''} remaining before you can no longer sell.`;
 
+      // Email buyer (full refund) and seller (strike warning)
+      try {
+        emails.init(sendgridSecret.value());
+        const buyerEmail = await getUserEmail(productData.buyerId);
+        const sellerEmail = await getUserEmail(decodedToken.uid);
+        const sellerRecord = await admin.auth().getUser(decodedToken.uid);
+        const sellerName = sellerRecord.displayName || sellerRecord.email.split('@')[0];
+        await Promise.all([
+          emails.sendSellerCancelledToBuyer(buyerEmail, {
+            productName: productData.title || 'your item',
+            sellerName,
+            refundAmount: (paymentIntent.amount / 100).toFixed(2),
+          }),
+          emails.sendSellerCancelledToSeller(sellerEmail, {
+            productName: productData.title || 'an item',
+            strikeCount: newCount,
+            strikesRemaining,
+            suspended,
+          }),
+        ]);
+      } catch (emailErr) {
+        console.error('Email error (sellerCancelOrder):', emailErr.message);
+      }
+
       return res.status(200).json({
         success: true,
         refundId: refund.id,
@@ -918,7 +1015,7 @@ exports.sellerCancelOrder = onRequest(
 // --- CHECK OVERDUE ORDERS (runs daily — auto-cancels unshipped orders older than 14 days) ---
 // Note: requires a Firestore composite index on (sold ASC, soldTimestamp ASC)
 exports.checkOverdueOrders = onSchedule(
-  { schedule: 'every 24 hours', secrets: [stripeSecret] },
+  { schedule: 'every 24 hours', secrets: [stripeSecret, sendgridSecret] },
   async (event) => {
     const stripe = require('stripe')(stripeSecret.value());
     const fourteenDaysAgo = Date.now() - (14 * 24 * 60 * 60 * 1000);
@@ -937,6 +1034,7 @@ exports.checkOverdueOrders = onSchedule(
     });
 
     console.log(`Found ${overdueOrders.length} overdue unshipped orders`);
+    emails.init(sendgridSecret.value());
 
     let processed = 0;
     let errors = 0;
@@ -1012,6 +1110,39 @@ exports.checkOverdueOrders = onSchedule(
           cancellationReason: 'Seller failed to ship within 14 days',
           ...(refundId ? { refundId } : {})
         });
+
+        // Email buyer and seller about the auto-cancellation
+        try {
+          const sellerData2 = productData.userId
+            ? (await db.collection('users').doc(productData.userId).get()).data() || {}
+            : {};
+          const strikesRemaining2 = Math.max(0, SELLER_STRIKES_LIMIT - ((sellerData2.sellerCancellationCount || 0) + 1));
+          const suspended2 = ((sellerData2.sellerCancellationCount || 0) + 1) >= SELLER_STRIKES_LIMIT;
+          const buyerEmail2 = await getUserEmail(productData.buyerId);
+          const sellerEmail2 = await getUserEmail(productData.userId);
+          const refundDisplay = refundId
+            ? (await (async () => {
+                try {
+                  const r = await stripe.refunds.retrieve(refundId);
+                  return (r.amount / 100).toFixed(2);
+                } catch (_) { return '0.00'; }
+              })())
+            : '0.00';
+          await Promise.all([
+            emails.sendOverdueCancelledToBuyer(buyerEmail2, {
+              productName: productData.title || 'your item',
+              refundAmount: refundDisplay,
+            }),
+            emails.sendOverdueCancelledToSeller(sellerEmail2, {
+              productName: productData.title || 'an item',
+              strikeCount: (sellerData2.sellerCancellationCount || 0) + 1,
+              strikesRemaining: strikesRemaining2,
+              suspended: suspended2,
+            }),
+          ]);
+        } catch (emailErr) {
+          console.error(`Email error (checkOverdueOrders) for ${productId}:`, emailErr.message);
+        }
 
         processed++;
       } catch (err) {

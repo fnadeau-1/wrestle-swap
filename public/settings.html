@@ -9,24 +9,35 @@
     <link rel="stylesheet" href="css/layout.css">
     <style>
         /* Page-specific styles for settings.html */
-        .top-bar, .main-header {
-            background-color: #f7f7f7;
-        }
+        body { background-color: #f7f7f7; }
 
-        .container {
-            max-width: 900px;
-            margin: 30px auto;
-        }
+        .top-bar, .main-header { background-color: #f7f7f7; }
+        .top-bar-btn:hover { background: #e5e5e5; }
 
-        /* Username status styles */
-        #username-status.checking {
+        .container { max-width: 860px; margin: 30px auto; padding: 0 20px; }
+
+        .page-title { font-size: 28px; color: #333; margin-bottom: 6px; }
+        .page-subtitle { font-size: 15px; color: #707070; margin-bottom: 28px; }
+
+        .helper-text {
+            font-size: 12px;
             color: #707070;
+            margin: 4px 0 0;
         }
-        #username-status.success {
-            color: #28a745;
-        }
-        #username-status.error {
-            color: #dc3545;
+
+        /* Username availability */
+        #username-status.checking { color: #707070; }
+        #username-status.success  { color: #28a745; }
+        #username-status.error    { color: #dc3545; }
+
+        /* Google-only notice for password section */
+        .google-only-notice {
+            background: #e8f0fe;
+            border-left: 4px solid #4285f4;
+            padding: 14px 18px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
         }
     </style>
 </head>
@@ -35,13 +46,15 @@
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <a href="sign-in.html" id="user-greeting">Hi! Sign in</a>
-                <a href="help.html">Help & Contact</a>
+                <span id="user-menu-wrapper">
+                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                </span>
+                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help &amp; Contact</button>
             </div>
-                <a href="chat.html">Chats</a>
+                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
             <div>
-                <a href="sell.html">Sell</a>
-                <a href="watchlist.html">Watchlist</a>
+                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
+                <button class="top-bar-btn" onclick="window.location.href='settings.html'" style="font-weight:bold;">Settings</button>
             </div>
         </div>
     </div>
@@ -50,15 +63,23 @@
     <div class="main-header">
         <div class="header-content">
             <a href="index.html" class="logo">Wrestle Swap</a>
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="search-input"
+                        placeholder="Search for wrestling shoes, singlets, gear..."
+                        onkeypress="if(event.key==='Enter') performSearch()">
+                </div>
+                <button class="search-btn" onclick="performSearch()">Search</button>
+            </div>
         </div>
     </div>
 
     <!-- Main Content -->
     <div class="container">
         <h1 class="page-title">Account Settings</h1>
-        <p class="page-subtitle">Manage your account preferences and information</p>
+        <p class="page-subtitle">Manage your account information and preferences</p>
 
-        <!-- Account Information -->
+        <!-- ── Account Information ── -->
         <div class="settings-section">
             <h2 class="section-title">Account Information</h2>
             <div class="info-row">
@@ -66,16 +87,20 @@
                 <span class="info-value" id="user-email">Loading...</span>
             </div>
             <div class="info-row">
+                <span class="info-label">Sign-in Method</span>
+                <span class="info-value" id="signin-method">Loading...</span>
+            </div>
+            <div class="info-row">
                 <span class="info-label">Member Since</span>
                 <span class="info-value" id="member-since">Loading...</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Account Status</span>
-                <span class="info-value" style="color: #28a745;">✓ Active</span>
+                <span class="info-value" id="account-status"><span style="color:#28a745;">✓ Active</span></span>
             </div>
         </div>
 
-        <!-- Profile Settings -->
+        <!-- ── Profile Settings ── -->
         <div class="settings-section">
             <h2 class="section-title">Profile Settings</h2>
             <div class="success-message" id="profile-success">Profile updated successfully!</div>
@@ -84,15 +109,15 @@
             <form id="profile-form">
                 <div class="form-group">
                     <label class="form-label">Username</label>
-                    <input type="text" class="form-input" id="username" placeholder="Enter a unique username" style="text-transform: lowercase;">
-                    <div id="username-status" style="font-size: 12px; margin-top: 5px;"></div>
-                    <p class="helper-text">This must be unique - other users will find you by this name</p>
+                    <input type="text" class="form-input" id="username"
+                        placeholder="Enter a unique username" style="text-transform:lowercase;" autocomplete="off">
+                    <div id="username-status" style="font-size:12px;margin-top:5px;"></div>
+                    <p class="helper-text">Lowercase letters, numbers, and underscores only — must be at least 3 characters</p>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Display Name</label>
-                    <input type="text" class="form-input" id="display-name" placeholder="Enter your display name">
-                    <p class="helper-text">This name will be shown to other users</p>
+                    <input type="text" class="form-input" id="display-name" placeholder="Your name as shown to other users">
                 </div>
 
                 <div class="form-group">
@@ -104,7 +129,7 @@
                 <div class="form-group">
                     <label class="form-label">Bio</label>
                     <textarea class="form-textarea" id="bio" placeholder="Tell others about yourself..."></textarea>
-                    <p class="helper-text">Optional - Share your wrestling background or interests</p>
+                    <p class="helper-text">Optional — share your wrestling background or interests</p>
                 </div>
 
                 <div class="button-group">
@@ -114,80 +139,22 @@
             </form>
         </div>
 
-        <!-- Change Password -->
+        <!-- ── Change Password ── -->
         <div class="settings-section">
             <h2 class="section-title">Change Password</h2>
-            <div class="success-message" id="password-success">Password changed successfully!</div>
-            <div class="error-message" id="password-error"></div>
-
-            <form id="password-form">
-                <div class="form-group">
-                    <label class="form-label">Current Password</label>
-                    <input type="password" class="form-input" id="current-password" required>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">New Password</label>
-                    <input type="password" class="form-input" id="new-password" required>
-                    <p class="helper-text">Must be at least 6 characters</p>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Confirm New Password</label>
-                    <input type="password" class="form-input" id="confirm-password" required>
-                </div>
-
-                <button type="submit" class="btn btn-primary">Change Password</button>
-            </form>
-        </div>
-
-        <!-- Privacy Settings -->
-        <div class="settings-section">
-            <h2 class="section-title">Privacy Settings</h2>
-
-            <div class="toggle-row">
-                <div class="toggle-info">
-                    <div class="toggle-title">Show Profile to Public</div>
-                    <div class="toggle-description">Allow others to view your public profile</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="public-profile" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-
-            <div class="toggle-row">
-                <div class="toggle-info">
-                    <div class="toggle-title">Show Location</div>
-                    <div class="toggle-description">Display your location on listings</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="show-location" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-
-            <div class="toggle-row">
-                <div class="toggle-info">
-                    <div class="toggle-title">Allow Messages</div>
-                    <div class="toggle-description">Let other users send you messages</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="allow-messages" checked>
-                    <span class="slider"></span>
-                </label>
+            <div id="password-section-content">
+                <!-- Populated by JS — shows form for email users, notice for Google users -->
             </div>
         </div>
 
-        <!-- Seller Settings -->
+        <!-- ── Seller Account (Stripe) ── -->
         <div class="settings-section">
-            <h2 class="section-title">Seller Settings</h2>
-            <div class="success-message" id="seller-success">Seller settings updated successfully!</div>
+            <h2 class="section-title">Seller Account</h2>
+            <div class="success-message" id="seller-success">Settings saved!</div>
             <div class="error-message" id="seller-error"></div>
 
-            <!-- Stripe Account Status -->
-            <div id="stripe-warning" class="warning-box" style="display: none;">
-                <p><strong>⚠️ Action Required:</strong> You must connect a Stripe Express account before you can receive payments from sales. This is legally required for all sellers.</p>
+            <div id="stripe-warning" class="warning-box" style="display:none;">
+                <p><strong>Action Required:</strong> Connect a Stripe Express account to receive payments from sales.</p>
             </div>
 
             <div class="info-row">
@@ -195,241 +162,140 @@
                     <span class="info-label">Stripe Express Account</span>
                     <p class="helper-text">Required to receive payments from sales</p>
                 </div>
-                <div style="text-align: right;">
-                    <span class="info-value" id="stripe-status">
-                        <span style="color: #ffa500;">⚠ Not Connected</span>
-                    </span>
-                    <br>
-                    <button class="btn btn-primary" id="stripe-connect-btn" style="margin-top: 10px; display: none;">
+                <div style="text-align:right;">
+                    <span class="info-value" id="stripe-status"><span style="color:#ffa500;">⚠ Not Connected</span></span><br>
+                    <button class="btn btn-primary" id="stripe-connect-btn" style="margin-top:10px;display:none;"
+                        onclick="window.location.href='stripe-express-prompt.html'">
                         Connect Stripe Account
                     </button>
-                    <button class="btn btn-secondary" id="stripe-manage-btn" style="margin-top: 10px; display: none;">
-                        Manage Account
+                    <button class="btn btn-secondary" id="stripe-manage-btn" style="margin-top:10px;display:none;"
+                        onclick="window.open('https://express.stripe.com','_blank')">
+                        Manage Stripe Account
                     </button>
                 </div>
-            </div>
-
-            <div class="info-row">
-                <span class="info-label">Account ID</span>
-                <span class="info-value" id="stripe-account-id" style="font-family: monospace; font-size: 12px;">Not connected</span>
             </div>
 
             <div class="info-row">
                 <span class="info-label">Payouts Enabled</span>
-                <span class="info-value" id="payouts-enabled">
-                    <span style="color: #dc3545;">✗ No</span>
-                </span>
+                <span class="info-value" id="payouts-enabled"><span style="color:#dc3545;">✗ No</span></span>
             </div>
-
             <div class="info-row">
                 <span class="info-label">Charges Enabled</span>
-                <span class="info-value" id="charges-enabled">
-                    <span style="color: #dc3545;">✗ No</span>
-                </span>
-            </div>
-
-            <!-- Seller Stats -->
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e5e5;">
-                <h3 style="font-size: 18px; margin-bottom: 15px;">Seller Statistics</h3>
-
-                <div class="info-row">
-                    <span class="info-label">Total Listings</span>
-                    <span class="info-value" id="total-listings">0</span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">Active Listings</span>
-                    <span class="info-value" id="active-listings">0</span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">Sold Items</span>
-                    <span class="info-value" id="sold-items">0</span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">Total Sales Revenue</span>
-                    <span class="info-value" id="total-revenue">$0.00</span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">Seller Rating</span>
-                    <span class="info-value" id="seller-rating">
-                        <span style="color: #ffa500;">★★★★★</span> (No ratings yet)
-                    </span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label">Response Time</span>
-                    <span class="info-value" id="response-time">N/A</span>
-                </div>
-            </div>
-
-            <!-- Seller Preferences -->
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e5e5;">
-                <h3 style="font-size: 18px; margin-bottom: 15px;">Seller Preferences</h3>
-
-                <div class="toggle-row">
-                    <div class="toggle-info">
-                        <div class="toggle-title">Auto-Respond to Messages</div>
-                        <div class="toggle-description">Send automatic response when buyers message you</div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="auto-respond">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="toggle-row">
-                    <div class="toggle-info">
-                        <div class="toggle-title">Vacation Mode</div>
-                        <div class="toggle-description">Temporarily hide all your listings</div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="vacation-mode">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="toggle-row">
-                    <div class="toggle-info">
-                        <div class="toggle-title">Accept Offers</div>
-                        <div class="toggle-description">Allow buyers to make offers on your items</div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="accept-offers" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="form-group" style="margin-top: 20px;">
-                    <label class="form-label">Default Shipping Time (days)</label>
-                    <input type="number" class="form-input" id="shipping-time" min="1" max="30" value="3">
-                    <p class="helper-text">How many days you typically take to ship after receiving payment</p>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Return Policy</label>
-                    <select class="form-input" id="return-policy">
-                        <option value="no-returns">No Returns</option>
-                        <option value="14-days">14 Day Returns</option>
-                        <option value="30-days" selected>30 Day Returns</option>
-                        <option value="60-days">60 Day Returns</option>
-                    </select>
-                    <p class="helper-text">Your default return policy for items</p>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Auto-Response Message</label>
-                    <textarea class="form-textarea" id="auto-response-message" placeholder="Thank you for your message! I'll get back to you within 24 hours."></textarea>
-                    <p class="helper-text">This message will be sent when auto-respond is enabled</p>
-                </div>
-
-                <button type="button" class="btn btn-primary" id="save-seller-settings">Save Seller Settings</button>
-            </div>
-
-            <!-- Shipping Address -->
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e5e5;">
-                <h3 style="font-size: 18px; margin-bottom: 15px;">Shipping Address</h3>
-                <p class="helper-text" style="margin-bottom: 20px;">This is the address your items will ship from. Required to sell items.</p>
-
-                <div class="success-message" id="shipping-success">Shipping address saved successfully!</div>
-                <div class="error-message" id="shipping-error"></div>
-
-                <form id="shipping-address-form">
-                    <div class="form-group">
-                        <label class="form-label">Full Name <span style="color: #dc3545;">*</span></label>
-                        <input type="text" class="form-input" id="shipping-name" placeholder="Your full name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Street Address <span style="color: #dc3545;">*</span></label>
-                        <input type="text" class="form-input" id="shipping-street1" placeholder="123 Main Street" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Apartment, Suite, etc.</label>
-                        <input type="text" class="form-input" id="shipping-street2" placeholder="Apt 4B (optional)">
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px;">
-                        <div class="form-group">
-                            <label class="form-label">City <span style="color: #dc3545;">*</span></label>
-                            <input type="text" class="form-input" id="shipping-city" placeholder="New York" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">State <span style="color: #dc3545;">*</span></label>
-                            <input type="text" class="form-input" id="shipping-state" placeholder="NY" maxlength="2" style="text-transform: uppercase;" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">ZIP Code <span style="color: #dc3545;">*</span></label>
-                            <input type="text" class="form-input" id="shipping-zip" placeholder="10001" maxlength="10" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Phone Number</label>
-                        <input type="tel" class="form-input" id="shipping-phone" placeholder="(555) 123-4567">
-                        <p class="helper-text">Optional - May be used by shipping carriers for delivery</p>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Save Shipping Address</button>
-                </form>
+                <span class="info-value" id="charges-enabled"><span style="color:#dc3545;">✗ No</span></span>
             </div>
         </div>
 
-        <!-- Notification Settings -->
+        <!-- ── Seller Statistics ── -->
         <div class="settings-section">
-            <h2 class="section-title">Notification Settings</h2>
-
-            <div class="toggle-row">
-                <div class="toggle-info">
-                    <div class="toggle-title">Email Notifications</div>
-                    <div class="toggle-description">Receive updates about your listings and purchases</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="email-notifications" checked>
-                    <span class="slider"></span>
-                </label>
+            <h2 class="section-title">Seller Statistics</h2>
+            <div class="info-row">
+                <span class="info-label">Total Listings</span>
+                <span class="info-value" id="total-listings">—</span>
             </div>
-
-            <div class="toggle-row">
-                <div class="toggle-info">
-                    <div class="toggle-title">Marketing Emails</div>
-                    <div class="toggle-description">Receive promotional offers and news</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="marketing-emails">
-                    <span class="slider"></span>
-                </label>
+            <div class="info-row">
+                <span class="info-label">Active Listings</span>
+                <span class="info-value" id="active-listings">—</span>
             </div>
-
-            <div class="toggle-row">
-                <div class="toggle-info">
-                    <div class="toggle-title">Price Drop Alerts</div>
-                    <div class="toggle-description">Get notified when items on your watchlist drop in price</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="price-alerts" checked>
-                    <span class="slider"></span>
-                </label>
+            <div class="info-row">
+                <span class="info-label">Sold Items</span>
+                <span class="info-value" id="sold-items">—</span>
             </div>
-
-            <div class="toggle-row">
-                <div class="toggle-info">
-                    <div class="toggle-title">Sale Notifications</div>
-                    <div class="toggle-description">Get notified immediately when someone buys your item</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="sale-notifications" checked>
-                    <span class="slider"></span>
-                </label>
+            <div class="info-row">
+                <span class="info-label">Total Sales Revenue</span>
+                <span class="info-value" id="total-revenue">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Seller Strikes</span>
+                <span class="info-value" id="seller-strikes">—</span>
             </div>
         </div>
 
-        <!-- Danger Zone -->
+        <!-- ── Shipping Address ── -->
+        <div class="settings-section">
+            <h2 class="section-title">Shipping Address</h2>
+            <p class="helper-text" style="margin-bottom:20px;">Your default ship-from address. Required to create shipping labels.</p>
+            <div class="success-message" id="shipping-success">Shipping address saved!</div>
+            <div class="error-message" id="shipping-error"></div>
+
+            <form id="shipping-address-form">
+                <div class="form-group">
+                    <label class="form-label">Full Name <span style="color:#dc3545;">*</span></label>
+                    <input type="text" class="form-input" id="shipping-name" placeholder="Your full name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Street Address <span style="color:#dc3545;">*</span></label>
+                    <input type="text" class="form-input" id="shipping-street1" placeholder="123 Main Street" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Apartment, Suite, etc.</label>
+                    <input type="text" class="form-input" id="shipping-street2" placeholder="Apt 4B (optional)">
+                </div>
+                <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:15px;">
+                    <div class="form-group">
+                        <label class="form-label">City <span style="color:#dc3545;">*</span></label>
+                        <input type="text" class="form-input" id="shipping-city" placeholder="New York" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">State <span style="color:#dc3545;">*</span></label>
+                        <input type="text" class="form-input" id="shipping-state" placeholder="NY"
+                            maxlength="2" style="text-transform:uppercase;" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ZIP Code <span style="color:#dc3545;">*</span></label>
+                        <input type="text" class="form-input" id="shipping-zip" placeholder="10001" maxlength="10" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" id="shipping-phone" placeholder="(555) 123-4567">
+                    <p class="helper-text">Optional — may be used by carriers for delivery notifications</p>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Shipping Address</button>
+            </form>
+        </div>
+
+        <!-- ── Notification Settings ── -->
+        <div class="settings-section">
+            <h2 class="section-title">Email Notifications</h2>
+            <div class="success-message" id="notif-success">Notification preferences saved!</div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-title">Order &amp; Sale Emails</div>
+                    <div class="toggle-description">Receive emails when you make a sale, receive an order, or an order is cancelled</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="notif-orders" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-title">Shipping &amp; Tracking Emails</div>
+                    <div class="toggle-description">Get notified with tracking information when your order ships</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="notif-shipping" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-title">Marketing &amp; Announcements</div>
+                    <div class="toggle-description">Occasional emails about new features and promotions</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="notif-marketing">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <button type="button" class="btn btn-primary" style="margin-top:16px;" id="save-notif-btn">Save Preferences</button>
+        </div>
+
+        <!-- ── Account Actions ── -->
         <div class="settings-section">
             <h2 class="section-title">Account Actions</h2>
             <div class="button-group">
@@ -439,11 +305,14 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, updatePassword, EmailAuthProvider,
+                 reauthenticateWithCredential, signOut, deleteUser }
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp,
+                 collection, query, where, getDocs }
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
@@ -462,221 +331,260 @@
         let currentUser = null;
         let currentUsername = null;
         let usernameCheckTimeout;
-        let isUsernameAvailable = true;
 
-        async function checkUsernameAvailable(username, currentUserId) {
+        // ── Username availability checker ──────────────────────────────────
+        async function checkUsernameAvailable(username, uid) {
             try {
-                const usernameDoc = await getDoc(doc(db, 'usernames', username.toLowerCase()));
-                if (!usernameDoc.exists()) {
-                    return true;
-                }
-                const data = usernameDoc.data();
-                return data.userId === currentUserId;
-            } catch (error) {
-                console.error('Error checking username:', error);
+                const snap = await getDoc(doc(db, 'usernames', username.toLowerCase()));
+                if (!snap.exists()) return true;
+                return snap.data().userId === uid;
+            } catch (e) {
+                console.error('Username check error:', e);
                 return false;
             }
         }
 
         document.getElementById('username').addEventListener('input', function(e) {
-            const username = e.target.value.toLowerCase();
-            const statusDiv = document.getElementById('username-status');
-
+            const val = e.target.value.toLowerCase();
+            const status = document.getElementById('username-status');
             clearTimeout(usernameCheckTimeout);
 
-            if (!username) {
-                statusDiv.textContent = '';
-                statusDiv.className = '';
-                isUsernameAvailable = false;
-                return;
-            }
+            if (!val) { status.textContent = ''; status.className = ''; return; }
 
-            statusDiv.textContent = 'Checking...';
-            statusDiv.className = 'checking';
+            status.textContent = 'Checking...';
+            status.className = 'checking';
 
             usernameCheckTimeout = setTimeout(async () => {
-                if (username.length < 3) {
-                    statusDiv.textContent = 'Username must be at least 3 characters';
-                    statusDiv.className = 'error';
-                    isUsernameAvailable = false;
-                    return;
+                if (val.length < 3) {
+                    status.textContent = 'Must be at least 3 characters';
+                    status.className = 'error'; return;
                 }
-
-                if (!/^[a-z0-9_]+$/.test(username)) {
-                    statusDiv.textContent = 'Only letters, numbers, and underscores allowed';
-                    statusDiv.className = 'error';
-                    isUsernameAvailable = false;
-                    return;
+                if (!/^[a-z0-9_]+$/.test(val)) {
+                    status.textContent = 'Letters, numbers, and underscores only';
+                    status.className = 'error'; return;
                 }
-
-                const available = await checkUsernameAvailable(username, currentUser?.uid);
-                isUsernameAvailable = available;
-
-                if (available) {
-                    statusDiv.textContent = '✓ Available';
-                    statusDiv.className = 'success';
-                } else {
-                    statusDiv.textContent = '✗ Already taken';
-                    statusDiv.className = 'error';
-                }
+                const ok = await checkUsernameAvailable(val, currentUser?.uid);
+                status.textContent = ok ? '✓ Available' : '✗ Already taken';
+                status.className = ok ? 'success' : 'error';
             }, 500);
         });
 
+        // ── Auth state ─────────────────────────────────────────────────────
         onAuthStateChanged(auth, async (user) => {
-            const greeting = document.getElementById('user-greeting');
-
             if (!user) {
-                greeting.textContent = 'Hi! Sign in';
-                greeting.href = 'sign-in.html';
-                alert('Please sign in to access settings');
-                window.location.href = 'sign-in.html';
+                window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.href);
                 return;
             }
-
             currentUser = user;
 
+            // Build dropdown menu
+            const menuWrapper = document.getElementById('user-menu-wrapper');
             const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-            greeting.textContent = `Hi, ${firstName}!`;
-            greeting.href = 'profile.html';
+            menuWrapper.innerHTML = `
+                <div class="user-menu-container">
+                    <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                    <div class="dropdown-menu">
+                        <a href="watchlist.html">Watchlist</a>
+                        <a href="my-orders.html">Your Orders</a>
+                        <a href="listings-manager.html">Your Listings</a>
+                        <a href="messages.html">Messages</a>
+                    </div>
+                </div>`;
 
+            // Account info
             document.getElementById('user-email').textContent = user.email;
+            document.getElementById('member-since').textContent =
+                new Date(user.metadata.creationTime).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
 
-            const memberSince = new Date(user.metadata.creationTime);
-            document.getElementById('member-since').textContent = memberSince.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
+            // Sign-in method
+            const isGoogle = user.providerData.some(p => p.providerId === 'google.com');
+            document.getElementById('signin-method').textContent = isGoogle ? 'Google' : 'Email & Password';
 
+            // Password section — hide for Google users
+            buildPasswordSection(isGoogle);
+
+            // Load Firestore profile
             try {
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
-                    const userData = userDoc.data();
+                    const d = userDoc.data();
 
-                    document.getElementById('username').value = userData.username || '';
-                    currentUsername = userData.username || '';
-                    if (currentUsername) {
-                        isUsernameAvailable = true;
+                    // Account status — check suspension
+                    if (d.sellerSuspended) {
+                        document.getElementById('account-status').innerHTML =
+                            '<span style="color:#dc3545;">✗ Selling Suspended</span>';
                     }
-                    document.getElementById('display-name').value = userData.displayName || '';
-                    document.getElementById('location').value = userData.location || '';
-                    document.getElementById('bio').value = userData.bio || '';
 
-                    if (userData.stripeAccountId) {
-                        document.getElementById('stripe-status').innerHTML = '<span style="color: #28a745;">✓ Connected</span>';
-                        document.getElementById('stripe-account-id').textContent = userData.stripeAccountId;
+                    // Profile fields
+                    document.getElementById('username').value = d.username || '';
+                    document.getElementById('display-name').value = d.displayName || '';
+                    document.getElementById('location').value = d.location || '';
+                    document.getElementById('bio').value = d.bio || '';
+                    currentUsername = d.username || '';
+
+                    // Stripe
+                    if (d.stripeAccountId) {
+                        document.getElementById('stripe-status').innerHTML = '<span style="color:#28a745;">✓ Connected</span>';
                         document.getElementById('stripe-manage-btn').style.display = 'inline-block';
                         document.getElementById('stripe-warning').style.display = 'none';
-
-                        if (userData.stripePayoutsEnabled) {
-                            document.getElementById('payouts-enabled').innerHTML = '<span style="color: #28a745;">✓ Yes</span>';
-                        }
-                        if (userData.stripeChargesEnabled) {
-                            document.getElementById('charges-enabled').innerHTML = '<span style="color: #28a745;">✓ Yes</span>';
-                        }
+                        if (d.stripePayoutsEnabled)
+                            document.getElementById('payouts-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
+                        if (d.stripeChargesEnabled)
+                            document.getElementById('charges-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
                     } else {
                         document.getElementById('stripe-connect-btn').style.display = 'inline-block';
                         document.getElementById('stripe-warning').style.display = 'block';
                     }
 
-                    if (userData.sellerSettings) {
-                        document.getElementById('auto-respond').checked = userData.sellerSettings.autoRespond || false;
-                        document.getElementById('vacation-mode').checked = userData.sellerSettings.vacationMode || false;
-                        document.getElementById('accept-offers').checked = userData.sellerSettings.acceptOffers !== false;
-                        document.getElementById('shipping-time').value = userData.sellerSettings.shippingTime || 3;
-                        document.getElementById('return-policy').value = userData.sellerSettings.returnPolicy || '30-days';
-                        document.getElementById('auto-response-message').value = userData.sellerSettings.autoResponseMessage || '';
+                    // Notification preferences
+                    if (d.notifications) {
+                        document.getElementById('notif-orders').checked    = d.notifications.orders    !== false;
+                        document.getElementById('notif-shipping').checked  = d.notifications.shipping  !== false;
+                        document.getElementById('notif-marketing').checked = d.notifications.marketing === true;
                     }
 
-                    // Load shipping address
-                    if (userData.shippingAddress) {
-                        const addr = userData.shippingAddress;
-                        document.getElementById('shipping-name').value = addr.name || '';
-                        document.getElementById('shipping-street1').value = addr.street1 || '';
-                        document.getElementById('shipping-street2').value = addr.street2 || '';
-                        document.getElementById('shipping-city').value = addr.city || '';
-                        document.getElementById('shipping-state').value = addr.state || '';
-                        document.getElementById('shipping-zip').value = addr.zip || '';
-                        document.getElementById('shipping-phone').value = addr.phone || '';
+                    // Shipping address
+                    if (d.shippingAddress) {
+                        const a = d.shippingAddress;
+                        document.getElementById('shipping-name').value   = a.name   || '';
+                        document.getElementById('shipping-street1').value = a.street1 || '';
+                        document.getElementById('shipping-street2').value = a.street2 || '';
+                        document.getElementById('shipping-city').value   = a.city   || '';
+                        document.getElementById('shipping-state').value  = a.state  || '';
+                        document.getElementById('shipping-zip').value    = a.zip    || '';
+                        document.getElementById('shipping-phone').value  = a.phone  || '';
                     }
 
-                    await loadSellerStats(user.uid);
+                    // Seller strikes
+                    const strikes = d.sellerCancellationCount || 0;
+                    const strikeEl = document.getElementById('seller-strikes');
+                    if (d.sellerSuspended) {
+                        strikeEl.innerHTML = `<span style="color:#dc3545;">${strikes} / 3 — Suspended</span>`;
+                    } else if (strikes > 0) {
+                        strikeEl.innerHTML = `<span style="color:#ffa500;">${strikes} / 3</span>`;
+                    } else {
+                        strikeEl.textContent = '0 / 3';
+                    }
                 }
-            } catch (error) {
-                console.log('Error loading user data:', error);
+            } catch (e) {
+                console.error('Error loading user data:', e);
             }
+
+            await loadSellerStats(user.uid);
         });
 
-        async function loadSellerStats(userId) {
+        // ── Seller stats ───────────────────────────────────────────────────
+        async function loadSellerStats(uid) {
             try {
-                const listingsQuery = query(collection(db, 'listings'), where('sellerId', '==', userId));
-                const listingsSnapshot = await getDocs(listingsQuery);
+                const snap = await getDocs(
+                    query(collection(db, 'products'), where('userId', '==', uid))
+                );
 
-                let totalListings = 0;
-                let activeListings = 0;
-                let soldItems = 0;
-                let totalRevenue = 0;
-
-                listingsSnapshot.forEach((doc) => {
-                    const listing = doc.data();
-                    totalListings++;
-
-                    if (listing.status === 'active') {
-                        activeListings++;
-                    } else if (listing.status === 'sold') {
-                        soldItems++;
-                        totalRevenue += listing.price || 0;
+                let total = 0, active = 0, sold = 0, revenue = 0;
+                snap.forEach(d => {
+                    const p = d.data();
+                    if (p.cancelled) return; // skip cancelled listings from totals
+                    total++;
+                    if (p.sold) {
+                        sold++;
+                        revenue += p.price || 0;
+                    } else {
+                        active++;
                     }
                 });
 
-                document.getElementById('total-listings').textContent = totalListings;
-                document.getElementById('active-listings').textContent = activeListings;
-                document.getElementById('sold-items').textContent = soldItems;
-                document.getElementById('total-revenue').textContent = '$' + totalRevenue.toFixed(2);
-
-            } catch (error) {
-                console.log('Error loading seller stats:', error);
+                document.getElementById('total-listings').textContent  = total;
+                document.getElementById('active-listings').textContent = active;
+                document.getElementById('sold-items').textContent      = sold;
+                document.getElementById('total-revenue').textContent   = '$' + revenue.toFixed(2);
+            } catch (e) {
+                console.error('Error loading seller stats:', e);
             }
         }
 
-        document.getElementById('stripe-connect-btn').addEventListener('click', async function() {
-            window.location.href = 'http://localhost:3000';
-        });
+        // ── Password section — differs for Google vs email users ──────────
+        function buildPasswordSection(isGoogle) {
+            const container = document.getElementById('password-section-content');
+            if (isGoogle) {
+                container.innerHTML = `
+                    <div class="google-only-notice">
+                        Your account uses Google Sign-In — password changes are managed through your
+                        <a href="https://myaccount.google.com/security" target="_blank" style="color:#3665f3;">Google account settings</a>.
+                    </div>`;
+                return;
+            }
 
-        document.getElementById('stripe-manage-btn').addEventListener('click', function() {
-            alert('This would open your Stripe Express dashboard where you can manage your account, view payouts, and update banking information.');
-        });
+            container.innerHTML = `
+                <div class="success-message" id="password-success">Password changed successfully!</div>
+                <div class="error-message" id="password-error"></div>
+                <form id="password-form">
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="form-input" id="current-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-input" id="new-password" required>
+                        <p class="helper-text">Must be at least 6 characters</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-input" id="confirm-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                </form>`;
 
+            document.getElementById('password-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const current   = document.getElementById('current-password').value;
+                const next      = document.getElementById('new-password').value;
+                const confirm   = document.getElementById('confirm-password').value;
+                const errorMsg  = document.getElementById('password-error');
+                const successMsg = document.getElementById('password-success');
+                errorMsg.style.display = 'none';
+
+                if (next.length < 6) {
+                    errorMsg.textContent = 'New password must be at least 6 characters';
+                    errorMsg.style.display = 'block'; return;
+                }
+                if (next !== confirm) {
+                    errorMsg.textContent = 'Passwords do not match';
+                    errorMsg.style.display = 'block'; return;
+                }
+                try {
+                    const cred = EmailAuthProvider.credential(currentUser.email, current);
+                    await reauthenticateWithCredential(currentUser, cred);
+                    await updatePassword(currentUser, next);
+                    successMsg.style.display = 'block';
+                    document.getElementById('password-form').reset();
+                    setTimeout(() => successMsg.style.display = 'none', 3000);
+                } catch (err) {
+                    errorMsg.textContent = err.code === 'auth/wrong-password'
+                        ? 'Current password is incorrect'
+                        : 'Error: ' + err.message;
+                    errorMsg.style.display = 'block';
+                }
+            });
+        }
+
+        // ── Profile form save ──────────────────────────────────────────────
         document.getElementById('profile-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const username    = document.getElementById('username').value.toLowerCase().trim();
+            const displayName = document.getElementById('display-name').value.trim();
+            const location    = document.getElementById('location').value.trim();
+            const bio         = document.getElementById('bio').value.trim();
+            const errorMsg    = document.getElementById('profile-error');
+            errorMsg.style.display = 'none';
 
-            const username = document.getElementById('username').value.toLowerCase().trim();
-            const displayName = document.getElementById('display-name').value;
-            const location = document.getElementById('location').value;
-            const bio = document.getElementById('bio').value;
-            const errorMsg = document.getElementById('profile-error');
-
-            if (!username) {
-                errorMsg.textContent = 'Username is required';
-                errorMsg.style.display = 'block';
-                return;
-            }
-
-            if (username.length < 3) {
-                errorMsg.textContent = 'Username must be at least 3 characters';
-                errorMsg.style.display = 'block';
-                return;
-            }
-
-            if (!/^[a-z0-9_]+$/.test(username)) {
-                errorMsg.textContent = 'Username can only contain letters, numbers, and underscores';
-                errorMsg.style.display = 'block';
-                return;
+            if (!username || username.length < 3 || !/^[a-z0-9_]+$/.test(username)) {
+                errorMsg.textContent = 'Please enter a valid username (3+ characters, letters/numbers/underscores)';
+                errorMsg.style.display = 'block'; return;
             }
 
             const available = await checkUsernameAvailable(username, currentUser.uid);
             if (!available) {
-                errorMsg.textContent = 'Username is already taken. Please choose another.';
+                errorMsg.textContent = 'That username is already taken.';
                 errorMsg.style.display = 'block';
                 document.getElementById('username-status').textContent = '✗ Already taken';
                 document.getElementById('username-status').className = 'error';
@@ -684,201 +592,123 @@
             }
 
             try {
+                // Update username reservation
                 if (username !== currentUsername) {
-                    if (currentUsername) {
-                        await deleteDoc(doc(db, 'usernames', currentUsername));
-                    }
-
-                    await setDoc(doc(db, 'usernames', username), {
-                        userId: currentUser.uid,
-                        createdAt: new Date().toISOString()
-                    });
+                    if (currentUsername) await deleteDoc(doc(db, 'usernames', currentUsername));
+                    await setDoc(doc(db, 'usernames', username), { userId: currentUser.uid, createdAt: serverTimestamp() });
                 }
 
                 await setDoc(doc(db, 'users', currentUser.uid), {
-                    username: username,
-                    displayName: displayName,
-                    location: location,
-                    bio: bio,
+                    username, displayName, location, bio,
                     email: currentUser.email,
                     updatedAt: serverTimestamp()
                 }, { merge: true });
 
                 currentUsername = username;
-
-                errorMsg.style.display = 'none';
                 const successMsg = document.getElementById('profile-success');
                 successMsg.style.display = 'block';
-                setTimeout(() => {
-                    successMsg.style.display = 'none';
-                }, 3000);
-
-            } catch (error) {
-                errorMsg.textContent = 'Error updating profile: ' + error.message;
+                setTimeout(() => successMsg.style.display = 'none', 3000);
+            } catch (err) {
+                errorMsg.textContent = 'Error saving profile: ' + err.message;
                 errorMsg.style.display = 'block';
             }
         });
 
-        document.getElementById('save-seller-settings').addEventListener('click', async function() {
-            try {
-                const sellerSettings = {
-                    autoRespond: document.getElementById('auto-respond').checked,
-                    vacationMode: document.getElementById('vacation-mode').checked,
-                    acceptOffers: document.getElementById('accept-offers').checked,
-                    shippingTime: parseInt(document.getElementById('shipping-time').value),
-                    returnPolicy: document.getElementById('return-policy').value,
-                    autoResponseMessage: document.getElementById('auto-response-message').value
-                };
-
-                await setDoc(doc(db, 'users', currentUser.uid), {
-                    sellerSettings: sellerSettings,
-                    updatedAt: serverTimestamp()
-                }, { merge: true });
-
-                const successMsg = document.getElementById('seller-success');
-                successMsg.style.display = 'block';
-                setTimeout(() => {
-                    successMsg.style.display = 'none';
-                }, 3000);
-
-            } catch (error) {
-                const errorMsg = document.getElementById('seller-error');
-                errorMsg.textContent = 'Error updating seller settings: ' + error.message;
-                errorMsg.style.display = 'block';
-            }
-        });
-
-        // Save Shipping Address
-        document.getElementById('shipping-address-form').addEventListener('submit', async function(e) {
+        // ── Shipping address save ──────────────────────────────────────────
+        document.getElementById('shipping-address-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            const errorMsg = document.getElementById('shipping-error');
+            const errorMsg   = document.getElementById('shipping-error');
             const successMsg = document.getElementById('shipping-success');
             errorMsg.style.display = 'none';
 
-            const shippingAddress = {
-                name: document.getElementById('shipping-name').value.trim(),
+            const addr = {
+                name:    document.getElementById('shipping-name').value.trim(),
                 street1: document.getElementById('shipping-street1').value.trim(),
                 street2: document.getElementById('shipping-street2').value.trim(),
-                city: document.getElementById('shipping-city').value.trim(),
-                state: document.getElementById('shipping-state').value.trim().toUpperCase(),
-                zip: document.getElementById('shipping-zip').value.trim(),
-                phone: document.getElementById('shipping-phone').value.trim(),
+                city:    document.getElementById('shipping-city').value.trim(),
+                state:   document.getElementById('shipping-state').value.trim().toUpperCase(),
+                zip:     document.getElementById('shipping-zip').value.trim(),
+                phone:   document.getElementById('shipping-phone').value.trim(),
                 country: 'US'
             };
 
-            // Validate required fields
-            if (!shippingAddress.name || !shippingAddress.street1 || !shippingAddress.city || !shippingAddress.state || !shippingAddress.zip) {
-                errorMsg.textContent = 'Please fill in all required fields';
-                errorMsg.style.display = 'block';
-                return;
+            if (!addr.name || !addr.street1 || !addr.city || !addr.state || !addr.zip) {
+                errorMsg.textContent = 'Please fill in all required fields.';
+                errorMsg.style.display = 'block'; return;
+            }
+            if (addr.state.length !== 2) {
+                errorMsg.textContent = 'State must be a 2-letter abbreviation (e.g., NY, CA).';
+                errorMsg.style.display = 'block'; return;
+            }
+            if (!/^\d{5}(-\d{4})?$/.test(addr.zip)) {
+                errorMsg.textContent = 'Please enter a valid ZIP code (e.g., 10001).';
+                errorMsg.style.display = 'block'; return;
             }
 
-            // Validate state format
-            if (shippingAddress.state.length !== 2) {
-                errorMsg.textContent = 'State must be 2-letter abbreviation (e.g., NY, CA)';
+            try {
+                await setDoc(doc(db, 'users', currentUser.uid),
+                    { shippingAddress: addr, updatedAt: serverTimestamp() }, { merge: true });
+                successMsg.style.display = 'block';
+                setTimeout(() => successMsg.style.display = 'none', 3000);
+            } catch (err) {
+                errorMsg.textContent = 'Error saving address: ' + err.message;
                 errorMsg.style.display = 'block';
-                return;
             }
+        });
 
-            // Validate ZIP format
-            if (!/^\d{5}(-\d{4})?$/.test(shippingAddress.zip)) {
-                errorMsg.textContent = 'Please enter a valid ZIP code (e.g., 10001 or 10001-1234)';
-                errorMsg.style.display = 'block';
-                return;
-            }
-
+        // ── Notification preferences save ─────────────────────────────────
+        document.getElementById('save-notif-btn').addEventListener('click', async () => {
+            const successMsg = document.getElementById('notif-success');
             try {
                 await setDoc(doc(db, 'users', currentUser.uid), {
-                    shippingAddress: shippingAddress,
+                    notifications: {
+                        orders:    document.getElementById('notif-orders').checked,
+                        shipping:  document.getElementById('notif-shipping').checked,
+                        marketing: document.getElementById('notif-marketing').checked,
+                    },
                     updatedAt: serverTimestamp()
                 }, { merge: true });
-
                 successMsg.style.display = 'block';
-                setTimeout(() => {
-                    successMsg.style.display = 'none';
-                }, 3000);
-
-            } catch (error) {
-                errorMsg.textContent = 'Error saving shipping address: ' + error.message;
-                errorMsg.style.display = 'block';
+                setTimeout(() => successMsg.style.display = 'none', 3000);
+            } catch (err) {
+                console.error('Error saving notifications:', err);
             }
         });
 
-        document.getElementById('password-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const currentPassword = document.getElementById('current-password').value;
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-
-            if (newPassword.length < 6) {
-                const errorMsg = document.getElementById('password-error');
-                errorMsg.textContent = 'New password must be at least 6 characters';
-                errorMsg.style.display = 'block';
-                return;
-            }
-
-            if (newPassword !== confirmPassword) {
-                const errorMsg = document.getElementById('password-error');
-                errorMsg.textContent = 'New passwords do not match';
-                errorMsg.style.display = 'block';
-                return;
-            }
-
-            try {
-                const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
-                await reauthenticateWithCredential(currentUser, credential);
-
-                await updatePassword(currentUser, newPassword);
-
-                const successMsg = document.getElementById('password-success');
-                successMsg.style.display = 'block';
-                document.getElementById('password-form').reset();
-
-                setTimeout(() => {
-                    successMsg.style.display = 'none';
-                }, 3000);
-
-            } catch (error) {
-                const errorMsg = document.getElementById('password-error');
-                if (error.code === 'auth/wrong-password') {
-                    errorMsg.textContent = 'Current password is incorrect';
-                } else {
-                    errorMsg.textContent = 'Error: ' + error.message;
-                }
-                errorMsg.style.display = 'block';
-            }
-        });
-
+        // ── Sign out ───────────────────────────────────────────────────────
         window.signOutUser = async function() {
             if (confirm('Are you sure you want to sign out?')) {
-                try {
-                    await signOut(auth);
-                    window.location.href = 'index.html';
-                } catch (error) {
-                    alert('Error signing out: ' + error.message);
-                }
+                await signOut(auth);
+                window.location.href = 'index.html';
             }
         };
 
+        // ── Delete account ─────────────────────────────────────────────────
         window.deleteAccount = async function() {
-            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                if (confirm('This will permanently delete all your data. Are you absolutely sure?')) {
-                    try {
-                        await deleteUser(currentUser);
-                        alert('Account deleted successfully');
-                        window.location.href = 'index.html';
-                    } catch (error) {
-                        if (error.code === 'auth/requires-recent-login') {
-                            alert('For security, please sign out and sign back in, then try deleting your account again.');
-                        } else {
-                            alert('Error deleting account: ' + error.message);
-                        }
-                    }
+            if (!confirm('Are you sure you want to delete your account? This cannot be undone.')) return;
+            if (!confirm('All your data will be permanently deleted. Confirm?')) return;
+            try {
+                // Clean up username reservation
+                if (currentUsername) {
+                    await deleteDoc(doc(db, 'usernames', currentUsername)).catch(() => {});
+                }
+                await deleteUser(currentUser);
+                window.location.href = 'index.html';
+            } catch (err) {
+                if (err.code === 'auth/requires-recent-login') {
+                    alert('For security, please sign out and sign back in before deleting your account.');
+                } else {
+                    alert('Error: ' + err.message);
                 }
             }
         };
+    </script>
+
+    <script>
+        function performSearch() {
+            const val = document.getElementById('search-input').value.trim();
+            window.location.href = val ? 'search.html?q=' + encodeURIComponent(val) : 'search.html';
+        }
     </script>
 </body>
 </html>
