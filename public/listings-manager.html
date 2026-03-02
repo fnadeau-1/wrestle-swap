@@ -512,6 +512,7 @@
                 </span>
                 <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
             </div>
+                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
                 <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
@@ -630,14 +631,14 @@
                 <h2 class="modal-title">Cancel Sale</h2>
             </div>
 
-            <p style="margin-bottom: 16px;">Are you sure you want to cancel this sale? The buyer will receive a refund.</p>
+            <p style="margin-bottom: 16px;">Are you sure you want to cancel this sale? The buyer will receive a <strong>full refund</strong>.</p>
 
             <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
-                <strong style="color: #dc2626;">5% Cancellation Fee</strong>
+                <strong style="color: #dc2626;">⚠️ Seller Strike Warning</strong>
                 <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">
-                    A 5% cancellation fee will be deducted from the buyer's refund. This fee goes to the platform.
+                    Cancelling a sale counts as a strike against your account. After <strong>3 strikes</strong> you will no longer be able to sell on Wrestle Swap.
                 </p>
-                <p id="sellerCancelFeeDetails" style="margin: 8px 0 0 0; color: #333; font-size: 14px; font-weight: 600;"></p>
+                <p id="sellerCancelStrikeDetails" style="margin: 8px 0 0 0; color: #333; font-size: 14px; font-weight: 600;"></p>
             </div>
 
             <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
@@ -647,6 +648,19 @@
             <div class="modal-actions">
                 <button class="btn btn-danger" id="confirmSellerCancelBtn" onclick="confirmSellerCancel()">Yes, Cancel Sale</button>
                 <button class="btn btn-secondary" onclick="closeSellerCancelModal()">Keep Sale</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strike Warning Modal -->
+    <div class="modal" id="strikeWarningModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="strikeWarningTitle">⚠️ Strike Recorded</h2>
+            </div>
+            <p id="strikeWarningMessage" style="font-size: 15px; line-height: 1.6; margin-bottom: 24px;"></p>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="closeStrikeWarningModal()">OK, I Understand</button>
             </div>
         </div>
     </div>
@@ -807,7 +821,7 @@
                         <a href="${fulfillmentLink}" class="btn btn-primary" style="text-align: center;">
                             📦 Ship Order
                         </a>
-                        <button class="btn btn-danger" onclick="event.stopPropagation(); openSellerCancelModal('${listing.id}', ${listing.price || 0}, '${listing.soldOrderId || ''}')">
+                        <button class="btn btn-danger" onclick="event.stopPropagation(); openSellerCancelModal('${listing.id}')">
                             Cancel Sale
                         </button>
                     `;
@@ -1042,33 +1056,28 @@
         // SELLER CANCEL ORDER FUNCTIONALITY
         // ============================================
 
-        const CANCEL_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/cancelOrder';
+        const SELLER_CANCEL_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/sellerCancelOrder';
         let saleToCancel = null;
-        let saleToCancelPrice = 0;
-        let saleToCancelOrderId = null;
 
-        function openSellerCancelModal(listingId, price, orderId) {
+        function openSellerCancelModal(listingId) {
             saleToCancel = listingId;
-            saleToCancelPrice = price;
-            saleToCancelOrderId = orderId;
 
-            // Calculate fee details
-            const cancellationFee = (price * 0.05).toFixed(2);
-            const buyerRefund = (price * 0.95).toFixed(2);
-
-            document.getElementById('sellerCancelFeeDetails').innerHTML = `
-                Order Total: $${price.toFixed(2)}<br>
-                Cancellation Fee (5%): $${cancellationFee}<br>
-                Buyer will receive: $${buyerRefund}
-            `;
+            // Show current strike count from user data if available
+            const user = auth.currentUser;
+            if (user) {
+                db.collection('users').doc(user.uid).get().then(userDoc => {
+                    const count = userDoc.exists ? (userDoc.data().sellerCancellationCount || 0) : 0;
+                    const remaining = Math.max(0, 3 - count);
+                    document.getElementById('sellerCancelStrikeDetails').textContent =
+                        `Current strikes: ${count}/3 — ${remaining} remaining after this cancellation if you proceed.`;
+                }).catch(() => {});
+            }
 
             document.getElementById('sellerCancelModal').classList.add('active');
         }
 
         function closeSellerCancelModal() {
             saleToCancel = null;
-            saleToCancelPrice = 0;
-            saleToCancelOrderId = null;
             document.getElementById('sellerCancelModal').classList.remove('active');
         }
 
@@ -1081,23 +1090,16 @@
             cancelBtn.disabled = true;
 
             try {
-                // Get listing data for shippo transaction ID
-                const listingDoc = await db.collection('products').doc(saleToCancel).get();
-                const listingData = listingDoc.exists ? listingDoc.data() : {};
+                const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+                if (!idToken) throw new Error('You must be signed in to cancel a sale');
 
-                // Call the Cloud Function to process refund
-                const response = await fetch(CANCEL_ORDER_URL, {
+                const response = await fetch(SELLER_CANCEL_ORDER_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
                     },
-                    body: JSON.stringify({
-                        paymentIntentId: saleToCancelOrderId || listingData.soldOrderId,
-                        productId: saleToCancel,
-                        reason: 'requested_by_customer',
-                        cancelledBy: 'seller',
-                        shippoTransactionId: listingData.shippoTransactionId || null
-                    })
+                    body: JSON.stringify({ productId: saleToCancel })
                 });
 
                 const result = await response.json();
@@ -1106,23 +1108,36 @@
                     throw new Error(result.error || 'Failed to process cancellation');
                 }
 
-                // Update local status
-                await db.collection('products').doc(saleToCancel).update({
-                    sold: false,
-                    cancelled: true,
-                    cancelledAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    cancelledBy: 'seller',
-                    refundId: result.refundId
-                });
-
                 closeSellerCancelModal();
                 await renderListings();
-                showInfo(result.message || 'Sale cancelled. Buyer has been refunded (minus 5% cancellation fee).');
+
+                // Show strike warning popup
+                showStrikeWarning(result.sellerCancellationCount, result.sellerSuspended, result.strikesRemaining);
+
             } catch (error) {
                 showError('Failed to cancel sale: ' + error.message);
                 cancelBtn.textContent = originalText;
                 cancelBtn.disabled = false;
             }
+        }
+
+        function showStrikeWarning(count, suspended, strikesRemaining) {
+            const title = document.getElementById('strikeWarningTitle');
+            const msg = document.getElementById('strikeWarningMessage');
+
+            if (suspended) {
+                title.textContent = '🚫 Account Suspended';
+                msg.innerHTML = `You have reached <strong>${count} cancellations</strong> and can no longer sell on Wrestle Swap. If you believe this is an error, please contact support.`;
+            } else {
+                title.textContent = '⚠️ Strike Recorded';
+                msg.innerHTML = `You have <strong>${count} of 3</strong> strikes. You have <strong>${strikesRemaining} strike${strikesRemaining !== 1 ? 's' : ''} remaining</strong> before you can no longer sell on this site.<br><br>The buyer has been fully refunded.`;
+            }
+
+            document.getElementById('strikeWarningModal').classList.add('active');
+        }
+
+        function closeStrikeWarningModal() {
+            document.getElementById('strikeWarningModal').classList.remove('active');
         }
 
         // ============================================
@@ -1144,6 +1159,7 @@
                             <a href="watchlist.html">Watchlist</a>
                             <a href="my-orders.html">Your Orders</a>
                             <a href="listings-manager.html">Your Listings</a>
+                            <a href="messages.html">Messages</a>
                         </div>
                     </div>
                 `;
@@ -1177,6 +1193,10 @@
 
         document.getElementById('sellerCancelModal').addEventListener('click', function(e) {
             if (e.target === this) closeSellerCancelModal();
+        });
+
+        document.getElementById('strikeWarningModal').addEventListener('click', function(e) {
+            if (e.target === this) closeStrikeWarningModal();
         });
     </script>
 </body>

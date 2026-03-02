@@ -4,42 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat - Wrestle Swap</title>
-    <link rel="stylesheet" href="css/base.css">
-    <style>
-        /* Page-specific styles for chat.html */
-        body, html {
-            height: 100%;
-            overflow: hidden;
-        }
-        iframe {
-            width: 100%;
-            height: 100vh;
-            border: none;
-        }
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-family: Arial, sans-serif;
-            color: #666;
-        }
-    </style>
-</head>
-<body>
-    <div class="loading">Loading messaging system...</div>
-    <iframe src="http://localhost:3000/messages" id="chatFrame"></iframe>
-    
     <script>
-        // Hide loading message when iframe loads
-        document.getElementById('chatFrame').onload = function() {
-            document.querySelector('.loading').style.display = 'none';
-        };
-        
-        // When deployed to production, use relative path
-        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-            document.getElementById('chatFrame').src = 'https://your-app-name.web.app/messages';
-        }
+        // Pass any query params along to messages.html
+        const params = window.location.search;
+        window.location.replace('messages.html' + params);
     </script>
-</body>
+</head>
+<body></body>
 </html>

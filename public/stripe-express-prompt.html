@@ -413,10 +413,12 @@
                 };
                 console.log('Request body:', requestBody);
                 
+                const idToken = await currentUser.getIdToken();
                 const response = await fetch(CLOUD_FUNCTION_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
                     },
                     body: JSON.stringify(requestBody),
                 });

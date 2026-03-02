@@ -296,6 +296,7 @@
                 </span>
                 <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
             </div>
+                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
                 <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
@@ -371,6 +372,9 @@
                 </div>
                 <div class="action-buttons" id="action-buttons">
                     <button class="btn btn-primary" onclick="buyNow()">Buy Now</button>
+                    <button class="btn btn-secondary" id="message-seller-btn" onclick="messageSeller()" style="display:none;">
+                        💬 Message Seller
+                    </button>
                     <button class="btn btn-secondary wishlist-btn" id="watchlist-btn" onclick="toggleWatchlist()">
                         <span id="heart-icon">♡</span> <span id="watchlist-text">Add to Watchlist</span>
                     </button>
@@ -404,7 +408,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, collection, query, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
@@ -433,6 +437,7 @@
                             <a href="watchlist.html">Watchlist</a>
                             <a href="my-orders.html">Your Orders</a>
                             <a href="listings-manager.html">Your Listings</a>
+                            <a href="messages.html">Messages</a>
                         </div>
                     </div>
                 `;
@@ -451,11 +456,13 @@
         window.firebaseDb = db;
         window.getCurrentUser = () => currentUser;
         window.getDoc = getDoc;
+        window.setDoc = setDoc;
         window.doc = doc;
         window.collection = collection;
         window.query = query;
         window.limit = limit;
         window.getDocs = getDocs;
+        window.serverTimestamp = serverTimestamp;
 
         window.firebaseReady = true;
         window.dispatchEvent(new Event('firebaseReady'));
@@ -756,17 +763,67 @@
         function checkIfOwnProduct(product) {
             const user = window.getCurrentUser();
             if (user && product.userId && user.uid === product.userId && !product.sold) {
-                // This is the user's own product - disable buying
+                // This is the user's own product - disable buying, no messaging yourself
                 document.getElementById('action-buttons').innerHTML = `
                     <button class="btn btn-primary" disabled style="background: #ccc; cursor: not-allowed;">This is Your Listing</button>
                     <p style="text-align: center; color: #707070; font-size: 14px;">You cannot purchase your own item.</p>
                     <a href="listings-manager.html" class="btn btn-secondary" style="text-decoration: none; text-align: center;">Manage Your Listings</a>
                 `;
                 document.getElementById('shipping-section').style.display = 'none';
+            } else if (user && product.userId && user.uid !== product.userId && !product.sold) {
+                // Buyer viewing someone else's active listing — show Message Seller button
+                const msgBtn = document.getElementById('message-seller-btn');
+                if (msgBtn) msgBtn.style.display = '';
             }
         }
         // Expose to window for auth state listener
         window.checkIfOwnProduct = checkIfOwnProduct;
+
+        async function messageSeller() {
+            const user = window.getCurrentUser();
+            if (!user) {
+                document.getElementById('signin-modal-overlay').classList.add('show');
+                return;
+            }
+
+            if (!currentProduct || !currentProduct.id) return;
+
+            if (currentProduct.userId === user.uid) {
+                showToast('This is your own listing', 'error');
+                return;
+            }
+
+            const msgBtn = document.getElementById('message-seller-btn');
+            if (msgBtn) { msgBtn.disabled = true; msgBtn.textContent = 'Opening chat...'; }
+
+            try {
+                const conversationId = `${currentProduct.id}_${user.uid}`;
+                const convRef = window.doc(window.firebaseDb, 'conversations', conversationId);
+
+                // Create conversation doc if it doesn't exist yet (merge: true is safe to call every time)
+                await window.setDoc(convRef, {
+                    productId: currentProduct.id,
+                    productName: currentProduct.name || 'Item',
+                    productImage: (currentProduct.images && currentProduct.images[0]) || currentProduct.image || null,
+                    buyerId: user.uid,
+                    buyerName: user.displayName || user.email.split('@')[0],
+                    sellerId: currentProduct.userId,
+                    sellerName: currentProduct.sellerUsername || currentProduct.sellerName || currentProduct.displayName || 'Seller',
+                    participants: [user.uid, currentProduct.userId],
+                    lastMessageAt: window.serverTimestamp(),
+                    lastMessage: null,
+                    unreadBuyer: 0,
+                    unreadSeller: 0
+                }, { merge: true });
+
+                window.location.href = `messages.html?conv=${conversationId}`;
+            } catch (err) {
+                console.error('Error opening conversation:', err);
+                showToast('Failed to open chat. Please try again.', 'error');
+                if (msgBtn) { msgBtn.disabled = false; msgBtn.innerHTML = '💬 Message Seller'; }
+            }
+        }
+        window.messageSeller = messageSeller;
 
         function buyNow() {
             if (!currentProduct) return;

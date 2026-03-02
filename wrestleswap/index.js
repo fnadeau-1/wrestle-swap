@@ -1,4 +1,5 @@
 const { onRequest } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 
@@ -52,6 +53,9 @@ exports.deleteSoldProducts = onRequest({ cors: true }, async (req, res) => {
 // Platform fee percentage (10% of product price only)
 const PLATFORM_FEE_PERCENT = 0.10;
 
+// Number of seller cancellations before account is suspended
+const SELLER_STRIKES_LIMIT = 3;
+
 // --- STRIPE PAYMENT INTENT WITH CONNECT ---
 // Shipping costs go to platform, product price (minus 10% fee) goes to seller
 exports.createPaymentIntent = onRequest(
@@ -90,8 +94,14 @@ exports.createPaymentIntent = onRequest(
       let sellerStripeAccountId = null;
       if (productData.userId) {
         const sellerDoc = await db.collection('users').doc(productData.userId).get();
-        if (sellerDoc.exists && sellerDoc.data().stripeAccountId) {
-          sellerStripeAccountId = sellerDoc.data().stripeAccountId;
+        if (sellerDoc.exists) {
+          const sellerData = sellerDoc.data();
+          if (sellerData.sellerSuspended) {
+            return res.status(403).json({ error: 'This seller is currently suspended and cannot accept payments' });
+          }
+          if (sellerData.stripeAccountId) {
+            sellerStripeAccountId = sellerData.stripeAccountId;
+          }
         }
       }
 
@@ -192,20 +202,11 @@ exports.cancelOrder = onRequest(
         return res.status(400).json({ error: 'Order is not in a cancellable state' });
       }
 
-      // Verify the payment intent belongs to this product
-      const piCheck = await stripe.paymentIntents.retrieve(paymentIntentId);
-      if (piCheck.metadata.productId !== productId) {
+      // Retrieve payment intent and verify it belongs to this product
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (paymentIntent.metadata.productId !== productId) {
         return res.status(403).json({ error: 'Payment intent does not match this product' });
       }
-
-      console.log('Processing cancellation:');
-      console.log('  Payment Intent:', paymentIntentId);
-      console.log('  Product ID:', productId);
-      console.log('  Cancelled by:', cancelledBy);
-      console.log('  Reason:', reason);
-
-      // Get the payment intent to find the charge
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
       if (!paymentIntent.latest_charge) {
         return res.status(400).json({ error: 'No charge found for this payment' });
@@ -218,6 +219,9 @@ exports.cancelOrder = onRequest(
       const cancellationFee = Math.round(originalAmount * CANCELLATION_FEE_PERCENT);
       const refundAmount = originalAmount - cancellationFee;
 
+      console.log('Processing buyer cancellation:');
+      console.log('  Payment Intent:', paymentIntentId);
+      console.log('  Product ID:', productId);
       console.log('  Original amount:', originalAmount);
       console.log('  Cancellation fee (5%):', cancellationFee);
       console.log('  Refund amount:', refundAmount);
@@ -226,12 +230,12 @@ exports.cancelOrder = onRequest(
       const refund = await stripe.refunds.create({
         charge: chargeId,
         amount: refundAmount,
-        reason: reason,
+        reason: 'requested_by_customer',
         metadata: {
-          productId: productId || 'unknown',
-          cancelledBy: cancelledBy,
-          cancellationFee: cancellationFee,
-          originalAmount: originalAmount
+          productId,
+          cancelledBy: 'buyer',
+          cancellationFee,
+          originalAmount
         }
       });
 
@@ -244,11 +248,8 @@ exports.cancelOrder = onRequest(
           const shippoKey = shippoSecret.value();
           const voidResponse = await fetch(`https://api.goshippo.com/transactions/${shippoTransactionId}`, {
             method: 'DELETE',
-            headers: {
-              'Authorization': `ShippoToken ${shippoKey}`,
-            }
+            headers: { 'Authorization': `ShippoToken ${shippoKey}` }
           });
-
           if (voidResponse.ok) {
             labelVoided = true;
             console.log('Shipping label voided successfully');
@@ -261,23 +262,19 @@ exports.cancelOrder = onRequest(
       }
 
       // Update product status in Firestore
-      if (productId) {
-        try {
-          await db.collection('products').doc(productId).update({
-            sold: false,
-            soldAt: null,
-            soldTimestamp: null,
-            soldOrderId: null,
-            cancelledAt: new Date(),
-            cancelledBy: cancelledBy,
-            cancellationReason: reason,
-            refundId: refund.id
-          });
-          console.log('Product status updated - marked as available');
-        } catch (dbError) {
-          console.error('Error updating product status:', dbError);
-        }
-      }
+      await db.collection('products').doc(productId).update({
+        sold: false,
+        soldAt: null,
+        soldTimestamp: null,
+        soldOrderId: null,
+        buyerId: null,
+        cancelled: true,
+        cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        cancelledBy: 'buyer',
+        cancellationReason: 'Cancelled by buyer',
+        refundId: refund.id
+      });
+      console.log('Product status updated - marked as available');
 
       return res.status(200).json({
         success: true,
@@ -371,12 +368,27 @@ exports.createConnectedAccount = onRequest(
       return;
     }
 
+    // Verify Firebase ID token — only the authenticated user can create their own Connect account
+    const authHeader = req.headers.authorization || '';
+    const idToken = authHeader.replace('Bearer ', '');
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     try {
       const stripe = require('stripe')(stripeSecret.value());
       const { userId, email, returnUrl, refreshUrl } = req.body;
 
       if (!userId || !email) {
         return res.status(400).json({ error: 'Missing userId or email' });
+      }
+
+      // Ensure the authenticated user can only create an account for themselves
+      if (decodedToken.uid !== userId) {
+        return res.status(403).json({ error: 'You can only create a Stripe account for your own user ID' });
       }
 
       console.log('Creating Stripe Connect account for user:', userId);
@@ -768,5 +780,246 @@ exports.completeOrder = onRequest(
       console.error('completeOrder error:', error);
       return res.status(500).json({ error: error.message });
     }
+  }
+);
+
+// --- SELLER CANCEL ORDER (full refund to buyer, strike against seller) ---
+exports.sellerCancelOrder = onRequest(
+  { cors: true, secrets: [stripeSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') {
+      return res.status(204).send('');
+    }
+
+    // Verify Firebase ID token — must be the seller
+    const authHeader = req.headers.authorization || '';
+    const idToken = authHeader.replace('Bearer ', '');
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      const stripe = require('stripe')(stripeSecret.value());
+      const { productId } = req.body;
+
+      if (!productId) {
+        return res.status(400).json({ error: 'productId is required' });
+      }
+
+      // Verify caller is the seller of this product
+      const productDoc = await db.collection('products').doc(productId).get();
+      if (!productDoc.exists) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      const productData = productDoc.data();
+      if (productData.userId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'You are not the seller of this item' });
+      }
+      if (!productData.sold || productData.cancelled || productData.cancelledAt) {
+        return res.status(400).json({ error: 'Order is not in a cancellable state' });
+      }
+
+      const paymentIntentId = productData.soldOrderId;
+      if (!paymentIntentId) {
+        return res.status(400).json({ error: 'No payment found for this order' });
+      }
+
+      // Retrieve Stripe charge for this order
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (!paymentIntent.latest_charge) {
+        return res.status(400).json({ error: 'No charge found for this payment' });
+      }
+
+      // Full refund to buyer — seller is at fault, buyer pays nothing
+      const refundOptions = {
+        charge: paymentIntent.latest_charge,
+        reason: 'requested_by_customer',
+        metadata: { productId, cancelledBy: 'seller', sellerUid: decodedToken.uid }
+      };
+      // Attempt to reverse the transfer so the platform isn't out of pocket.
+      // If the seller already paid out, reverse_transfer fails — fall back to platform-funded refund.
+      if (paymentIntent.transfer_data && paymentIntent.transfer_data.destination) {
+        refundOptions.reverse_transfer = true;
+      }
+      let refund;
+      try {
+        refund = await stripe.refunds.create(refundOptions);
+      } catch (stripeErr) {
+        if (refundOptions.reverse_transfer && stripeErr.code === 'insufficient_funds') {
+          console.warn('reverse_transfer failed (seller paid out) — refunding from platform balance');
+          delete refundOptions.reverse_transfer;
+          refund = await stripe.refunds.create(refundOptions);
+        } else {
+          throw stripeErr;
+        }
+      }
+      console.log('Seller cancel: full refund', refund.id, 'for product', productId);
+
+      // Apply seller strike
+      const sellerRef = db.collection('users').doc(decodedToken.uid);
+      const sellerDoc = await sellerRef.get();
+      const sellerData = sellerDoc.exists ? sellerDoc.data() : {};
+      const newCount = (sellerData.sellerCancellationCount || 0) + 1;
+      const suspended = newCount >= SELLER_STRIKES_LIMIT;
+      const strikesRemaining = Math.max(0, SELLER_STRIKES_LIMIT - newCount);
+
+      await sellerRef.set({
+        sellerCancellationCount: newCount,
+        sellerPenalties: admin.firestore.FieldValue.arrayUnion({
+          type: 'seller_cancel',
+          productId,
+          orderId: paymentIntentId,
+          timestamp: Date.now(),
+          strikeNumber: newCount
+        }),
+        ...(suspended ? { sellerSuspended: true } : {})
+      }, { merge: true });
+
+      console.log(`Seller ${decodedToken.uid} strike ${newCount}/${SELLER_STRIKES_LIMIT} — suspended: ${suspended}`);
+
+      // Mark product as cancelled and re-listed (available again)
+      await db.collection('products').doc(productId).update({
+        sold: false,
+        soldAt: null,
+        soldTimestamp: null,
+        soldOrderId: null,
+        buyerId: null,
+        cancelled: true,
+        cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        cancelledBy: 'seller',
+        cancellationReason: 'Cancelled by seller',
+        refundId: refund.id
+      });
+
+      const message = suspended
+        ? `Order cancelled. The buyer has been fully refunded. You have reached ${SELLER_STRIKES_LIMIT} cancellations and your selling privileges have been suspended.`
+        : `Order cancelled. The buyer has been fully refunded. Strike ${newCount} of ${SELLER_STRIKES_LIMIT} — you have ${strikesRemaining} strike${strikesRemaining !== 1 ? 's' : ''} remaining before you can no longer sell.`;
+
+      return res.status(200).json({
+        success: true,
+        refundId: refund.id,
+        refundAmount: paymentIntent.amount,
+        sellerCancellationCount: newCount,
+        sellerSuspended: suspended,
+        strikesRemaining,
+        message
+      });
+
+    } catch (error) {
+      console.error('sellerCancelOrder error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- CHECK OVERDUE ORDERS (runs daily — auto-cancels unshipped orders older than 14 days) ---
+// Note: requires a Firestore composite index on (sold ASC, soldTimestamp ASC)
+exports.checkOverdueOrders = onSchedule(
+  { schedule: 'every 24 hours', secrets: [stripeSecret] },
+  async (event) => {
+    const stripe = require('stripe')(stripeSecret.value());
+    const fourteenDaysAgo = Date.now() - (14 * 24 * 60 * 60 * 1000);
+
+    console.log('Overdue order check — cutoff:', new Date(fourteenDaysAgo).toISOString());
+
+    const snapshot = await db.collection('products')
+      .where('sold', '==', true)
+      .where('soldTimestamp', '<=', fourteenDaysAgo)
+      .get();
+
+    // Filter in JS: exclude already-cancelled and orders that have a tracking number
+    const overdueOrders = snapshot.docs.filter(doc => {
+      const d = doc.data();
+      return !d.cancelled && !d.cancelledAt && !d.trackingNumber;
+    });
+
+    console.log(`Found ${overdueOrders.length} overdue unshipped orders`);
+
+    let processed = 0;
+    let errors = 0;
+
+    for (const doc of overdueOrders) {
+      const productId = doc.id;
+      const productData = doc.data();
+
+      try {
+        // Issue full refund if payment exists
+        let refundId = null;
+        if (productData.soldOrderId) {
+          const paymentIntent = await stripe.paymentIntents.retrieve(productData.soldOrderId);
+          if (paymentIntent.latest_charge) {
+            const refundOptions = {
+              charge: paymentIntent.latest_charge,
+              reason: 'requested_by_customer',
+              metadata: { productId, cancelledBy: 'system', reason: 'seller_failed_to_ship' }
+            };
+            if (paymentIntent.transfer_data && paymentIntent.transfer_data.destination) {
+              refundOptions.reverse_transfer = true;
+            }
+            let refund;
+            try {
+              refund = await stripe.refunds.create(refundOptions);
+            } catch (stripeErr) {
+              if (refundOptions.reverse_transfer && stripeErr.code === 'insufficient_funds') {
+                console.warn(`Product ${productId}: reverse_transfer failed, refunding from platform balance`);
+                delete refundOptions.reverse_transfer;
+                refund = await stripe.refunds.create(refundOptions);
+              } else {
+                throw stripeErr;
+              }
+            }
+            refundId = refund.id;
+            console.log(`Overdue refund ${refund.id} for product ${productId}`);
+          }
+        }
+
+        // Strike the seller
+        if (productData.userId) {
+          const sellerRef = db.collection('users').doc(productData.userId);
+          const sellerDoc = await sellerRef.get();
+          const sellerData = sellerDoc.exists ? sellerDoc.data() : {};
+          const newCount = (sellerData.sellerCancellationCount || 0) + 1;
+          const suspended = newCount >= SELLER_STRIKES_LIMIT;
+
+          await sellerRef.set({
+            sellerCancellationCount: newCount,
+            sellerPenalties: admin.firestore.FieldValue.arrayUnion({
+              type: 'overdue_shipment',
+              productId,
+              orderId: productData.soldOrderId || null,
+              timestamp: Date.now(),
+              strikeNumber: newCount
+            }),
+            ...(suspended ? { sellerSuspended: true } : {})
+          }, { merge: true });
+
+          console.log(`Seller ${productData.userId} overdue strike ${newCount} — suspended: ${suspended}`);
+        }
+
+        // Mark product cancelled
+        await db.collection('products').doc(productId).update({
+          sold: false,
+          soldAt: null,
+          soldTimestamp: null,
+          soldOrderId: null,
+          buyerId: null,
+          cancelled: true,
+          cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+          cancelledBy: 'system',
+          cancellationReason: 'Seller failed to ship within 14 days',
+          ...(refundId ? { refundId } : {})
+        });
+
+        processed++;
+      } catch (err) {
+        console.error(`Error processing overdue order ${productId}:`, err.message);
+        errors++;
+      }
+    }
+
+    console.log(`Overdue check complete: ${processed} cancelled, ${errors} errors`);
   }
 );

@@ -13,29 +13,17 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-        }
-
-        .back-btn {
-            padding: 8px 16px;
-            background: #3665f3;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        .back-btn:hover {
-            background: #2348c5;
+            overflow: hidden;
         }
 
         /* Chat Container */
         .chat-container {
             display: flex;
+            flex: 1;
+            min-height: 0;
             max-width: 1280px;
-            margin: 20px auto;
-            height: calc(100vh - 100px);
+            width: calc(100% - 40px);
+            margin: 12px auto;
             background: white;
             border-radius: 8px;
             overflow: hidden;
@@ -315,7 +303,7 @@
         @media (max-width: 768px) {
             .chat-container {
                 margin: 0;
-                height: calc(100vh - 70px);
+                width: 100%;
                 border-radius: 0;
             }
 
@@ -339,11 +327,52 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-content">
+            <div>
+                <span id="user-menu-wrapper">
+                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                </span>
+                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help &amp; Contact</button>
+            </div>
+                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
+            <div>
+                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
+                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
             <a href="index.html" class="logo">Wrestle Swap</a>
-            <a href="index.html" class="back-btn">← Back to Home</a>
+            <div class="search-container">
+                <div class="search-box">
+                    <input
+                        type="text"
+                        class="search-input"
+                        id="search-input"
+                        placeholder="Search for wrestling shoes, singlets, gear..."
+                        onkeypress="if(event.key==='Enter') performSearch()"
+                    >
+                </div>
+                <button class="search-btn" onclick="performSearch()">Search</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nav Bar -->
+    <div class="nav-bar">
+        <div class="nav-content">
+            <a href="watchlist.html">Saved</a>
+            <a href="messages.html" style="color:#3665f3;font-weight:600;">Messages</a>
+            <a href="search.html">All Categories</a>
+            <a href="search.html?q=shoes">Wrestling Shoes</a>
+            <a href="search.html?q=singlet">Singlets</a>
+            <a href="search.html?q=shirt">Shirts</a>
+            <a href="search.html?q=shorts">Shorts</a>
         </div>
     </div>
 
@@ -372,7 +401,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, where, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, increment, query, orderBy, onSnapshot, serverTimestamp, where, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
@@ -390,75 +419,125 @@
 
         let currentUser = null;
         let currentConversationId = null;
+        let currentConversationData = null;
         let unsubscribeMessages = null;
+        let unsubscribeConversations = null;
+
+        // Read ?conv= param from URL — auto-open this conversation when list loads
+        const urlParams = new URLSearchParams(window.location.search);
+        let pendingConvId = urlParams.get('conv') || null;
 
         // Check authentication
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
+
+                // Build user dropdown menu
+                const menuWrapper = document.getElementById('user-menu-wrapper');
+                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+                menuWrapper.innerHTML = `
+                    <div class="user-menu-container">
+                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                        <div class="dropdown-menu">
+                            <a href="watchlist.html">Watchlist</a>
+                            <a href="my-orders.html">Your Orders</a>
+                            <a href="listings-manager.html">Your Listings</a>
+                            <a href="messages.html">Messages</a>
+                        </div>
+                    </div>`;
+
                 loadConversations();
             } else {
-                window.location.href = 'sign-in.html';
+                window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.href);
             }
         });
 
-        // Load conversations
-        async function loadConversations() {
+        // Load all conversations for the current user in real-time
+        function loadConversations() {
             const conversationsList = document.getElementById('conversations-list');
-            
-            // For demo purposes, show sample conversations
-            // In production, you'd query Firestore for real conversations
-            const sampleConversations = [
-                {
-                    id: 'conv1',
-                    otherUser: { name: 'WrestlingPro23', uid: 'user123' },
-                    lastMessage: 'Is the singlet still available?',
-                    timestamp: 'Just now'
-                },
-                {
-                    id: 'conv2',
-                    otherUser: { name: 'CoachSmith', uid: 'user456' },
-                    lastMessage: 'Can you ship by Friday?',
-                    timestamp: '5 min ago'
-                },
-                {
-                    id: 'conv3',
-                    otherUser: { name: 'MatGear4U', uid: 'user789' },
-                    lastMessage: 'Thanks for the quick response!',
-                    timestamp: '1 hour ago'
-                }
-            ];
+            conversationsList.innerHTML = '<div style="padding:20px;color:#999;text-align:center;">Loading...</div>';
 
-            conversationsList.innerHTML = sampleConversations.map(conv => `
-                <div class="conversation-item" onclick="openConversation('${conv.id}', '${conv.otherUser.name}', '${conv.otherUser.uid}')">
-                    <div class="conversation-avatar">${conv.otherUser.name[0]}</div>
-                    <div class="conversation-info">
-                        <div class="conversation-name">${conv.otherUser.name}</div>
-                        <div class="conversation-preview">${conv.lastMessage}</div>
-                    </div>
-                    <div class="conversation-time">${conv.timestamp}</div>
-                </div>
-            `).join('');
+            if (unsubscribeConversations) unsubscribeConversations();
+
+            const q = query(
+                collection(db, 'conversations'),
+                where('participants', 'array-contains', currentUser.uid),
+                orderBy('lastMessageAt', 'desc')
+            );
+
+            unsubscribeConversations = onSnapshot(q, (snapshot) => {
+                if (snapshot.empty) {
+                    conversationsList.innerHTML = `
+                        <div style="padding:30px 20px;text-align:center;color:#999;">
+                            <div style="font-size:40px;margin-bottom:10px;">💬</div>
+                            <div>No messages yet.</div>
+                            <div style="font-size:13px;margin-top:8px;">Browse listings and click "Message Seller" to start a conversation.</div>
+                        </div>`;
+                    return;
+                }
+
+                conversationsList.innerHTML = '';
+                snapshot.forEach(snapDoc => {
+                    const conv = { id: snapDoc.id, ...snapDoc.data() };
+                    const isBuyer = conv.buyerId === currentUser.uid;
+                    const otherName = isBuyer ? (conv.sellerName || 'Seller') : (conv.buyerName || 'Buyer');
+                    const otherUid  = isBuyer ? conv.sellerId : conv.buyerId;
+                    const unread    = isBuyer ? (conv.unreadBuyer || 0) : (conv.unreadSeller || 0);
+
+                    const item = document.createElement('div');
+                    item.className = 'conversation-item';
+                    item.dataset.convId = conv.id;
+                    item.innerHTML = `
+                        <div class="conversation-avatar">${escapeHtml(otherName[0].toUpperCase())}</div>
+                        <div class="conversation-info">
+                            <div class="conversation-name">
+                                ${escapeHtml(otherName)}
+                                ${unread > 0 ? `<span style="background:#c41e3a;color:white;font-size:11px;border-radius:10px;padding:1px 7px;margin-left:6px;">${unread}</span>` : ''}
+                            </div>
+                            <div class="conversation-preview">
+                                ${conv.productName ? `<span style="color:#3665f3;font-size:11px;font-weight:600;">${escapeHtml(conv.productName)}</span> · ` : ''}${conv.lastMessage ? escapeHtml(conv.lastMessage.substring(0, 60)) : '<em>No messages yet</em>'}
+                            </div>
+                        </div>
+                        <div class="conversation-time">${formatTime(conv.lastMessageAt)}</div>
+                    `;
+                    item.onclick = () => openConversation(conv.id, otherName, otherUid, conv, item);
+                    conversationsList.appendChild(item);
+                });
+
+                // Auto-open conversation from URL param
+                if (pendingConvId) {
+                    const target = conversationsList.querySelector(`[data-conv-id="${pendingConvId}"]`);
+                    if (target) target.click();
+                    pendingConvId = null;
+                }
+            }, (error) => {
+                console.error('Error loading conversations:', error);
+                conversationsList.innerHTML = '<div style="padding:20px;color:#dc3545;">Error loading messages. Please refresh.</div>';
+            });
         }
 
-        // Open a conversation
-        window.openConversation = function(conversationId, otherUserName, otherUserId) {
+        // Open a specific conversation
+        function openConversation(conversationId, otherUserName, otherUserId, convData, clickedItem) {
             currentConversationId = conversationId;
-            
-            // Update active state
-            document.querySelectorAll('.conversation-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            event.currentTarget.classList.add('active');
+            currentConversationData = convData;
 
-            // Set up chat area
+            // Update sidebar active state
+            document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
+            if (clickedItem) clickedItem.classList.add('active');
+
+            // Mark messages as read for current user
+            const isBuyer = convData.buyerId === currentUser.uid;
+            const unreadField = isBuyer ? 'unreadBuyer' : 'unreadSeller';
+            updateDoc(doc(db, 'conversations', conversationId), { [unreadField]: 0 }).catch(() => {});
+
+            // Render chat area
             const chatArea = document.getElementById('chat-area');
             chatArea.innerHTML = `
                 <div class="chat-header">
-                    <div class="chat-user-avatar">${otherUserName[0]}</div>
+                    <div class="chat-user-avatar">${escapeHtml(otherUserName[0].toUpperCase())}</div>
                     <div class="chat-user-info">
-                        <div class="chat-user-name">${otherUserName}</div>
-                        <div class="chat-user-status">Active now</div>
+                        <div class="chat-user-name">${escapeHtml(otherUserName)}</div>
+                        ${convData.productName ? `<div class="chat-user-status" style="color:#3665f3;">Re: <a href="productdetail.html?id=${convData.productId}" style="color:#3665f3;">${escapeHtml(convData.productName)}</a></div>` : '<div class="chat-user-status">Wrestle Swap</div>'}
                     </div>
                     <button class="view-profile-btn" onclick="window.location.href='profile.html?user=${otherUserId}'">
                         View Profile
@@ -466,103 +545,115 @@
                 </div>
                 <div class="messages-area" id="messages-area"></div>
                 <div class="message-input-area">
-                    <textarea 
-                        class="message-input" 
-                        id="message-input" 
+                    <textarea
+                        class="message-input"
+                        id="message-input"
                         placeholder="Type a message..."
                         rows="1"
-                        onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendMessage();}"
+                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"
                     ></textarea>
-                    <button class="send-btn" onclick="sendMessage()">➤</button>
+                    <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
                 </div>
             `;
 
-            // Load messages
             loadMessages(conversationId, otherUserName);
-        };
+        }
 
-        // Load messages for a conversation
+        // Real-time messages listener
         function loadMessages(conversationId, otherUserName) {
-            const messagesArea = document.getElementById('messages-area');
-            
-            // Unsubscribe from previous messages listener
-            if (unsubscribeMessages) {
-                unsubscribeMessages();
-            }
+            if (unsubscribeMessages) unsubscribeMessages();
 
-            // Listen for messages in real-time
             const messagesRef = collection(db, 'conversations', conversationId, 'messages');
             const q = query(messagesRef, orderBy('timestamp', 'asc'));
-            
+
             unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                const messagesArea = document.getElementById('messages-area');
+                if (!messagesArea) return;
+
                 messagesArea.innerHTML = '';
-                
-                snapshot.forEach((doc) => {
-                    const message = doc.data();
-                    const isSent = message.senderId === currentUser.uid;
-                    const senderName = isSent ? 'You' : otherUserName;
-                    
-                    const messageEl = document.createElement('div');
-                    messageEl.className = `message ${isSent ? 'sent' : ''}`;
-                    messageEl.innerHTML = `
-                        <div class="message-avatar">${senderName[0]}</div>
+                snapshot.forEach(snapDoc => {
+                    const msg = snapDoc.data();
+                    const isSent = msg.senderId === currentUser.uid;
+                    const label = isSent ? 'You' : otherUserName;
+
+                    const el = document.createElement('div');
+                    el.className = `message ${isSent ? 'sent' : ''}`;
+                    el.innerHTML = `
+                        <div class="message-avatar">${escapeHtml(label[0].toUpperCase())}</div>
                         <div class="message-content">
-                            <div class="message-bubble">${escapeHtml(message.text)}</div>
-                            <div class="message-time">${formatTime(message.timestamp)}</div>
+                            <div class="message-bubble">${escapeHtml(msg.text)}</div>
+                            <div class="message-time">${formatTime(msg.timestamp)}</div>
                         </div>
                     `;
-                    messagesArea.appendChild(messageEl);
+                    messagesArea.appendChild(el);
                 });
-                
-                // Scroll to bottom
+
                 messagesArea.scrollTop = messagesArea.scrollHeight;
             });
         }
 
-        // Send message
+        // Send a message
         window.sendMessage = async function() {
             const input = document.getElementById('message-input');
+            const sendBtn = document.getElementById('send-btn');
             const text = input.value.trim();
-            
-            if (!text || !currentConversationId) return;
-            
+            if (!text || !currentConversationId || !currentConversationData) return;
+
+            input.value = '';
+            if (sendBtn) sendBtn.disabled = true;
+
             try {
-                const messagesRef = collection(db, 'conversations', currentConversationId, 'messages');
-                await addDoc(messagesRef, {
-                    text: text,
+                const isBuyer = currentConversationData.buyerId === currentUser.uid;
+                const senderName = currentUser.displayName || currentUser.email.split('@')[0];
+
+                // Write message to subcollection
+                await addDoc(collection(db, 'conversations', currentConversationId, 'messages'), {
+                    text,
                     senderId: currentUser.uid,
-                    senderName: currentUser.displayName || currentUser.email.split('@')[0],
+                    senderName,
                     timestamp: serverTimestamp()
                 });
-                
-                input.value = '';
+
+                // Update conversation metadata: last message preview + unread count for the other party
+                await updateDoc(doc(db, 'conversations', currentConversationId), {
+                    lastMessage: text.substring(0, 100),
+                    lastMessageAt: serverTimestamp(),
+                    lastSenderId: currentUser.uid,
+                    [isBuyer ? 'unreadSeller' : 'unreadBuyer']: increment(1)
+                });
+
                 input.focus();
-            } catch (error) {
-                console.error('Error sending message:', error);
+            } catch (err) {
+                console.error('Error sending message:', err);
                 alert('Failed to send message. Please try again.');
+            } finally {
+                if (sendBtn) sendBtn.disabled = false;
             }
         };
 
-        // Format timestamp
+        // Format Firestore timestamp to human-readable relative time
         function formatTime(timestamp) {
-            if (!timestamp) return 'Just now';
-            
+            if (!timestamp) return '';
             const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            const now = new Date();
-            const diff = now - date;
-            
-            if (diff < 60000) return 'Just now';
+            const diff = Date.now() - date.getTime();
+            if (diff < 60000)   return 'Just now';
             if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
             if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-            
             return date.toLocaleDateString();
         }
 
-        // Escape HTML to prevent XSS
+        // XSS prevention
         function escapeHtml(text) {
             const div = document.createElement('div');
-            div.textContent = text;
+            div.textContent = String(text);
             return div.innerHTML;
+        }
+    </script>
+
+    <script>
+        function performSearch() {
+            const val = document.getElementById('search-input').value.trim();
+            window.location.href = val ? 'search.html?q=' + encodeURIComponent(val) : 'search.html';
         }
     </script>
 </body>

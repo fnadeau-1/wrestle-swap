@@ -59,9 +59,14 @@
     gap: 10px;
     margin-top: 20px;
 }
+#track-button{
+    background-color: red;
+    color: white;
+    border: 1px black;
+}
 
 /* Top bar buttons */
-.top-bar-btn {
+.top-bar-btn >#top-bar-btn {
     padding: 4px 16px;
     margin: 0 5px;
     cursor: pointer;
