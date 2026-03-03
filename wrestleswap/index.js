@@ -1186,3 +1186,184 @@ exports.checkOverdueOrders = onSchedule(
     console.log(`Overdue check complete: ${processed} cancelled, ${errors} errors`);
   }
 );
+
+// --- ADMIN: Permanently delete a user account ---
+// Deletes Firebase Auth record, Firestore user doc, and username reservation.
+// Caller must be authenticated and have isAdmin == true in their Firestore doc.
+exports.adminDeleteUser = onRequest(
+  { cors: true },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    // Verify caller is authenticated
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Verify caller is an admin (double-check server-side — never trust client-only)
+    const adminDoc = await db.collection('users').doc(decodedToken.uid).get();
+    if (!adminDoc.exists || adminDoc.data().isAdmin !== true) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    if (userId === decodedToken.uid) {
+      return res.status(400).json({ error: 'You cannot delete your own account' });
+    }
+
+    try {
+      // 1. Delete Firebase Auth user
+      await admin.auth().deleteUser(userId);
+
+      // 2. Delete Firestore user document
+      await db.collection('users').doc(userId).delete();
+
+      // 3. Delete username reservation if one exists
+      const usernameSnap = await db.collection('usernames')
+        .where('userId', '==', userId)
+        .get();
+      if (!usernameSnap.empty) {
+        const batch = db.batch();
+        usernameSnap.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      }
+
+      console.log(`Admin ${decodedToken.uid} deleted user ${userId}`);
+      return res.status(200).json({ success: true });
+
+    } catch (error) {
+      console.error('adminDeleteUser error:', error);
+      // auth/user-not-found means Auth record already gone — still clean up Firestore
+      if (error.code === 'auth/user-not-found') {
+        await db.collection('users').doc(userId).delete().catch(() => {});
+        return res.status(200).json({ success: true, note: 'Auth user not found but Firestore doc removed' });
+      }
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- ADMIN: Manually issue a refund for an order ---
+// Accepts: productId (required), refundAmount in cents (optional, defaults to full), relist (boolean, default true)
+// Caller must be authenticated and have isAdmin == true in their Firestore doc.
+exports.adminIssueRefund = onRequest(
+  { cors: true },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    // Verify caller is authenticated
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Verify caller is an admin (server-side, never trust client)
+    const adminDoc = await db.collection('users').doc(decodedToken.uid).get();
+    if (!adminDoc.exists || adminDoc.data().isAdmin !== true) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { productId, refundAmount, reason = 'requested_by_customer', relist = true } = req.body;
+    if (!productId) return res.status(400).json({ error: 'productId is required' });
+
+    const validReasons = ['duplicate', 'fraudulent', 'requested_by_customer'];
+    const refundReason = validReasons.includes(reason) ? reason : 'requested_by_customer';
+
+    try {
+      const stripe = require('stripe')(stripeSecret.value());
+
+      // Look up the product to get the payment intent ID
+      const productRef = db.collection('products').doc(productId);
+      const productSnap = await productRef.get();
+      if (!productSnap.exists) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+
+      const productData = productSnap.data();
+      const paymentIntentId = productData.soldOrderId;
+      if (!paymentIntentId) {
+        return res.status(400).json({ error: 'No payment intent found for this order' });
+      }
+
+      // Retrieve charge from Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (!paymentIntent.latest_charge) {
+        return res.status(400).json({ error: 'No charge found for this payment intent' });
+      }
+
+      const chargeId = paymentIntent.latest_charge;
+      const originalAmount = paymentIntent.amount;
+
+      // Validate refund amount
+      const amountToRefund = refundAmount ? parseInt(refundAmount) : originalAmount;
+      if (isNaN(amountToRefund) || amountToRefund <= 0 || amountToRefund > originalAmount) {
+        return res.status(400).json({ error: `Refund amount must be between 1 and ${originalAmount} cents` });
+      }
+
+      // Build refund options — attempt reverse_transfer, fall back if seller already paid out
+      const refundOptions = {
+        charge: chargeId,
+        amount: amountToRefund,
+        reason: refundReason,
+        metadata: { productId, issuedBy: 'admin', adminUid: decodedToken.uid }
+      };
+      if (paymentIntent.transfer_data && paymentIntent.transfer_data.destination) {
+        refundOptions.reverse_transfer = true;
+      }
+
+      let refund;
+      try {
+        refund = await stripe.refunds.create(refundOptions);
+      } catch (stripeErr) {
+        if (refundOptions.reverse_transfer && stripeErr.code === 'insufficient_funds') {
+          console.warn('Admin refund: reverse_transfer failed (seller paid out) — refunding from platform balance');
+          delete refundOptions.reverse_transfer;
+          refund = await stripe.refunds.create(refundOptions);
+        } else {
+          throw stripeErr;
+        }
+      }
+
+      // Build the Firestore update
+      const updatePayload = {
+        adminRefundIssued: true,
+        adminRefundAmount: amountToRefund,
+        adminRefundId: refund.id,
+        adminRefundAt: admin.firestore.FieldValue.serverTimestamp(),
+        adminRefundIssuedBy: decodedToken.uid,
+      };
+
+      if (relist) {
+        // Clear sold state so the listing becomes active again
+        updatePayload.sold = false;
+        updatePayload.buyerId = admin.firestore.FieldValue.delete();
+        updatePayload.soldOrderId = admin.firestore.FieldValue.delete();
+        updatePayload.soldAt = admin.firestore.FieldValue.delete();
+        updatePayload.soldTimestamp = admin.firestore.FieldValue.delete();
+      }
+
+      await productRef.update(updatePayload);
+
+      console.log(`Admin ${decodedToken.uid} issued refund ${refund.id} for product ${productId}, amount: ${amountToRefund}, relist: ${relist}`);
+      return res.status(200).json({
+        success: true,
+        refundId: refund.id,
+        amount: amountToRefund,
+        status: refund.status,
+        relisted: relist
+      });
+
+    } catch (error) {
+      console.error('adminIssueRefund error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);

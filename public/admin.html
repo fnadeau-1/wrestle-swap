@@ -23,6 +23,7 @@
             --color-success: #059669;
             --color-danger: #dc2626;
             --color-warning: #d97706;
+            --color-info: #3665f3;
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
             --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
             --radius: 8px;
@@ -111,6 +112,7 @@
             gap: 4px;
             border-bottom: 2px solid #e5e5e5;
             margin-bottom: 24px;
+            flex-wrap: wrap;
         }
 
         .tab-btn {
@@ -281,6 +283,11 @@
             color: #6b7280;
         }
 
+        .badge-blue {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
         /* ---- Action buttons ---- */
         .action-btn {
             padding: 5px 14px;
@@ -322,6 +329,100 @@
             cursor: default;
         }
 
+        .btn-delete {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .btn-relist {
+            background: #d97706;
+            color: #fff;
+        }
+
+        .btn-suspend {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .btn-flag {
+            background: #ea580c;
+            color: #fff;
+        }
+
+        .btn-unflag {
+            background: #6b7280;
+            color: #fff;
+        }
+
+        .btn-verify {
+            background: #059669;
+            color: #fff;
+        }
+
+        .btn-unverify {
+            background: #6b7280;
+            color: #fff;
+        }
+
+        .btn-warn {
+            background: #d97706;
+            color: #fff;
+        }
+
+        .btn-dismiss {
+            background: #6b7280;
+            color: #fff;
+        }
+
+        .btn-remove-target {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .btn-refund {
+            background: #7c3aed;
+            color: #fff;
+        }
+
+        .btn-details {
+            background: #0891b2;
+            color: #fff;
+        }
+
+        .action-gap {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .strikes-editor {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .strikes-editor input {
+            width: 50px;
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .btn-save-strikes {
+            background: #3665f3;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-save-strikes:hover { opacity: 0.85; }
+
         /* ---- Truncate long strings ---- */
         .uid-cell {
             font-family: monospace;
@@ -333,7 +434,352 @@
             color: #555;
         }
 
+        /* ---- Search bar ---- */
+        .search-bar-wrap {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .admin-search {
+            width: 100%;
+            max-width: 420px;
+            padding: 9px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .admin-search:focus {
+            border-color: #3665f3;
+        }
+
+        .admin-select {
+            padding: 9px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .admin-select:focus {
+            border-color: #3665f3;
+        }
+
+        .btn-delete-account {
+            background: #7f1d1d;
+            color: #fff;
+        }
+
+        /* ---- Dashboard stat cards ---- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: var(--radius);
+            border: 1px solid #e5e5e5;
+            box-shadow: var(--shadow-sm);
+            padding: 28px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-loading {
+            font-size: 24px;
+            color: #ccc;
+        }
+
+        /* ---- User detail modal ---- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 10000;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 40px 20px;
+            overflow-y: auto;
+        }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #666;
+            padding: 4px 8px;
+            border-radius: 4px;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #1a1a1a;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .modal-section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .modal-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .modal-list li {
+            font-size: 13px;
+            color: #333;
+            padding: 8px 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .modal-list li a {
+            color: #3665f3;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .modal-list li a:hover {
+            text-decoration: underline;
+        }
+
+        .modal-empty {
+            color: #888;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        .modal-loading {
+            text-align: center;
+            padding: 24px;
+            color: #888;
+        }
+
+        /* ---- Refund section separator ---- */
+        .sub-section {
+            margin-top: 36px;
+        }
+
+        .sub-section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        /* ---- Announcements tab ---- */
+        .announcement-status-box {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .announcement-status-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .announcement-current-msg {
+            font-size: 15px;
+            color: #1a1a1a;
+            margin-top: 6px;
+        }
+
+        .announcement-form-box {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 90px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .form-textarea:focus {
+            border-color: #3665f3;
+        }
+
+        .char-counter {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .char-counter.over {
+            color: #dc2626;
+        }
+
+        .form-select {
+            padding: 9px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            background: #fff;
+        }
+
+        .form-select:focus {
+            border-color: #3665f3;
+        }
+
+        .btn-primary {
+            padding: 9px 24px;
+            background: #dc2626;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .btn-primary:hover { opacity: 0.88; }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-secondary {
+            padding: 9px 24px;
+            background: #fff;
+            color: #333;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-secondary:hover { background: #f5f5f5; }
+
+        .form-btn-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* ---- Stars display ---- */
+        .stars {
+            color: #f59e0b;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
         /* ---- Responsive ---- */
+        @media (max-width: 900px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .modal-two-col {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             .admin-page {
                 padding: 0 12px;
@@ -342,6 +788,16 @@
             .tab-btn {
                 padding: 8px 14px;
                 font-size: 13px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
             }
         }
     </style>
@@ -352,6 +808,24 @@
     <div id="auth-gate">
         <div class="gate-spinner"></div>
         <span>Loading...</span>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div id="user-detail-modal" class="modal-overlay" style="display:none;" onclick="closeUserModal(event)">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title" id="modal-user-title">User Details</span>
+                <button class="modal-close" onclick="closeUserModalDirect()">&#x2715;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-content">
+                    <div class="modal-loading">
+                        <div class="spinner" style="display:inline-block;width:28px;height:28px;border:3px solid #e5e5e5;border-top-color:#f94545;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                        <p>Loading user data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Top Bar -->
@@ -386,20 +860,147 @@
     <div class="admin-page">
         <div class="admin-page-header">
             <h1>Admin Dashboard</h1>
-            <p>Manage orders, sellers, and refund requests for Wrestle Swap.</p>
+            <p>Manage the Wrestle Swap marketplace: users, listings, orders, reports, reviews, and announcements.</p>
         </div>
 
         <!-- Tab Switcher -->
         <div class="tab-bar" role="tablist">
-            <button class="tab-btn active" role="tab" onclick="switchTab('orders', this)">Orders</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('sellers', this)">Sellers</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('refunds', this)">Refund Requests</button>
+            <button class="tab-btn active" role="tab" onclick="switchTab('dashboard', this)">Dashboard</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('users', this)">Users</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('listings', this)">Listings</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('orders', this)">Orders</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('reports', this)">Reports</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('reviews', this)">Reviews</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('announcements', this)">Announcements</button>
         </div>
 
         <!-- ==============================
-             TAB 1: ORDERS
+             TAB 1: DASHBOARD
              ============================== -->
-        <div class="tab-section active" id="tab-orders">
+        <div class="tab-section active" id="tab-dashboard">
+            <div class="section-header">
+                <span class="section-title">Overview</span>
+                <button class="refresh-btn" onclick="loadDashboard()">Refresh</button>
+            </div>
+
+            <div id="dashboard-loading" class="loading-state">
+                <div class="spinner"></div>
+                <p>Computing stats...</p>
+            </div>
+
+            <div id="dashboard-stats" style="display:none;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-total-users">—</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-active-listings">—</div>
+                        <div class="stat-label">Active Listings</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-total-sales">—</div>
+                        <div class="stat-label">Total Sales</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-revenue">—</div>
+                        <div class="stat-label">Est. Platform Revenue (10%)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==============================
+             TAB 2: USERS
+             ============================== -->
+        <div class="tab-section" id="tab-users">
+            <div class="section-header">
+                <span class="section-title">Users</span>
+                <button class="refresh-btn" onclick="loadSellers()">Refresh</button>
+            </div>
+            <div class="search-bar-wrap">
+                <input type="text" class="admin-search" id="seller-search" placeholder="Search by name, email, or UID…" oninput="filterSellers(this.value)">
+            </div>
+
+            <div class="loading-state" id="sellers-loading">
+                <div class="spinner"></div>
+                <p>Loading users...</p>
+            </div>
+
+            <div class="empty-state" id="sellers-empty" style="display:none;">
+                No users found.
+            </div>
+
+            <div class="table-wrap" id="sellers-table-wrap" style="display:none;">
+                <table id="sellers-table">
+                    <thead>
+                        <tr>
+                            <th>Display Name</th>
+                            <th>Email</th>
+                            <th>UID</th>
+                            <th>Strikes</th>
+                            <th>Suspended</th>
+                            <th>Verified</th>
+                            <th>Stripe</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sellers-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==============================
+             TAB 3: LISTINGS
+             ============================== -->
+        <div class="tab-section" id="tab-listings">
+            <div class="section-header">
+                <span class="section-title">All Listings</span>
+                <button class="refresh-btn" onclick="loadListings()">Refresh</button>
+            </div>
+
+            <div class="search-bar-wrap">
+                <input type="text" class="admin-search" id="listings-search" placeholder="Search by title or seller UID…" oninput="filterListings()">
+                <select class="admin-select" id="listings-filter" onchange="filterListings()">
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="sold">Sold</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="flagged">Flagged</option>
+                </select>
+            </div>
+
+            <div class="loading-state" id="listings-loading">
+                <div class="spinner"></div>
+                <p>Loading listings...</p>
+            </div>
+
+            <div class="empty-state" id="listings-empty" style="display:none;">
+                No listings found.
+            </div>
+
+            <div class="table-wrap" id="listings-table-wrap" style="display:none;">
+                <table id="listings-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Price</th>
+                            <th>Seller UID</th>
+                            <th>Status</th>
+                            <th>Flagged</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listings-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==============================
+             TAB 4: ORDERS
+             ============================== -->
+        <div class="tab-section" id="tab-orders">
             <div class="section-header">
                 <span class="section-title">Orders (sold &amp; cancelled)</span>
                 <button class="refresh-btn" onclick="loadOrders()">Refresh</button>
@@ -420,8 +1021,8 @@
                         <tr>
                             <th>Product Title</th>
                             <th>Price</th>
-                            <th>Buyer UID</th>
-                            <th>Seller UID</th>
+                            <th>Buyer</th>
+                            <th>Seller</th>
                             <th>Status</th>
                             <th>Date</th>
                             <th>Actions</th>
@@ -430,77 +1031,163 @@
                     <tbody id="orders-tbody"></tbody>
                 </table>
             </div>
-        </div>
 
-        <!-- ==============================
-             TAB 2: SELLERS
-             ============================== -->
-        <div class="tab-section" id="tab-sellers">
-            <div class="section-header">
-                <span class="section-title">Sellers / Users</span>
-                <button class="refresh-btn" onclick="loadSellers()">Refresh</button>
-            </div>
+            <!-- Refund Requests sub-section -->
+            <div class="sub-section">
+                <div class="section-header">
+                    <span class="sub-section-title">Refund Requests</span>
+                    <button class="refresh-btn" onclick="loadRefunds()">Refresh</button>
+                </div>
 
-            <div class="loading-state" id="sellers-loading">
-                <div class="spinner"></div>
-                <p>Loading sellers...</p>
-            </div>
+                <div class="loading-state" id="refunds-loading">
+                    <div class="spinner"></div>
+                    <p>Loading refund requests...</p>
+                </div>
 
-            <div class="empty-state" id="sellers-empty" style="display:none;">
-                No users found.
-            </div>
+                <div class="empty-state" id="refunds-empty" style="display:none;">
+                    No refund requests found.
+                </div>
 
-            <div class="table-wrap" id="sellers-table-wrap" style="display:none;">
-                <table id="sellers-table">
-                    <thead>
-                        <tr>
-                            <th>Display Name</th>
-                            <th>Email</th>
-                            <th>Strikes</th>
-                            <th>Suspended</th>
-                            <th>Stripe Connected</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sellers-tbody"></tbody>
-                </table>
+                <div class="table-wrap" id="refunds-table-wrap" style="display:none;">
+                    <table id="refunds-table">
+                        <thead>
+                            <tr>
+                                <th>Product ID</th>
+                                <th>Buyer UID</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="refunds-tbody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <!-- ==============================
-             TAB 3: REFUND REQUESTS
+             TAB 5: REPORTS
              ============================== -->
-        <div class="tab-section" id="tab-refunds">
+        <div class="tab-section" id="tab-reports">
             <div class="section-header">
-                <span class="section-title">Refund Requests</span>
-                <button class="refresh-btn" onclick="loadRefunds()">Refresh</button>
+                <span class="section-title">Reports</span>
+                <button class="refresh-btn" onclick="loadReports()">Refresh</button>
             </div>
 
-            <div class="loading-state" id="refunds-loading">
+            <div class="loading-state" id="reports-loading">
                 <div class="spinner"></div>
-                <p>Loading refund requests...</p>
+                <p>Loading reports...</p>
             </div>
 
-            <div class="empty-state" id="refunds-empty" style="display:none;">
-                No refund requests found.
+            <div class="empty-state" id="reports-empty" style="display:none;">
+                No reports yet. Reports submitted by users will appear here.
             </div>
 
-            <div class="table-wrap" id="refunds-table-wrap" style="display:none;">
-                <table id="refunds-table">
+            <div class="table-wrap" id="reports-table-wrap" style="display:none;">
+                <table id="reports-table">
                     <thead>
                         <tr>
-                            <th>Product ID</th>
-                            <th>Buyer UID</th>
+                            <th>Type</th>
+                            <th>Target ID</th>
+                            <th>Reported By</th>
                             <th>Reason</th>
+                            <th>Details</th>
                             <th>Status</th>
                             <th>Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="refunds-tbody"></tbody>
+                    <tbody id="reports-tbody"></tbody>
                 </table>
             </div>
         </div>
+
+        <!-- ==============================
+             TAB 6: REVIEWS
+             ============================== -->
+        <div class="tab-section" id="tab-reviews">
+            <div class="section-header">
+                <span class="section-title">Reviews</span>
+                <button class="refresh-btn" onclick="loadReviews()">Refresh</button>
+            </div>
+
+            <div class="loading-state" id="reviews-loading">
+                <div class="spinner"></div>
+                <p>Loading reviews...</p>
+            </div>
+
+            <div class="empty-state" id="reviews-empty" style="display:none;">
+                No reviews yet.
+            </div>
+
+            <div class="table-wrap" id="reviews-table-wrap" style="display:none;">
+                <table id="reviews-table">
+                    <thead>
+                        <tr>
+                            <th>Reviewer UID</th>
+                            <th>Seller UID</th>
+                            <th>Rating</th>
+                            <th>Comment</th>
+                            <th>Flagged</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reviews-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==============================
+             TAB 7: ANNOUNCEMENTS
+             ============================== -->
+        <div class="tab-section" id="tab-announcements">
+            <div class="section-header">
+                <span class="section-title">Sitewide Announcements</span>
+                <button class="refresh-btn" onclick="loadAnnouncement()">Refresh</button>
+            </div>
+
+            <div class="announcement-status-box" id="announcement-status-box">
+                <div class="announcement-status-label">Current Status</div>
+                <div id="announcement-status-content">
+                    <div class="loading-state" style="padding:16px 0;">
+                        <div class="spinner" style="display:inline-block;width:24px;height:24px;border:3px solid #e5e5e5;border-top-color:#f94545;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="announcement-form-box">
+                <div class="section-title" style="margin-bottom:20px;">Post New Announcement</div>
+
+                <div class="form-group">
+                    <label class="form-label" for="announcement-message">Message <span style="color:#dc2626;">*</span></label>
+                    <textarea
+                        class="form-textarea"
+                        id="announcement-message"
+                        maxlength="280"
+                        placeholder="Enter the announcement message..."
+                        oninput="updateCharCounter()"
+                    ></textarea>
+                    <div class="char-counter" id="announcement-char-count">0 / 280</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="announcement-type">Type</label>
+                    <select class="form-select" id="announcement-type">
+                        <option value="info">Info (Blue)</option>
+                        <option value="warning">Warning (Yellow)</option>
+                        <option value="critical">Critical (Red)</option>
+                    </select>
+                </div>
+
+                <div class="form-btn-row">
+                    <button class="btn-primary" id="post-announcement-btn" onclick="postAnnouncement()">Post Announcement</button>
+                    <button class="btn-secondary" onclick="dismissAnnouncement()">Dismiss Current Announcement</button>
+                </div>
+            </div>
+        </div>
+
     </div><!-- /.admin-page -->
 
 
@@ -527,20 +1214,21 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
+        // Current signed-in user reference
+        var currentUser = null;
+
         // ============================================
         // AUTH GATE — verify admin before showing page
         // ============================================
         auth.onAuthStateChanged(async function(user) {
             if (!user) {
-                // Not signed in — redirect
                 window.location.href = 'index.html';
                 return;
             }
 
             try {
-                const userDoc = await db.collection('users').doc(user.uid).get();
+                var userDoc = await db.collection('users').doc(user.uid).get();
                 if (!userDoc.exists || userDoc.data().isAdmin !== true) {
-                    // Not an admin — redirect
                     window.location.href = 'index.html';
                     return;
                 }
@@ -550,16 +1238,18 @@
                 return;
             }
 
-            // Admin confirmed — reveal the page and load initial tab
+            // Admin confirmed — reveal the page and load dashboard
+            currentUser = user;
             document.getElementById('auth-gate').style.display = 'none';
-            loadOrders();
+            loadDashboard();
         });
 
         // ============================================
         // TAB SWITCHER
         // ============================================
+        var tabLoadState = {};
+
         function switchTab(name, btn) {
-            // Deactivate all tabs and sections
             document.querySelectorAll('.tab-btn').forEach(function(b) {
                 b.classList.remove('active');
             });
@@ -570,10 +1260,14 @@
             btn.classList.add('active');
             document.getElementById('tab-' + name).classList.add('active');
 
-            // Lazy-load data when tab is first opened
-            if (name === 'orders') { loadOrders(); }
-            if (name === 'sellers') { loadSellers(); }
-            if (name === 'refunds') { loadRefunds(); }
+            // Lazy-load data when tab is first opened (or always reload)
+            if (name === 'dashboard') { loadDashboard(); }
+            if (name === 'users') { loadSellers(); }
+            if (name === 'listings') { loadListings(); }
+            if (name === 'orders') { loadOrders(); loadRefunds(); }
+            if (name === 'reports') { loadReports(); }
+            if (name === 'reviews') { loadReviews(); }
+            if (name === 'announcements') { loadAnnouncement(); }
         }
 
         // ============================================
@@ -595,7 +1289,7 @@
 
         function truncate(str, len) {
             if (!str) return '—';
-            return str.length > len ? str.substring(0, len) + '…' : str;
+            return str.length > len ? str.substring(0, len) + '\u2026' : str;
         }
 
         function escapeHtml(str) {
@@ -613,23 +1307,577 @@
             var empty   = document.getElementById(prefix + '-empty');
             var wrap    = document.getElementById(prefix + '-table-wrap');
 
-            loading.style.display = state === 'loading' ? 'block' : 'none';
-            empty.style.display   = state === 'empty'   ? 'block' : 'none';
-            wrap.style.display    = state === 'table'   ? 'block' : 'none';
+            if (loading) loading.style.display = state === 'loading' ? 'block' : 'none';
+            if (empty)   empty.style.display   = state === 'empty'   ? 'block' : 'none';
+            if (wrap)    wrap.style.display     = state === 'table'   ? 'block' : 'none';
+        }
+
+        function renderStars(rating) {
+            var r = Math.round(rating) || 0;
+            var stars = '';
+            for (var i = 1; i <= 5; i++) {
+                stars += i <= r ? '\u2605' : '\u2606';
+            }
+            return '<span class="stars">' + stars + '</span>';
         }
 
         // ============================================
-        // TAB 1: ORDERS
+        // TAB 1: DASHBOARD
         // ============================================
-        var ordersLoaded = false;
+        async function loadDashboard() {
+            document.getElementById('dashboard-loading').style.display = 'block';
+            document.getElementById('dashboard-stats').style.display = 'none';
 
+            try {
+                // Run queries in parallel
+                var usersSnap = await db.collection('users').get();
+                var activeSnap = await db.collection('products')
+                    .where('sold', '==', false)
+                    .get();
+                var soldSnap = await db.collection('products')
+                    .where('sold', '==', true)
+                    .get();
+
+                var totalUsers = usersSnap.size;
+
+                // Active = sold==false AND cancelled!=true
+                var activeCount = 0;
+                activeSnap.forEach(function(doc) {
+                    var d = doc.data();
+                    if (d.cancelled !== true) activeCount++;
+                });
+
+                var totalSales = soldSnap.size;
+
+                // Revenue = sum of price * 0.10 for sold products
+                var revenue = 0;
+                soldSnap.forEach(function(doc) {
+                    var price = parseFloat(doc.data().price) || 0;
+                    revenue += price * 0.10;
+                });
+
+                document.getElementById('stat-total-users').textContent = totalUsers.toLocaleString();
+                document.getElementById('stat-active-listings').textContent = activeCount.toLocaleString();
+                document.getElementById('stat-total-sales').textContent = totalSales.toLocaleString();
+                document.getElementById('stat-revenue').textContent = '$' + revenue.toFixed(2);
+
+                document.getElementById('dashboard-loading').style.display = 'none';
+                document.getElementById('dashboard-stats').style.display = 'block';
+
+            } catch (err) {
+                console.error('Error loading dashboard:', err);
+                document.getElementById('dashboard-loading').innerHTML =
+                    '<p style="color:#dc2626;">Error loading stats: ' + escapeHtml(err.message) + '</p>';
+            }
+        }
+
+        // ============================================
+        // TAB 2: USERS (previously "Sellers")
+        // ============================================
+        async function loadSellers() {
+            showSection('sellers', 'loading');
+
+            try {
+                var snap = await db.collection('users').limit(200).get();
+
+                if (snap.empty) {
+                    showSection('sellers', 'empty');
+                    return;
+                }
+
+                var tbody = document.getElementById('sellers-tbody');
+                tbody.innerHTML = '';
+
+                snap.forEach(function(doc) {
+                    var u = doc.data();
+                    var uid = doc.id;
+                    var suspended = u.sellerSuspended === true;
+                    var verified = u.verifiedSeller === true;
+                    var strikes = u.sellerCancellationCount != null ? u.sellerCancellationCount : 0;
+                    var stripeConnected = u.stripeAccountId ? 'Yes' : 'No';
+
+                    var suspendedBadge = suspended
+                        ? '<span class="badge badge-red">Suspended</span>'
+                        : '<span class="badge badge-green">Active</span>';
+
+                    var verifiedBadge = verified
+                        ? '<span class="badge badge-green">&#10003; Verified</span>'
+                        : '<span class="badge badge-gray">Unverified</span>';
+
+                    var toggleSuspendBtn = suspended
+                        ? '<button class="action-btn btn-unsuspend" onclick="unsuspendUser(\'' + uid + '\', this)">Unsuspend</button>'
+                        : '<button class="action-btn btn-suspend" onclick="suspendUser(\'' + uid + '\', this)">Suspend</button>';
+
+                    var toggleVerifyBtn = verified
+                        ? '<button class="action-btn btn-unverify" onclick="unverifyUser(\'' + uid + '\', this)">Unverify</button>'
+                        : '<button class="action-btn btn-verify" onclick="verifyUser(\'' + uid + '\', this)">Verify Seller</button>';
+
+                    var strikesEditor =
+                        '<div class="strikes-editor">' +
+                            '<input type="number" min="0" max="99" value="' + strikes + '" id="strikes-input-' + uid + '">' +
+                            '<button class="btn-save-strikes" onclick="saveStrikes(\'' + uid + '\')">Save</button>' +
+                        '</div>';
+
+                    var row = document.createElement('tr');
+                    row.id = 'seller-row-' + uid;
+                    row.dataset.search = [
+                        (u.displayName || u.name || ''),
+                        (u.email || ''),
+                        uid,
+                        (u.username || '')
+                    ].join(' ').toLowerCase();
+
+                    row.innerHTML =
+                        '<td>' + escapeHtml(u.displayName || u.name || '—') + '</td>' +
+                        '<td>' + escapeHtml(u.email || '—') + '</td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(uid) + '">' + escapeHtml(uid) + '</span></td>' +
+                        '<td id="strikes-cell-' + uid + '">' + strikesEditor + '</td>' +
+                        '<td id="suspended-cell-' + uid + '">' + suspendedBadge + '</td>' +
+                        '<td id="verified-cell-' + uid + '">' + verifiedBadge + '</td>' +
+                        '<td>' + stripeConnected + '</td>' +
+                        '<td id="actions-cell-' + uid + '"><div class="action-gap">' +
+                            toggleSuspendBtn +
+                            toggleVerifyBtn +
+                            '<button class="action-btn btn-details" onclick="viewUserDetails(\'' + uid + '\', ' + JSON.stringify(escapeHtml(u.displayName || u.name || uid)) + ')">View Details</button>' +
+                            '<button class="action-btn btn-delete-account" onclick="deleteAccount(\'' + uid + '\', this)">Delete Account</button>' +
+                        '</div></td>';
+                    tbody.appendChild(row);
+                });
+
+                showSection('sellers', 'table');
+
+            } catch (err) {
+                console.error('Error loading users:', err);
+                showSection('sellers', 'empty');
+                document.getElementById('sellers-empty').textContent = 'Error loading users: ' + err.message;
+            }
+        }
+
+        async function unsuspendUser(uid, btn) {
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                await db.collection('users').doc(uid).update({ sellerSuspended: false });
+                document.getElementById('suspended-cell-' + uid).innerHTML = '<span class="badge badge-green">Active</span>';
+                var actionsCell = document.getElementById('actions-cell-' + uid);
+                // Replace suspend btn only, keep others
+                var suspendBtnOld = actionsCell.querySelector('.btn-unsuspend');
+                if (suspendBtnOld) {
+                    var newBtn = document.createElement('button');
+                    newBtn.className = 'action-btn btn-suspend';
+                    newBtn.setAttribute('onclick', 'suspendUser(\'' + uid + '\', this)');
+                    newBtn.textContent = 'Suspend';
+                    suspendBtnOld.replaceWith(newBtn);
+                }
+            } catch (err) {
+                console.error('Error unsuspending user:', err);
+                btn.disabled = false;
+                btn.textContent = 'Unsuspend';
+                alert('Failed to unsuspend: ' + err.message);
+            }
+        }
+
+        async function suspendUser(uid, btn) {
+            if (!confirm('Suspend this user? They will not be able to list or sell items.')) return;
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                await db.collection('users').doc(uid).update({ sellerSuspended: true });
+                document.getElementById('suspended-cell-' + uid).innerHTML = '<span class="badge badge-red">Suspended</span>';
+                var actionsCell = document.getElementById('actions-cell-' + uid);
+                var suspendBtnOld = actionsCell.querySelector('.btn-suspend');
+                if (suspendBtnOld) {
+                    var newBtn = document.createElement('button');
+                    newBtn.className = 'action-btn btn-unsuspend';
+                    newBtn.setAttribute('onclick', 'unsuspendUser(\'' + uid + '\', this)');
+                    newBtn.textContent = 'Unsuspend';
+                    suspendBtnOld.replaceWith(newBtn);
+                }
+            } catch (err) {
+                console.error('Error suspending user:', err);
+                btn.disabled = false;
+                btn.textContent = 'Suspend';
+                alert('Failed to suspend: ' + err.message);
+            }
+        }
+
+        async function verifyUser(uid, btn) {
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                await db.collection('users').doc(uid).update({ verifiedSeller: true });
+                document.getElementById('verified-cell-' + uid).innerHTML = '<span class="badge badge-green">&#10003; Verified</span>';
+                var newBtn = document.createElement('button');
+                newBtn.className = 'action-btn btn-unverify';
+                newBtn.setAttribute('onclick', 'unverifyUser(\'' + uid + '\', this)');
+                newBtn.textContent = 'Unverify';
+                btn.replaceWith(newBtn);
+            } catch (err) {
+                console.error('Error verifying user:', err);
+                btn.disabled = false;
+                btn.textContent = 'Verify Seller';
+                alert('Failed to verify user: ' + err.message);
+            }
+        }
+
+        async function unverifyUser(uid, btn) {
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                await db.collection('users').doc(uid).update({ verifiedSeller: false });
+                document.getElementById('verified-cell-' + uid).innerHTML = '<span class="badge badge-gray">Unverified</span>';
+                var newBtn = document.createElement('button');
+                newBtn.className = 'action-btn btn-verify';
+                newBtn.setAttribute('onclick', 'verifyUser(\'' + uid + '\', this)');
+                newBtn.textContent = 'Verify Seller';
+                btn.replaceWith(newBtn);
+            } catch (err) {
+                console.error('Error unverifying user:', err);
+                btn.disabled = false;
+                btn.textContent = 'Unverify';
+                alert('Failed to unverify user: ' + err.message);
+            }
+        }
+
+        async function saveStrikes(uid) {
+            var input = document.getElementById('strikes-input-' + uid);
+            var val = parseInt(input.value, 10);
+            if (isNaN(val) || val < 0) { alert('Enter a valid number of strikes (0 or more).'); return; }
+            input.disabled = true;
+            try {
+                var update = { sellerCancellationCount: val };
+                if (val >= 3) update.sellerSuspended = true;
+                await db.collection('users').doc(uid).update(update);
+                if (val >= 3) {
+                    document.getElementById('suspended-cell-' + uid).innerHTML = '<span class="badge badge-red">Suspended</span>';
+                    var actionsCell = document.getElementById('actions-cell-' + uid);
+                    var suspendBtn = actionsCell.querySelector('.btn-suspend');
+                    if (suspendBtn) {
+                        var newBtn = document.createElement('button');
+                        newBtn.className = 'action-btn btn-unsuspend';
+                        newBtn.setAttribute('onclick', 'unsuspendUser(\'' + uid + '\', this)');
+                        newBtn.textContent = 'Unsuspend';
+                        suspendBtn.replaceWith(newBtn);
+                    }
+                }
+                input.disabled = false;
+            } catch (err) {
+                console.error('Error saving strikes:', err);
+                input.disabled = false;
+                alert('Failed to save: ' + err.message);
+            }
+        }
+
+        function filterSellers(query) {
+            var q = (query || '').toLowerCase().trim();
+            document.querySelectorAll('#sellers-tbody tr').forEach(function(row) {
+                row.style.display = (!q || row.dataset.search.includes(q)) ? '' : 'none';
+            });
+        }
+
+        async function deleteAccount(uid, btn) {
+            if (!confirm('PERMANENTLY delete this account?\n\nThis removes:\n\u2022 Firebase Auth login\n\u2022 Firestore user document\n\u2022 Username reservation\n\nThis cannot be undone.')) return;
+            if (!confirm('Are you absolutely sure? This is irreversible.')) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+
+            try {
+                var idToken = await firebase.auth().currentUser.getIdToken();
+                var resp = await fetch('https://admindeleteuser-kebvkf67ma-uc.a.run.app', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + idToken
+                    },
+                    body: JSON.stringify({ userId: uid })
+                });
+                var data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Deletion failed');
+
+                var row = document.getElementById('seller-row-' + uid);
+                if (row) row.remove();
+
+            } catch (err) {
+                console.error('Error deleting account:', err);
+                btn.disabled = false;
+                btn.textContent = 'Delete Account';
+                alert('Failed to delete account: ' + err.message);
+            }
+        }
+
+        // ---- User Detail Modal ----
+        async function viewUserDetails(uid, displayName) {
+            var modal = document.getElementById('user-detail-modal');
+            var titleEl = document.getElementById('modal-user-title');
+            var contentEl = document.getElementById('modal-content');
+
+            titleEl.textContent = 'User Details: ' + displayName;
+            contentEl.innerHTML =
+                '<div class="modal-loading">' +
+                    '<div class="spinner" style="display:inline-block;width:28px;height:28px;border:3px solid #e5e5e5;border-top-color:#f94545;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:10px;"></div>' +
+                    '<p>Loading user data...</p>' +
+                '</div>';
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            try {
+                var listingsSnap = await db.collection('products')
+                    .where('userId', '==', uid)
+                    .limit(20)
+                    .get();
+
+                var purchasesSnap = await db.collection('products')
+                    .where('buyerId', '==', uid)
+                    .limit(20)
+                    .get();
+
+                var listingsHtml = '';
+                if (listingsSnap.empty) {
+                    listingsHtml = '<p class="modal-empty">No listings found.</p>';
+                } else {
+                    listingsHtml = '<ul class="modal-list">';
+                    listingsSnap.forEach(function(doc) {
+                        var p = doc.data();
+                        var title = escapeHtml(truncate(p.title || p.name || 'Untitled', 50));
+                        var price = p.price != null ? '$' + parseFloat(p.price).toFixed(2) : '—';
+                        var status = p.sold ? 'Sold' : (p.cancelled ? 'Cancelled' : 'Active');
+                        listingsHtml +=
+                            '<li>' +
+                                '<a href="productdetail.html?id=' + escapeHtml(doc.id) + '" target="_blank">' + title + '</a> ' +
+                                '&mdash; ' + price + ' &mdash; ' +
+                                '<span style="color:#666;">' + status + '</span>' +
+                            '</li>';
+                    });
+                    listingsHtml += '</ul>';
+                }
+
+                var purchasesHtml = '';
+                if (purchasesSnap.empty) {
+                    purchasesHtml = '<p class="modal-empty">No purchases found.</p>';
+                } else {
+                    purchasesHtml = '<ul class="modal-list">';
+                    purchasesSnap.forEach(function(doc) {
+                        var p = doc.data();
+                        var title = escapeHtml(truncate(p.title || p.name || 'Untitled', 50));
+                        var price = p.price != null ? '$' + parseFloat(p.price).toFixed(2) : '—';
+                        purchasesHtml +=
+                            '<li>' +
+                                '<a href="productdetail.html?id=' + escapeHtml(doc.id) + '" target="_blank">' + title + '</a> ' +
+                                '&mdash; ' + price +
+                            '</li>';
+                    });
+                    purchasesHtml += '</ul>';
+                }
+
+                contentEl.innerHTML =
+                    '<div class="modal-two-col">' +
+                        '<div>' +
+                            '<div class="modal-section-title">Their Listings (' + listingsSnap.size + ')</div>' +
+                            listingsHtml +
+                        '</div>' +
+                        '<div>' +
+                            '<div class="modal-section-title">Their Purchases (' + purchasesSnap.size + ')</div>' +
+                            purchasesHtml +
+                        '</div>' +
+                    '</div>';
+
+            } catch (err) {
+                console.error('Error loading user details:', err);
+                contentEl.innerHTML = '<p style="color:#dc2626;">Error loading user data: ' + escapeHtml(err.message) + '</p>';
+            }
+        }
+
+        function closeUserModal(event) {
+            if (event.target === document.getElementById('user-detail-modal')) {
+                closeUserModalDirect();
+            }
+        }
+
+        function closeUserModalDirect() {
+            document.getElementById('user-detail-modal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        // ============================================
+        // TAB 3: LISTINGS
+        // ============================================
+        var allListings = [];
+
+        async function loadListings() {
+            showSection('listings', 'loading');
+            allListings = [];
+
+            try {
+                var snap;
+                try {
+                    snap = await db.collection('products')
+                        .orderBy('createdAt', 'desc')
+                        .limit(200)
+                        .get();
+                } catch (e) {
+                    // createdAt index may not exist — fall back to no ordering
+                    snap = await db.collection('products')
+                        .limit(200)
+                        .get();
+                }
+
+                if (snap.empty) {
+                    showSection('listings', 'empty');
+                    return;
+                }
+
+                snap.forEach(function(doc) {
+                    allListings.push({ id: doc.id, data: doc.data() });
+                });
+
+                renderListings(allListings);
+
+            } catch (err) {
+                console.error('Error loading listings:', err);
+                showSection('listings', 'empty');
+                document.getElementById('listings-empty').textContent = 'Error loading listings: ' + err.message;
+            }
+        }
+
+        function getListingStatus(d) {
+            if (d.cancelled === true) return 'cancelled';
+            if (d.sold === true) return 'sold';
+            return 'active';
+        }
+
+        function renderListings(items) {
+            if (items.length === 0) {
+                showSection('listings', 'empty');
+                return;
+            }
+
+            var tbody = document.getElementById('listings-tbody');
+            tbody.innerHTML = '';
+
+            items.forEach(function(item) {
+                var d = item.data;
+                var statusKey = getListingStatus(d);
+                var statusBadge = statusKey === 'active'
+                    ? '<span class="badge badge-green">Active</span>'
+                    : statusKey === 'sold'
+                        ? '<span class="badge badge-blue">Sold</span>'
+                        : '<span class="badge badge-red">Cancelled</span>';
+
+                var flaggedBadge = d.adminFlagged === true
+                    ? '<span class="badge badge-red">Flagged</span>'
+                    : '';
+
+                var flagBtn = d.adminFlagged === true
+                    ? '<button class="action-btn btn-unflag" onclick="unflagListing(\'' + item.id + '\', this)">Unflag</button>'
+                    : '<button class="action-btn btn-flag" onclick="flagListing(\'' + item.id + '\', this)">Flag</button>';
+
+                var sellerUid = escapeHtml(d.userId || d.sellerUid || '—');
+
+                var row = document.createElement('tr');
+                row.id = 'listing-row-' + item.id;
+                row.dataset.title = (d.title || d.name || '').toLowerCase();
+                row.dataset.seller = (d.userId || d.sellerUid || '').toLowerCase();
+                row.dataset.status = statusKey;
+                row.dataset.flagged = d.adminFlagged === true ? 'true' : 'false';
+
+                row.innerHTML =
+                    '<td>' + escapeHtml(truncate(d.title || d.name, 45)) + '</td>' +
+                    '<td>' + (d.price != null ? '$' + parseFloat(d.price).toFixed(2) : '—') + '</td>' +
+                    '<td><span class="uid-cell" title="' + sellerUid + '">' + sellerUid + '</span></td>' +
+                    '<td>' + statusBadge + '</td>' +
+                    '<td id="flagged-cell-' + item.id + '">' + flaggedBadge + '</td>' +
+                    '<td>' + formatDate(d.createdAt) + '</td>' +
+                    '<td><div class="action-gap">' +
+                        '<button class="action-btn btn-view" onclick="window.open(\'productdetail.html?id=' + escapeHtml(item.id) + '\', \'_blank\')">View</button>' +
+                        '<span id="flag-btn-wrap-' + item.id + '">' + flagBtn + '</span>' +
+                        '<button class="action-btn btn-delete" onclick="deleteListingAdmin(\'' + item.id + '\', this)">Delete</button>' +
+                    '</div></td>';
+                tbody.appendChild(row);
+            });
+
+            showSection('listings', 'table');
+        }
+
+        function filterListings() {
+            var query = (document.getElementById('listings-search').value || '').toLowerCase().trim();
+            var filter = document.getElementById('listings-filter').value;
+
+            var filtered = allListings.filter(function(item) {
+                var matchText = !query ||
+                    item.data.title && item.data.title.toLowerCase().includes(query) ||
+                    item.data.name && item.data.name.toLowerCase().includes(query) ||
+                    (item.data.userId || '').toLowerCase().includes(query) ||
+                    (item.data.sellerUid || '').toLowerCase().includes(query);
+
+                var statusKey = getListingStatus(item.data);
+                var matchStatus = filter === 'all' ||
+                    filter === statusKey ||
+                    (filter === 'flagged' && item.data.adminFlagged === true);
+
+                return matchText && matchStatus;
+            });
+
+            renderListings(filtered);
+        }
+
+        async function flagListing(productId, btn) {
+            btn.disabled = true;
+            try {
+                await db.collection('products').doc(productId).update({ adminFlagged: true });
+                document.getElementById('flagged-cell-' + productId).innerHTML = '<span class="badge badge-red">Flagged</span>';
+                var wrap = document.getElementById('flag-btn-wrap-' + productId);
+                if (wrap) wrap.innerHTML = '<button class="action-btn btn-unflag" onclick="unflagListing(\'' + productId + '\', this)">Unflag</button>';
+                // Update local cache
+                var item = allListings.find(function(i) { return i.id === productId; });
+                if (item) item.data.adminFlagged = true;
+            } catch (err) {
+                console.error('Error flagging listing:', err);
+                btn.disabled = false;
+                alert('Failed to flag listing: ' + err.message);
+            }
+        }
+
+        async function unflagListing(productId, btn) {
+            btn.disabled = true;
+            try {
+                await db.collection('products').doc(productId).update({ adminFlagged: false });
+                document.getElementById('flagged-cell-' + productId).innerHTML = '';
+                var wrap = document.getElementById('flag-btn-wrap-' + productId);
+                if (wrap) wrap.innerHTML = '<button class="action-btn btn-flag" onclick="flagListing(\'' + productId + '\', this)">Flag</button>';
+                var item = allListings.find(function(i) { return i.id === productId; });
+                if (item) item.data.adminFlagged = false;
+            } catch (err) {
+                console.error('Error unflagging listing:', err);
+                btn.disabled = false;
+                alert('Failed to unflag listing: ' + err.message);
+            }
+        }
+
+        async function deleteListingAdmin(productId, btn) {
+            if (!confirm('Permanently delete this listing? This cannot be undone.')) return;
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+            try {
+                await db.collection('products').doc(productId).delete();
+                var row = document.getElementById('listing-row-' + productId);
+                if (row) row.remove();
+                allListings = allListings.filter(function(i) { return i.id !== productId; });
+            } catch (err) {
+                console.error('Error deleting listing:', err);
+                btn.disabled = false;
+                btn.textContent = 'Delete';
+                alert('Failed to delete: ' + err.message);
+            }
+        }
+
+        // ============================================
+        // TAB 4: ORDERS
+        // ============================================
         async function loadOrders() {
             showSection('orders', 'loading');
 
             try {
-                // Query: sold==true OR cancelled==true
-                // Firestore doesn't support OR across two fields natively,
-                // so we run two queries and merge.
                 var soldSnap = await db.collection('products')
                     .where('sold', '==', true)
                     .orderBy('soldTimestamp', 'desc')
@@ -642,7 +1890,6 @@
                     .limit(100)
                     .get();
 
-                // Merge and deduplicate by doc id
                 var seenIds = {};
                 var orders = [];
 
@@ -660,7 +1907,6 @@
                     }
                 });
 
-                // Sort by soldTimestamp desc
                 orders.sort(function(a, b) {
                     var ta = a.soldTimestamp && a.soldTimestamp.toMillis ? a.soldTimestamp.toMillis() : 0;
                     var tb = b.soldTimestamp && b.soldTimestamp.toMillis ? b.soldTimestamp.toMillis() : 0;
@@ -678,16 +1924,27 @@
                 orders.forEach(function(order) {
                     var status = getOrderStatus(order);
                     var row = document.createElement('tr');
+                    row.id = 'order-row-' + order.id;
+                    var buyerId  = order.buyerId  || order.buyerUid  || '—';
+                    var sellerId = order.userId   || order.sellerUid || '—';
+
+                    var issueRefundBtn = (!order.cancelled && order.sold)
+                        ? '<button class="action-btn btn-refund" onclick="issueRefund(\'' + order.id + '\', this)">Issue Refund</button>'
+                        : '';
+
                     row.innerHTML =
                         '<td>' + escapeHtml(truncate(order.title || order.name, 40)) + '</td>' +
                         '<td>' + (order.price != null ? '$' + parseFloat(order.price).toFixed(2) : '—') + '</td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(order.buyerUid || '') + '">' + escapeHtml(order.buyerUid || '—') + '</span></td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(order.userId || order.sellerUid || '') + '">' + escapeHtml(order.userId || order.sellerUid || '—') + '</span></td>' +
-                        '<td>' + status.badge + '</td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(buyerId) + '">' + escapeHtml(buyerId) + '</span></td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(sellerId) + '">' + escapeHtml(sellerId) + '</span></td>' +
+                        '<td id="order-status-' + order.id + '">' + status.badge + '</td>' +
                         '<td>' + formatDate(order.soldTimestamp) + '</td>' +
-                        '<td>' +
+                        '<td><div class="action-gap">' +
                             '<button class="action-btn btn-view" onclick="window.open(\'productdetail.html?id=' + escapeHtml(order.id) + '\', \'_blank\')">View</button>' +
-                        '</td>';
+                            (!order.cancelled && order.sold ? '<button class="action-btn btn-relist" onclick="relistProduct(\'' + order.id + '\', this)">Relist</button>' : '') +
+                            issueRefundBtn +
+                            '<button class="action-btn btn-delete" onclick="deleteProduct(\'' + order.id + '\', this)">Delete</button>' +
+                        '</div></td>';
                     tbody.appendChild(row);
                 });
 
@@ -710,89 +1967,101 @@
             return { badge: '<span class="badge badge-green">Active Order</span>' };
         }
 
-        // ============================================
-        // TAB 2: SELLERS
-        // ============================================
-        async function loadSellers() {
-            showSection('sellers', 'loading');
-
-            try {
-                var snap = await db.collection('users').limit(100).get();
-
-                if (snap.empty) {
-                    showSection('sellers', 'empty');
-                    return;
-                }
-
-                var tbody = document.getElementById('sellers-tbody');
-                tbody.innerHTML = '';
-
-                snap.forEach(function(doc) {
-                    var u = doc.data();
-                    var uid = doc.id;
-                    var suspended = u.sellerSuspended === true;
-                    var strikes = u.sellerCancellationCount != null ? u.sellerCancellationCount : 0;
-                    var stripeConnected = u.stripeAccountId ? 'Yes' : 'No';
-
-                    var suspendedBadge = suspended
-                        ? '<span class="badge badge-red">Suspended</span>'
-                        : '<span class="badge badge-gray">No</span>';
-
-                    var unsuspendBtn = suspended
-                        ? '<button class="action-btn btn-unsuspend" onclick="unsuspendUser(\'' + uid + '\', this)">Unsuspend</button>'
-                        : '';
-
-                    var row = document.createElement('tr');
-                    row.id = 'seller-row-' + uid;
-                    row.innerHTML =
-                        '<td>' + escapeHtml(u.displayName || u.name || '—') + '</td>' +
-                        '<td>' + escapeHtml(u.email || '—') + '</td>' +
-                        '<td>' + strikes + '</td>' +
-                        '<td>' + suspendedBadge + '</td>' +
-                        '<td>' + stripeConnected + '</td>' +
-                        '<td>' + unsuspendBtn + '</td>';
-                    tbody.appendChild(row);
-                });
-
-                showSection('sellers', 'table');
-
-            } catch (err) {
-                console.error('Error loading sellers:', err);
-                showSection('sellers', 'empty');
-                document.getElementById('sellers-empty').textContent = 'Error loading sellers: ' + err.message;
-            }
-        }
-
-        async function unsuspendUser(uid, btn) {
+        async function relistProduct(productId, btn) {
+            if (!confirm('Relist this product? This will mark it as unsold and available for purchase again.')) return;
             btn.disabled = true;
             btn.textContent = 'Saving...';
             try {
-                await db.collection('users').doc(uid).update({
-                    sellerSuspended: false,
-                    sellerCancellationCount: 0
+                await db.collection('products').doc(productId).update({
+                    sold: false,
+                    soldAt: null,
+                    soldTimestamp: null,
+                    soldOrderId: null,
+                    buyerId: null,
+                    cancelled: false,
+                    cancelledAt: null,
+                    cancelledBy: null
                 });
-
-                // Refresh that row in the table
-                var row = document.getElementById('seller-row-' + uid);
-                if (row) {
-                    var suspendedCell = row.cells[3];
-                    var actionsCell   = row.cells[5];
-                    var strikesCell   = row.cells[2];
-                    suspendedCell.innerHTML = '<span class="badge badge-gray">No</span>';
-                    strikesCell.textContent = '0';
-                    actionsCell.innerHTML   = '';
-                }
+                var row = document.getElementById('order-row-' + productId);
+                if (row) row.cells[4].innerHTML = '<span class="badge badge-gray">Relisted</span>';
+                btn.remove();
             } catch (err) {
-                console.error('Error unsuspending user:', err);
+                console.error('Error relisting product:', err);
                 btn.disabled = false;
-                btn.textContent = 'Unsuspend';
-                alert('Failed to unsuspend user: ' + err.message);
+                btn.textContent = 'Relist';
+                alert('Failed to relist: ' + err.message);
             }
         }
 
-        // ============================================
-        // TAB 3: REFUND REQUESTS
-        // ============================================
+        async function deleteProduct(productId, btn) {
+            if (!confirm('Permanently delete this listing? This cannot be undone.')) return;
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+            try {
+                await db.collection('products').doc(productId).delete();
+                var row = document.getElementById('order-row-' + productId);
+                if (row) row.remove();
+            } catch (err) {
+                console.error('Error deleting product:', err);
+                btn.disabled = false;
+                btn.textContent = 'Delete';
+                alert('Failed to delete: ' + err.message);
+            }
+        }
+
+        async function issueRefund(productId, btn) {
+            var amountStr = prompt('Enter refund amount in dollars (leave blank for full refund):\n\nProduct ID: ' + productId);
+            if (amountStr === null) return; // cancelled
+
+            var amountCents = null;
+            if (amountStr.trim() !== '') {
+                var amountDollars = parseFloat(amountStr);
+                if (isNaN(amountDollars) || amountDollars <= 0) {
+                    alert('Please enter a valid dollar amount greater than 0, or leave blank for a full refund.');
+                    return;
+                }
+                amountCents = Math.round(amountDollars * 100);
+            }
+
+            var relistStr = confirm('Re-list this product after refund?\n\nOK = relist product\nCancel = keep as sold (no relist)');
+
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+
+            try {
+                var idToken = await firebase.auth().currentUser.getIdToken();
+                var body = { productId: productId, relist: relistStr };
+                if (amountCents !== null) body.refundAmount = amountCents;
+
+                var resp = await fetch('https://adminissuerefund-kebvkf67ma-uc.a.run.app', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + idToken
+                    },
+                    body: JSON.stringify(body)
+                });
+                var data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Refund failed');
+
+                // Show success badge in status column
+                var statusCell = document.getElementById('order-status-' + productId);
+                if (statusCell) {
+                    statusCell.innerHTML += ' <span class="badge badge-blue">Refunded $' + amountDollars.toFixed(2) + '</span>';
+                }
+                btn.textContent = 'Refunded';
+                btn.disabled = true;
+                btn.className = 'action-btn btn-resolved-done';
+
+            } catch (err) {
+                console.error('Error issuing refund:', err);
+                btn.disabled = false;
+                btn.textContent = 'Issue Refund';
+                alert('Failed to issue refund: ' + err.message);
+            }
+        }
+
+        // ---- Refund Requests (sub-section of Orders tab) ----
         async function loadRefunds() {
             showSection('refunds', 'loading');
 
@@ -829,9 +2098,9 @@
                         '<td><span class="uid-cell" title="' + escapeHtml(r.productId || '') + '">' + escapeHtml(r.productId || '—') + '</span></td>' +
                         '<td><span class="uid-cell" title="' + escapeHtml(r.buyerUid || r.userId || '') + '">' + escapeHtml(r.buyerUid || r.userId || '—') + '</span></td>' +
                         '<td>' + escapeHtml(truncate(r.reason, 60)) + '</td>' +
-                        '<td>' + statusBadge + '</td>' +
+                        '<td id="refund-status-' + docId + '">' + statusBadge + '</td>' +
                         '<td>' + formatDate(r.createdAt) + '</td>' +
-                        '<td>' + resolveBtn + '</td>';
+                        '<td id="refund-action-' + docId + '">' + resolveBtn + '</td>';
                     tbody.appendChild(row);
                 });
 
@@ -852,18 +2121,412 @@
                     status: 'resolved',
                     resolvedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-
-                // Update the row visually
-                var row = document.getElementById('refund-row-' + docId);
-                if (row) {
-                    row.cells[3].innerHTML = '<span class="badge badge-gray">Resolved</span>';
-                    row.cells[5].innerHTML = '<button class="action-btn btn-resolved-done" disabled>Resolved</button>';
-                }
+                var statusCell = document.getElementById('refund-status-' + docId);
+                var actionCell = document.getElementById('refund-action-' + docId);
+                if (statusCell) statusCell.innerHTML = '<span class="badge badge-gray">Resolved</span>';
+                if (actionCell) actionCell.innerHTML = '<button class="action-btn btn-resolved-done" disabled>Resolved</button>';
             } catch (err) {
                 console.error('Error resolving refund request:', err);
                 btn.disabled = false;
                 btn.textContent = 'Mark Resolved';
                 alert('Failed to update refund request: ' + err.message);
+            }
+        }
+
+        // ============================================
+        // TAB 5: REPORTS
+        // ============================================
+        var allReports = [];
+
+        async function loadReports() {
+            showSection('reports', 'loading');
+            allReports = [];
+
+            try {
+                var snap = await db.collection('reports')
+                    .orderBy('createdAt', 'desc')
+                    .limit(100)
+                    .get();
+
+                if (snap.empty) {
+                    showSection('reports', 'empty');
+                    return;
+                }
+
+                var tbody = document.getElementById('reports-tbody');
+                tbody.innerHTML = '';
+
+                snap.forEach(function(doc) {
+                    var r = doc.data();
+                    var docId = doc.id;
+                    allReports.push({ id: docId, data: r });
+
+                    var statusBadge;
+                    if (r.status === 'dismissed') {
+                        statusBadge = '<span class="badge badge-gray">Dismissed</span>';
+                    } else if (r.status === 'resolved') {
+                        statusBadge = '<span class="badge badge-red">Removed</span>';
+                    } else {
+                        statusBadge = '<span class="badge badge-yellow">Pending</span>';
+                    }
+
+                    var targetCell = '';
+                    if (r.targetType === 'listing' && r.targetId) {
+                        targetCell = '<a href="productdetail.html?id=' + escapeHtml(r.targetId) + '" target="_blank" style="font-family:monospace;font-size:11px;color:#3665f3;">' + escapeHtml(truncate(r.targetId, 16)) + '</a>';
+                    } else if (r.targetId) {
+                        targetCell = '<span class="uid-cell" title="' + escapeHtml(r.targetId) + '">' + escapeHtml(truncate(r.targetId, 16)) + '</span>';
+                    } else {
+                        targetCell = '—';
+                    }
+
+                    var actionsHtml = '';
+                    if (!r.status || r.status === 'pending') {
+                        actionsHtml =
+                            '<div class="action-gap">' +
+                                '<button class="action-btn btn-remove-target" onclick="reportRemoveTarget(\'' + docId + '\', this)">Remove Target</button>' +
+                                '<button class="action-btn btn-dismiss" onclick="reportDismiss(\'' + docId + '\', this)">Dismiss</button>' +
+                                '<button class="action-btn btn-warn" onclick="reportWarnUser(\'' + docId + '\', this)">Warn User</button>' +
+                            '</div>';
+                    }
+
+                    var row = document.createElement('tr');
+                    row.id = 'report-row-' + docId;
+                    row.innerHTML =
+                        '<td><span class="badge badge-gray">' + escapeHtml(r.targetType || 'unknown') + '</span></td>' +
+                        '<td>' + targetCell + '</td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(r.reportedBy || r.reporterUid || '') + '">' + escapeHtml(truncate(r.reportedBy || r.reporterUid, 16) || '—') + '</span></td>' +
+                        '<td>' + escapeHtml(truncate(r.reason, 40)) + '</td>' +
+                        '<td>' + escapeHtml(truncate(r.details || r.description, 50)) + '</td>' +
+                        '<td id="report-status-' + docId + '">' + statusBadge + '</td>' +
+                        '<td>' + formatDate(r.createdAt) + '</td>' +
+                        '<td id="report-actions-' + docId + '">' + actionsHtml + '</td>';
+                    tbody.appendChild(row);
+                });
+
+                showSection('reports', 'table');
+
+            } catch (err) {
+                console.error('Error loading reports:', err);
+                showSection('reports', 'empty');
+                document.getElementById('reports-empty').textContent = 'Error loading reports: ' + err.message;
+            }
+        }
+
+        async function reportRemoveTarget(docId, btn) {
+            var report = allReports.find(function(r) { return r.id === docId; });
+            if (!report) { alert('Report data not found.'); return; }
+
+            var r = report.data;
+
+            if (r.targetType === 'user') {
+                alert('To remove a user account, please use the Users tab.');
+                return;
+            }
+
+            if (!confirm('Remove the target listing (' + (r.targetId || 'unknown') + ')? This will permanently delete the product listing.')) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Removing...';
+
+            try {
+                if (r.targetType === 'listing' && r.targetId) {
+                    await db.collection('products').doc(r.targetId).delete();
+                }
+
+                await db.collection('reports').doc(docId).update({
+                    status: 'resolved',
+                    action: 'removed',
+                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                var statusCell = document.getElementById('report-status-' + docId);
+                var actionsCell = document.getElementById('report-actions-' + docId);
+                if (statusCell) statusCell.innerHTML = '<span class="badge badge-red">Removed</span>';
+                if (actionsCell) actionsCell.innerHTML = '';
+
+            } catch (err) {
+                console.error('Error removing target:', err);
+                btn.disabled = false;
+                btn.textContent = 'Remove Target';
+                alert('Failed to remove target: ' + err.message);
+            }
+        }
+
+        async function reportDismiss(docId, btn) {
+            btn.disabled = true;
+            btn.textContent = 'Dismissing...';
+
+            try {
+                await db.collection('reports').doc(docId).update({
+                    status: 'dismissed',
+                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                var statusCell = document.getElementById('report-status-' + docId);
+                var actionsCell = document.getElementById('report-actions-' + docId);
+                if (statusCell) statusCell.innerHTML = '<span class="badge badge-gray">Dismissed</span>';
+                if (actionsCell) actionsCell.innerHTML = '';
+
+            } catch (err) {
+                console.error('Error dismissing report:', err);
+                btn.disabled = false;
+                btn.textContent = 'Dismiss';
+                alert('Failed to dismiss report: ' + err.message);
+            }
+        }
+
+        async function reportWarnUser(docId, btn) {
+            var report = allReports.find(function(r) { return r.id === docId; });
+            if (!report) { alert('Report data not found.'); return; }
+
+            var r = report.data;
+            var reportedUid = r.reportedUserId || r.targetId;
+
+            if (!reportedUid) {
+                alert('No user UID associated with this report to warn.');
+                return;
+            }
+
+            if (!confirm('Send a warning to user ' + reportedUid + ' for reason: "' + (r.reason || 'policy violation') + '"?')) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Warning...';
+
+            try {
+                await db.collection('reports').doc(docId).update({
+                    status: 'resolved',
+                    action: 'warned',
+                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                await db.collection('users').doc(reportedUid).update({
+                    adminWarnings: firebase.firestore.FieldValue.arrayUnion({
+                        reason: r.reason || 'Policy violation',
+                        warnedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    })
+                });
+
+                var statusCell = document.getElementById('report-status-' + docId);
+                var actionsCell = document.getElementById('report-actions-' + docId);
+                if (statusCell) statusCell.innerHTML = '<span class="badge badge-yellow">Warned</span>';
+                if (actionsCell) actionsCell.innerHTML = '';
+
+            } catch (err) {
+                console.error('Error warning user:', err);
+                btn.disabled = false;
+                btn.textContent = 'Warn User';
+                alert('Failed to warn user: ' + err.message);
+            }
+        }
+
+        // ============================================
+        // TAB 6: REVIEWS
+        // ============================================
+        async function loadReviews() {
+            showSection('reviews', 'loading');
+
+            try {
+                var snap = await db.collection('sellerRatings')
+                    .orderBy('createdAt', 'desc')
+                    .limit(100)
+                    .get();
+
+                if (snap.empty) {
+                    showSection('reviews', 'empty');
+                    return;
+                }
+
+                var tbody = document.getElementById('reviews-tbody');
+                tbody.innerHTML = '';
+
+                snap.forEach(function(doc) {
+                    var rv = doc.data();
+                    var docId = doc.id;
+
+                    var flaggedBadge = rv.adminFlagged === true
+                        ? '<span class="badge badge-red">Flagged</span>'
+                        : '';
+
+                    var flagBtn = rv.adminFlagged === true
+                        ? '<button class="action-btn btn-unflag" onclick="unflagReview(\'' + docId + '\', this)">Unflag</button>'
+                        : '<button class="action-btn btn-flag" onclick="flagReview(\'' + docId + '\', this)">Flag</button>';
+
+                    var row = document.createElement('tr');
+                    row.id = 'review-row-' + docId;
+                    row.innerHTML =
+                        '<td><span class="uid-cell" title="' + escapeHtml(rv.reviewerUid || rv.buyerId || '') + '">' + escapeHtml(truncate(rv.reviewerUid || rv.buyerId, 16) || '—') + '</span></td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(rv.sellerUid || rv.userId || '') + '">' + escapeHtml(truncate(rv.sellerUid || rv.userId, 16) || '—') + '</span></td>' +
+                        '<td>' + renderStars(rv.rating) + '</td>' +
+                        '<td>' + escapeHtml(truncate(rv.comment || rv.review, 60)) + '</td>' +
+                        '<td id="review-flagged-' + docId + '">' + flaggedBadge + '</td>' +
+                        '<td>' + formatDate(rv.createdAt) + '</td>' +
+                        '<td><div class="action-gap">' +
+                            '<span id="review-flag-btn-' + docId + '">' + flagBtn + '</span>' +
+                            '<button class="action-btn btn-delete" onclick="deleteReview(\'' + docId + '\', this)">Remove</button>' +
+                        '</div></td>';
+                    tbody.appendChild(row);
+                });
+
+                showSection('reviews', 'table');
+
+            } catch (err) {
+                console.error('Error loading reviews:', err);
+                showSection('reviews', 'empty');
+                document.getElementById('reviews-empty').textContent = 'Error loading reviews: ' + err.message;
+            }
+        }
+
+        async function flagReview(docId, btn) {
+            btn.disabled = true;
+            try {
+                await db.collection('sellerRatings').doc(docId).update({ adminFlagged: true });
+                document.getElementById('review-flagged-' + docId).innerHTML = '<span class="badge badge-red">Flagged</span>';
+                var wrap = document.getElementById('review-flag-btn-' + docId);
+                if (wrap) wrap.innerHTML = '<button class="action-btn btn-unflag" onclick="unflagReview(\'' + docId + '\', this)">Unflag</button>';
+            } catch (err) {
+                console.error('Error flagging review:', err);
+                btn.disabled = false;
+                alert('Failed to flag review: ' + err.message);
+            }
+        }
+
+        async function unflagReview(docId, btn) {
+            btn.disabled = true;
+            try {
+                await db.collection('sellerRatings').doc(docId).update({ adminFlagged: false });
+                document.getElementById('review-flagged-' + docId).innerHTML = '';
+                var wrap = document.getElementById('review-flag-btn-' + docId);
+                if (wrap) wrap.innerHTML = '<button class="action-btn btn-flag" onclick="flagReview(\'' + docId + '\', this)">Flag</button>';
+            } catch (err) {
+                console.error('Error unflagging review:', err);
+                btn.disabled = false;
+                alert('Failed to unflag review: ' + err.message);
+            }
+        }
+
+        async function deleteReview(docId, btn) {
+            if (!confirm('Permanently remove this review? This cannot be undone.')) return;
+            btn.disabled = true;
+            btn.textContent = 'Removing...';
+            try {
+                await db.collection('sellerRatings').doc(docId).delete();
+                var row = document.getElementById('review-row-' + docId);
+                if (row) row.remove();
+            } catch (err) {
+                console.error('Error deleting review:', err);
+                btn.disabled = false;
+                btn.textContent = 'Remove';
+                alert('Failed to remove review: ' + err.message);
+            }
+        }
+
+        // ============================================
+        // TAB 7: ANNOUNCEMENTS
+        // ============================================
+        async function loadAnnouncement() {
+            var contentEl = document.getElementById('announcement-status-content');
+            contentEl.innerHTML =
+                '<div style="padding:8px 0;color:#888;font-size:13px;">Loading...</div>';
+
+            try {
+                var snap = await db.collection('config').doc('announcement').get();
+
+                if (!snap.exists) {
+                    contentEl.innerHTML = '<p style="color:#888;font-size:14px;">No active announcement.</p>';
+                    return;
+                }
+
+                var a = snap.data();
+
+                if (!a.active) {
+                    contentEl.innerHTML = '<p style="color:#888;font-size:14px;">No active announcement.</p>';
+                    return;
+                }
+
+                var typeColors = { info: '#1e40af', warning: '#92400e', critical: '#991b1b' };
+                var typeBg = { info: '#dbeafe', warning: '#fef9c3', critical: '#fee2e2' };
+                var t = a.type || 'info';
+
+                contentEl.innerHTML =
+                    '<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">' +
+                        '<span class="badge badge-green" style="align-self:flex-start;">Active</span>' +
+                        '<div style="background:' + (typeBg[t] || '#f3f4f6') + ';border-radius:6px;padding:10px 16px;flex:1;min-width:200px;">' +
+                            '<span style="font-weight:600;font-size:12px;color:' + (typeColors[t] || '#444') + ';text-transform:uppercase;letter-spacing:.04em;">' + escapeHtml(t) + '</span>' +
+                            '<p style="margin:6px 0 0;font-size:14px;color:#1a1a1a;">' + escapeHtml(a.message || '') + '</p>' +
+                        '</div>' +
+                    '</div>';
+
+            } catch (err) {
+                console.error('Error loading announcement:', err);
+                contentEl.innerHTML = '<p style="color:#dc2626;font-size:13px;">Error loading announcement: ' + escapeHtml(err.message) + '</p>';
+            }
+        }
+
+        function updateCharCounter() {
+            var textarea = document.getElementById('announcement-message');
+            var counter = document.getElementById('announcement-char-count');
+            var len = textarea.value.length;
+            counter.textContent = len + ' / 280';
+            if (len >= 260) {
+                counter.classList.add('over');
+            } else {
+                counter.classList.remove('over');
+            }
+        }
+
+        async function postAnnouncement() {
+            var message = document.getElementById('announcement-message').value.trim();
+            var type = document.getElementById('announcement-type').value;
+            var btn = document.getElementById('post-announcement-btn');
+
+            if (!message) {
+                alert('Please enter a message for the announcement.');
+                return;
+            }
+
+            if (message.length > 280) {
+                alert('Message is too long. Maximum 280 characters.');
+                return;
+            }
+
+            if (!confirm('Post this announcement? It will be visible to all users immediately.')) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Posting...';
+
+            try {
+                await db.collection('config').doc('announcement').set({
+                    active: true,
+                    message: message,
+                    type: type,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdBy: currentUser ? currentUser.uid : 'admin'
+                });
+
+                document.getElementById('announcement-message').value = '';
+                updateCharCounter();
+                loadAnnouncement();
+                alert('Announcement posted successfully.');
+
+            } catch (err) {
+                console.error('Error posting announcement:', err);
+                alert('Failed to post announcement: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Post Announcement';
+            }
+        }
+
+        async function dismissAnnouncement() {
+            if (!confirm('Dismiss the current announcement? It will no longer be shown to users.')) return;
+
+            try {
+                await db.collection('config').doc('announcement').update({ active: false });
+                loadAnnouncement();
+                alert('Announcement dismissed.');
+            } catch (err) {
+                console.error('Error dismissing announcement:', err);
+                alert('Failed to dismiss announcement: ' + err.message);
             }
         }
     </script>

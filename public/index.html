@@ -13,12 +13,13 @@
             background-color: #ffffff;
         }
 
-        .banner {
-            background: url("https://www.pennsylvaniartc.org/static/sitefiles/news/News-Jul-2020-Jordan-Burroughs.jpg");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
+.banner {
+    background: url("https://cloudfront-us-east-1.images.arcpublishing.com/pmn/PQBA3G25S5CB5NPM6HETT2WZ3M.jpeg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed; /* ← this is the magic line */
+}
 
         .logo {
             font-size: 32px;
@@ -36,13 +37,16 @@
                 </span>
                 <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
                 <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
+
             </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
                 <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
+                <button class="top-bar-btn" onclick="window.location.href='track.html'">Track Packages</button>
             </div>
         </div>
     </div>
+
 
     <!-- Main Header -->
     <div class="main-header">
@@ -60,7 +64,7 @@
                 </div>
                 <button class="search-btn" onclick="performSearch()">Search</button>
             </div>
-            <button class="track-button" onclick="window.location.href='track.html'">Track<br>Packages</button>
+
         </div>
     </div>
 
@@ -289,5 +293,6 @@
             window.location.href = url;
         }
     </script>
+    <script type="module" src="js/site-notice.js"></script>
 </body>
 </html>
