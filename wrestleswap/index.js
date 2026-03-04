@@ -132,6 +132,18 @@ exports.createPaymentIntent = onRequest(
       };
 
       if (sellerStripeAccountId && productPriceInCents > 0) {
+        // Verify the seller's Connect account has transfers capability active
+        // before attempting a destination charge — avoids a hard 500 error
+        const sellerAccount = await stripe.accounts.retrieve(sellerStripeAccountId);
+        const transfersActive = sellerAccount.capabilities &&
+          sellerAccount.capabilities.transfers === 'active';
+
+        if (!transfersActive) {
+          return res.status(400).json({
+            error: 'The seller has not completed their payment account setup. Please contact the seller or try again later.'
+          });
+        }
+
         const platformFeeOnProduct = Math.round(productPriceInCents * PLATFORM_FEE_PERCENT);
         const sellerReceives = productPriceInCents - platformFeeOnProduct;
         const applicationFeeAmount = amount - sellerReceives;
