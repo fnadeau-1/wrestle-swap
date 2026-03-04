@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
-    <script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
     <style>
         /* Page-specific styles for sell.html */
         .container {
@@ -214,23 +213,6 @@
             color: #e53238;
         }
 
-        .recaptcha-container {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-        }
-
-        .recaptcha-error {
-            color: #e53238;
-            font-size: 14px;
-            text-align: center;
-            margin-top: 10px;
-            display: none;
-        }
-
-        .recaptcha-error.show {
-            display: block;
-        }
     </style>
 </head>
 <body>
@@ -368,15 +350,9 @@
                 </div>
             </div>
 
-            <div class="loading" id="loading">
+            <div class="loading" id="loading" style="display:none;">
                 <p>Listing your item...</p>
             </div>
-
-            <!-- reCAPTCHA Verification -->
-            <div class="recaptcha-container">
-                <div class="g-recaptcha" data-sitekey="6LcM51YsAAAAAJIK9J6ztDQhKET0FdHvOBZ9p9Ah" data-action="LIST_ITEM"></div>
-            </div>
-            <p class="recaptcha-error" id="recaptcha-error">Please complete the reCAPTCHA verification</p>
 
             <div class="submit-section">
                 <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">Cancel</button>
@@ -580,85 +556,27 @@
             selectedFiles.forEach(file => displayPreview(file));
         }
 
-        // Cloud Function URL for reCAPTCHA verification
-        const RECAPTCHA_VERIFY_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/verifyRecaptcha';
-
-        // reCAPTCHA Enterprise verification function (server-side)
-        async function verifyRecaptchaServer() {
-            const recaptchaToken = grecaptcha.enterprise.getResponse();
-            const errorElement = document.getElementById('recaptcha-error');
-
-            if (!recaptchaToken || recaptchaToken.length === 0) {
-                errorElement.textContent = 'Please complete the reCAPTCHA verification';
-                errorElement.classList.add('show');
-                return false;
-            }
-
-            try {
-                // Send token to Cloud Function for verification
-                const response = await fetch(RECAPTCHA_VERIFY_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        token: recaptchaToken,
-                        expectedAction: 'LIST_ITEM'
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!result.success) {
-                    errorElement.textContent = result.error || 'reCAPTCHA verification failed. Please try again.';
-                    errorElement.classList.add('show');
-                    grecaptcha.enterprise.reset();
-                    return false;
-                }
-
-                console.log('reCAPTCHA verified successfully. Score:', result.score);
-                errorElement.classList.remove('show');
-                return true;
-
-            } catch (error) {
-                console.error('reCAPTCHA verification error:', error);
-                errorElement.textContent = 'Error verifying reCAPTCHA. Please try again.';
-                errorElement.classList.add('show');
-                grecaptcha.enterprise.reset();
-                return false;
-            }
-        }
-
         document.getElementById('sell-form').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const loading = document.getElementById('loading');
             const submitBtn = document.getElementById('submit-btn');
 
-            // Show loading while verifying reCAPTCHA
-            loading.classList.add('active');
+            loading.style.display = 'block';
             submitBtn.disabled = true;
-
-            // Verify reCAPTCHA with server
-            const recaptchaValid = await verifyRecaptchaServer();
-            if (!recaptchaValid) {
-                loading.classList.remove('active');
-                submitBtn.disabled = false;
-                return;
-            }
 
             // Double-check Stripe account before submission
             const stripeAccountId = window.getStripeAccountId();
             if (!stripeAccountId) {
                 alert('You must connect your Stripe account before listing items. Click the button above to get started.');
-                loading.classList.remove('active');
+                loading.style.display = 'none';
                 submitBtn.disabled = false;
                 return;
             }
 
             if (selectedFiles.length === 0) {
                 alert('Please add at least one photo');
-                loading.classList.remove('active');
+                loading.style.display = 'none';
                 submitBtn.disabled = false;
                 return;
             }
@@ -666,7 +584,7 @@
             const currentUser = window.getCurrentUser();
             if (!currentUser) {
                 alert('You must be signed in to list items');
-                loading.classList.remove('active');
+                loading.style.display = 'none';
                 submitBtn.disabled = false;
                 return;
             }
@@ -677,7 +595,7 @@
                 for (let i = 0; i < selectedFiles.length; i++) {
                     const file = selectedFiles[i];
                     const timestamp = Date.now();
-                    const storageReference = window.storageRef(window.firebaseStorage, `products/${timestamp}_${i}_${file.name}`);
+                    const storageReference = window.storageRef(window.firebaseStorage, `product-images/${currentUser.uid}/${timestamp}_${i}_${file.name}`);
                     
                     await window.uploadBytes(storageReference, file);
                     const downloadURL = await window.getDownloadURL(storageReference);
@@ -723,14 +641,13 @@
                 // Save to Firestore
                 const docRef = await window.addDoc(window.collection(window.firestoreDB, 'products'), productData);
                 
-                loading.classList.remove('active');
+                loading.style.display = 'none';
                 alert('Item listed successfully! Your Stripe account is connected and ready to receive payments.');
                 window.location.href = 'index.html';
                 
             } catch (error) {
-                loading.classList.remove('active');
+                loading.style.display = 'none';
                 submitBtn.disabled = false;
-                grecaptcha.enterprise.reset(); // Reset reCAPTCHA so user can try again
                 console.error('Error listing item:', error);
                 alert('Error listing item: ' + error.message);
             }
