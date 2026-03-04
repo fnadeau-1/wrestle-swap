@@ -3,3 +3,8 @@
 node_modules/
 class/
 functions/sendgrid.env
+functions/
+public/functions/
+*.env
+*.key
+*.pem
