@@ -11,7 +11,22 @@
       "Bash(cmd /c \"node_modules\\\\.bin\\\\firebase-functions.cmd\")",
       "Bash(curl:*)",
       "Bash(npm install:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx firebase:*)",
+      "Bash(cd /c/Users/finna/OneDrive/Desktop/SWAPS && firebase functions:secrets:list 2>&1)",
+      "Bash(cd /c/Users/finna/OneDrive/Desktop/SWAPS && firebase secrets:list 2>&1)",
+      "Bash(head:*)",
+      "Bash(python3:*)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(cd \"C:/Users/finna/OneDrive/Desktop/SWAPS\" && firebase functions:delete deleteSoldProducts --region us-central1 --force 2>&1)",
+      "Bash(grep:*)",
+      "Bash(git:*)",
+      "Bash(cd:*)"
     ]
   }
 }
