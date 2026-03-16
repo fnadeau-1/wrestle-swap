@@ -565,11 +565,19 @@
             const thumbnailContainer = document.getElementById('thumbnail-container');
             thumbnailContainer.innerHTML = '';
 
+            function makeProductImg(src, altText) {
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = altText;
+                return img;
+            }
+
             if (product.images && product.images.length > 0) {
                 const firstImage = product.images[0];
                 if (isImageURL(firstImage)) {
                     mainImageEl.className = 'main-image';
-                    mainImageEl.innerHTML = `<img src="${firstImage}" alt="${product.name}">`;
+                    mainImageEl.innerHTML = '';
+                    mainImageEl.appendChild(makeProductImg(firstImage, product.name));
                 } else {
                     mainImageEl.className = 'main-image emoji';
                     mainImageEl.textContent = firstImage;
@@ -580,7 +588,7 @@
                     thumb.className = 'thumbnail' + (index === 0 ? ' active' : '');
 
                     if (isImageURL(img)) {
-                        thumb.innerHTML = `<img src="${img}" alt="Product image ${index + 1}">`;
+                        thumb.appendChild(makeProductImg(img, `Product image ${index + 1}`));
                     } else {
                         thumb.className += ' emoji';
                         thumb.textContent = img;
@@ -592,25 +600,40 @@
             } else if (product.image) {
                 if (isImageURL(product.image)) {
                     mainImageEl.className = 'main-image';
-                    mainImageEl.innerHTML = `<img src="${product.image}" alt="${product.name}">`;
+                    mainImageEl.innerHTML = '';
+                    mainImageEl.appendChild(makeProductImg(product.image, product.name));
                 } else {
                     mainImageEl.className = 'main-image emoji';
                     mainImageEl.textContent = product.image;
                 }
             }
 
+            function escapeHtml(str) {
+                if (!str) return '';
+                const d = document.createElement('div');
+                d.textContent = str;
+                return d.innerHTML;
+            }
+
             let detailsHtml = '';
-            if (product.brand) detailsHtml += `<div class="detail-label">Brand:</div><div class="detail-value">${product.brand}</div>`;
-            if (product.model) detailsHtml += `<div class="detail-label">Model:</div><div class="detail-value">${product.model}</div>`;
-            if (product.color) detailsHtml += `<div class="detail-label">Color:</div><div class="detail-value">${product.color}</div>`;
-            if (product.size) detailsHtml += `<div class="detail-label">Size:</div><div class="detail-value">${product.size}</div>`;
-            if (product.condition) detailsHtml += `<div class="detail-label">Condition:</div><div class="detail-value">${product.condition}</div>`;
-            if (product.category) detailsHtml += `<div class="detail-label">Category:</div><div class="detail-value">${product.category}</div>`;
+            if (product.brand) detailsHtml += `<div class="detail-label">Brand:</div><div class="detail-value">${escapeHtml(product.brand)}</div>`;
+            if (product.model) detailsHtml += `<div class="detail-label">Model:</div><div class="detail-value">${escapeHtml(product.model)}</div>`;
+            if (product.color) detailsHtml += `<div class="detail-label">Color:</div><div class="detail-value">${escapeHtml(product.color)}</div>`;
+            if (product.size) detailsHtml += `<div class="detail-label">Size:</div><div class="detail-value">${escapeHtml(product.size)}</div>`;
+            if (product.condition) detailsHtml += `<div class="detail-label">Condition:</div><div class="detail-value">${escapeHtml(product.condition)}</div>`;
+            if (product.category) detailsHtml += `<div class="detail-label">Category:</div><div class="detail-value">${escapeHtml(product.category)}</div>`;
 
             document.getElementById('product-details').innerHTML = detailsHtml;
 
             const description = product.description || 'No description available.';
-            document.getElementById('product-description').innerHTML = `<strong>Description:</strong><br><br>${description}`;
+            const descEl = document.getElementById('product-description');
+            descEl.innerHTML = '';
+            const strong = document.createElement('strong');
+            strong.textContent = 'Description:';
+            descEl.appendChild(strong);
+            descEl.appendChild(document.createElement('br'));
+            descEl.appendChild(document.createElement('br'));
+            descEl.appendChild(document.createTextNode(description));
 
             let sellerDisplayName = 'Anonymous Seller';
 

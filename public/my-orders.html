@@ -951,8 +951,8 @@
                                     // Delivered - can contact support if item wasn't as expected
                                     return `<button class="btn btn-secondary" onclick="window.location.href='help.html?subject=Order Issue&orderId=${order.id}'">Contact Support</button>`;
                                 } else if (isShipped) {
-                                    // Shipped but not delivered - no cancellation or refund option
-                                    return '<span style="color: #2563eb; font-size: 12px;">In Transit</span>';
+                                    // Shipped but not delivered - can request refund
+                                    return `<button class="btn btn-secondary" onclick="openRefundRequestModal('${order.id}')">Request Refund</button>`;
                                 } else {
                                     // Not shipped yet - can cancel
                                     return `<button class="btn btn-danger" onclick="openCancelModal('${order.id}')">Cancel Order</button>`;
@@ -1230,8 +1230,11 @@
                                 // Delivered - show contact support option
                                 return `<a href="help.html?subject=Order Issue&orderId=${orderId}" class="btn btn-secondary">Contact Support</a>`;
                             } else if (isShipped) {
-                                // Shipped but not delivered - no cancel option
-                                return '';
+                                // Shipped but not delivered - can request refund
+                                if (order.refundRequested) {
+                                    return '<span style="color: #d97706; font-size: 14px; font-weight: 500;">Refund Requested</span>';
+                                }
+                                return `<button class="btn btn-secondary" onclick="closeOrderModal(); openRefundRequestModal('${orderId}')">Request Refund</button>`;
                             } else {
                                 // Not shipped - can cancel
                                 return `<button class="btn btn-danger" onclick="openCancelModal('${orderId}')">Cancel Order</button>`;

@@ -755,31 +755,9 @@ input:checked + .slider:before {
    =========================================== */
 
 @media (max-width: 768px) {
+    /* Buttons */
     .button-group {
         flex-direction: column;
-    }
-
-    .info-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-    .items-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    }
-
-    .toast {
-        bottom: 20px;
-        right: 20px;
-        left: 20px;
-        max-width: none;
-    }
-
-    /* Bigger tap targets for top bar buttons */
-    .top-bar-btn {
-        padding: 8px 10px;
-        font-size: 12px;
     }
 
     /* Search button easier to tap */
@@ -788,26 +766,97 @@ input:checked + .slider:before {
         font-size: 14px;
     }
 
-    /* Full-width primary buttons on mobile forms */
-    .btn {
-        width: 100%;
-        text-align: center;
-    }
-
-    /* Cards: full-width on very narrow screens */
+    /* Cards */
     .card {
         margin-bottom: 12px;
+    }
+
+    /* Sections: reduce padding on mobile */
+    .section {
+        padding: 16px;
+        border-radius: 8px;
+    }
+
+    .settings-section {
+        padding: 16px;
+    }
+
+    /* Info rows: stack label/value vertically */
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    /* Grids */
+    .items-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    /* Product image height */
+    .product-image {
+        height: 160px;
+    }
+
+    .item-image {
+        height: 150px;
+    }
+
+    /* Category cards: smaller padding */
+    .category-card {
+        padding: 12px 8px;
+    }
+
+    .category-icon {
+        font-size: 28px;
+        margin-bottom: 6px;
+    }
+
+    .category-name {
+        font-size: 12px;
+    }
+
+    /* Toast: full-width at bottom */
+    .toast {
+        bottom: 0;
+        right: 0;
+        left: 0;
+        border-radius: 8px 8px 0 0;
+        max-width: none;
+    }
+
+    /* Form elements: larger tap targets */
+    .form-input,
+    .form-textarea,
+    .form-select {
+        font-size: 16px; /* prevents iOS zoom on focus */
+        padding: 14px 12px;
+    }
+
+    .search-input {
+        font-size: 16px; /* prevents iOS zoom */
     }
 }
 
 @media (max-width: 480px) {
     .items-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
 
-    /* Single column buttons */
     .btn {
         font-size: 15px;
         padding: 11px 20px;
+    }
+
+    .product-image {
+        height: 140px;
+    }
+
+    /* Badges: smaller on tiny screens */
+    .badge {
+        font-size: 11px;
+        padding: 4px 8px;
     }
 }

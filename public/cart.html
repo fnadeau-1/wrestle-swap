@@ -492,15 +492,6 @@
                     <a href="search.html">← Continue Shopping</a>
                 </div>
 
-                <div class="promo-code">
-                    <div class="summary-row" style="margin-bottom: 10px;">
-                        <span class="summary-label">Have a promo code?</span>
-                    </div>
-                    <div class="promo-input-group">
-                        <input type="text" class="promo-input" placeholder="Enter code" id="promo-input">
-                        <button class="apply-btn" onclick="applyPromo()">Apply</button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -785,7 +776,6 @@
         // ============================================
         
         async function saveForLater(itemId) {
-            alert('Item saved to your watchlist! (This is a demo)');
             await removeItem(itemId);
         }
 
@@ -875,23 +865,6 @@
             window.location.href = 'checkout.html';
         }
 
-        // ============================================
-        // PROMO CODE - Apply discount codes
-        // ============================================
-        
-        function applyPromo() {
-            const promoInput = document.getElementById('promo-input');
-            const code = promoInput.value.toUpperCase();
-            
-            if (code === 'WRESTLE10') {
-                alert('Promo code applied! 10% discount added.');
-                promoInput.value = '';
-            } else if (code === '') {
-                alert('Please enter a promo code.');
-            } else {
-                alert('Invalid promo code. Try "WRESTLE10" for a demo discount!');
-            }
-        }
     </script>
     <script type="module" src="js/site-notice.js"></script>
 </body>

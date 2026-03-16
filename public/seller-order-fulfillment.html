@@ -716,26 +716,63 @@
         window.getDoc = getDoc;
         window.doc = doc;
 
-        // Handle auth state for user menu
-        onAuthStateChanged(auth, (user) => {
+        const urlProductId = new URLSearchParams(window.location.search).get('productId');
+
+        function showAccessDenied(message) {
+            document.querySelector('.container').innerHTML = `
+                <div style="text-align:center;padding:80px 20px;background:white;border-radius:8px;margin-top:40px;box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="font-size:64px;margin-bottom:20px;">🚫</div>
+                    <h2 style="font-size:24px;color:#333;margin-bottom:12px;">Access Denied</h2>
+                    <p style="color:#707070;margin-bottom:24px;">${message}</p>
+                    <a href="listings-manager.html" style="display:inline-block;padding:12px 28px;background:#c41e3a;color:white;border-radius:6px;text-decoration:none;font-weight:600;">Back to My Listings</a>
+                </div>
+            `;
+        }
+
+        // Handle auth state — verify user is signed in AND is the seller of this order
+        onAuthStateChanged(auth, async (user) => {
             const menuWrapper = document.getElementById('user-menu-wrapper');
-            if (user) {
-                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                menuWrapper.innerHTML = `
-                    <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
-                        <div class="dropdown-menu">
-                            <a href="watchlist.html">Watchlist</a>
-                            <a href="my-orders.html">Your Orders</a>
-                            <a href="listings-manager.html">Your Listings</a>
-                            <a href="messages.html">Messages</a>
-                        </div>
-                    </div>
-                `;
-            } else {
+
+            if (!user) {
                 menuWrapper.innerHTML = `
                     <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
                 `;
+                window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.href);
+                return;
+            }
+
+            const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+            menuWrapper.innerHTML = `
+                <div class="user-menu-container">
+                    <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                    <div class="dropdown-menu">
+                        <a href="watchlist.html">Watchlist</a>
+                        <a href="my-orders.html">Your Orders</a>
+                        <a href="listings-manager.html">Your Listings</a>
+                        <a href="messages.html">Messages</a>
+                    </div>
+                </div>
+            `;
+
+            // Verify this user is the seller of the product
+            if (urlProductId) {
+                try {
+                    const productSnap = await getDoc(doc(db, 'products', urlProductId));
+                    if (!productSnap.exists()) {
+                        showAccessDenied('This order could not be found.');
+                        return;
+                    }
+                    if (productSnap.data().userId !== user.uid) {
+                        showAccessDenied('You are not the seller of this order.');
+                        return;
+                    }
+                    // Ownership confirmed — load the order details
+                    window.sellerVerified = true;
+                    if (typeof loadOrderDetails === 'function') loadOrderDetails();
+                } catch (e) {
+                    console.error('Seller verification error:', e);
+                    showAccessDenied('Could not verify order ownership. Please try again.');
+                }
             }
         });
     </script>
@@ -912,8 +949,15 @@
             `;
         }
 
-        // Load order details when page loads
-        window.addEventListener('DOMContentLoaded', loadOrderDetails);
+        // loadOrderDetails is called by onAuthStateChanged after ownership is verified.
+        // If productId is not in the URL (e.g. seller arriving right after checkout),
+        // we still allow sessionStorage-only display since there's nothing to verify against.
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!urlProductId) {
+                loadOrderDetails();
+            }
+            // If urlProductId is set, wait for onAuthStateChanged to verify and call us.
+        });
     </script>
     <script type="module" src="js/site-notice.js"></script>
 </body>

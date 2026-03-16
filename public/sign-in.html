@@ -567,6 +567,15 @@
             }
         }
 
+        function getPostLoginRedirect() {
+            const params = new URLSearchParams(window.location.search);
+            const redirect = params.get('redirect');
+            if (redirect && !redirect.includes('://')) {
+                return redirect;
+            }
+            return 'index.html';
+        }
+
         // Google Login for Sign In
         async function googleLogin() {
             if (popupInProgress) return;
@@ -580,7 +589,7 @@
                 const provider = new window.GoogleAuthProvider();
                 const result = await window.signInWithPopup(window.firebaseAuth, provider);
                 alert('Sign in successful! Welcome back to Wrestle Swap!');
-                window.location.href = 'index.html';
+                window.location.href = getPostLoginRedirect();
             } catch (error) {
                 if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
                     alert('Error: ' + error.message);
@@ -625,7 +634,7 @@
                 await saveUserData(user.uid, userData);
 
                 alert('Account created successfully! Welcome to Wrestle Swap!');
-                window.location.href = 'index.html';
+                window.location.href = getPostLoginRedirect();
             } catch (error) {
                 // Only show error if it's not a cancelled popup
                 if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
@@ -650,7 +659,7 @@
             try {
                 await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
                 alert('Sign in successful! Welcome back to Wrestle Swap!');
-                window.location.href = 'index.html';
+                window.location.href = getPostLoginRedirect();
             } catch (error) {
                 alert('Error: ' + error.message);
             }
@@ -716,7 +725,7 @@
                 await saveUserData(user.uid, userData);
                 
                 alert('Account created successfully! Welcome to Wrestle Swap!');
-                window.location.href = 'index.html';
+                window.location.href = getPostLoginRedirect();
             } catch (error) {
                 alert('Error: ' + error.message);
             }

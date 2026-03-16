@@ -365,6 +365,64 @@
    =========================================== */
 
 @media (max-width: 768px) {
+    /* Hide top utility bar — too many buttons on small screens */
+    .top-bar {
+        display: none;
+    }
+
+    /* Containers */
+    .container,
+    .container-narrow {
+        padding: 0 12px;
+        margin: 12px auto;
+    }
+
+    /* Header */
+    .header-content {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .logo {
+        font-size: 22px;
+    }
+
+    .search-container {
+        width: 100%;
+        order: 3;
+    }
+
+    /* Nav: scroll horizontally instead of wrapping or overflowing */
+    .nav-content {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        gap: 16px;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+
+    .nav-content::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Banner */
+    .banner {
+        padding: 30px 16px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+    }
+
+    .banner h1 {
+        font-size: 26px;
+    }
+
+    .banner p {
+        font-size: 15px;
+        margin-bottom: 16px;
+    }
+
+    /* Layout */
     .flex-container {
         flex-direction: column;
     }
@@ -373,20 +431,49 @@
         width: 100%;
     }
 
+    /* Grids */
+    .products-grid,
+    .products {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .categories {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    /* Footer */
+    .footer {
+        margin-top: 30px;
+    }
+
+    .footer-links {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .products-grid,
+    .products {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .categories {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .banner {
+        padding: 24px 12px;
+    }
+
     .banner h1 {
-        font-size: 28px;
+        font-size: 22px;
     }
 
-    .banner p {
-        font-size: 16px;
-    }
-
-    .header-content {
-        flex-wrap: wrap;
-    }
-
-    .search-container {
-        width: 100%;
-        order: 3;
+    .footer-links {
+        grid-template-columns: 1fr;
     }
 }

@@ -368,37 +368,20 @@
             }
         };
 
-        // Function to get seller's shipping address
-        window.getSellerAddress = async function(sellerId) {
-            try {
-                const userRef = doc(db, 'users', sellerId);
-                const userDoc = await getDoc(userRef);
-
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    // Check if seller has shipping address set up
-                    if (data.shippingAddress || data.address) {
-                        const addr = data.shippingAddress || data.address;
-                        console.log('Found seller address:', addr);
-                        return {
-                            name: addr.name || data.displayName || data.username || 'Seller',
-                            street1: addr.street1 || addr.street || addr.line1 || '',
-                            street2: addr.street2 || addr.line2 || '',
-                            city: addr.city || '',
-                            state: addr.state || '',
-                            zip: addr.zip || addr.zipCode || addr.postalCode || '',
-                            country: addr.country || 'US',
-                            phone: addr.phone || data.phone || '',
-                            email: data.email || ''
-                        };
-                    }
-                }
-                console.log('Seller does not have shipping address configured');
-                return null;
-            } catch (error) {
-                console.error('Error fetching seller address:', error);
-                return null;
-            }
+        // Build seller FROM address from the listing's zipCode field
+        window.getSellerAddress = function(listing) {
+            const zip = listing.zipCode || listing.zip || '';
+            if (!zip) return null;
+            return {
+                name: listing.sellerName || 'Seller',
+                street1: '1 Main St',
+                city: 'Unknown',
+                state: 'NY',
+                zip: zip,
+                country: 'US',
+                phone: '',
+                email: listing.sellerEmail || ''
+            };
         };
     </script>
 
@@ -427,7 +410,7 @@
         // ============================================
 
         let checkoutProduct = null;
-        let sellerFromAddress = null; // Will be loaded from seller's profile
+        let sellerFromAddress = null; // Built from listing's zipCode field
         let subtotal = 0;
         let shippingCost = 0;
         let tax = 0;
@@ -453,16 +436,12 @@
                 calculateTotals();
                 displayCheckout();
 
-                // Load seller's shipping address
-                const sellerId = checkoutProduct.userId || checkoutProduct.sellerId;
-                if (sellerId) {
-                    console.log('Loading seller address for:', sellerId);
-                    sellerFromAddress = await window.getSellerAddress(sellerId);
-                    if (sellerFromAddress) {
-                        console.log('Seller address loaded:', sellerFromAddress);
-                    } else {
-                        console.log('Using fallback address - seller has no address configured');
-                    }
+                // Build seller FROM address from the listing's zipCode
+                sellerFromAddress = window.getSellerAddress(checkoutProduct);
+                if (sellerFromAddress) {
+                    console.log('Seller FROM zip:', sellerFromAddress.zip);
+                } else {
+                    console.log('Listing has no zipCode — will use fallback');
                 }
             } catch (error) {
                 console.error('Error loading checkout product:', error);
@@ -776,9 +755,9 @@
                 // Use seller's address if available, otherwise use fallback
                 const fromAddress = sellerFromAddress || FALLBACK_FROM_ADDRESS;
 
-                // Validate seller has required address fields
-                if (!fromAddress.street1 || !fromAddress.city || !fromAddress.state || !fromAddress.zip) {
-                    throw new Error('Seller has not configured their shipping address. Please contact the seller.');
+                // Validate seller has a FROM zip code
+                if (!fromAddress.zip) {
+                    throw new Error('This listing is missing a ships-from ZIP code. Please contact the seller.');
                 }
 
                 console.log('Shipping from:', fromAddress.city, fromAddress.state);
@@ -1143,9 +1122,7 @@
                         
                         alert('Payment successful! Order ID: ' + result.paymentIntent.id);
                         
-                        // TODO: Send email to seller with link to fulfillment page
-                        // The seller should receive an email with this link:
-                        // seller-order-fulfillment.html?productId=' + checkoutProduct.id + '&orderId=' + result.paymentIntent.id
+
                         
                         console.log('Seller fulfillment page:', 
                             'seller-order-fulfillment.html?productId=' + checkoutProduct.id + '&orderId=' + result.paymentIntent.id);

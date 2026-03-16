@@ -479,6 +479,103 @@
         // Load order info when page loads
         window.addEventListener('DOMContentLoaded', loadOrderInfo);
     </script>
+
+    <!-- Firestore fallback: load order from DB if sessionStorage is empty on refresh -->
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, getDoc, doc }
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
+            authDomain: "wrestleswap.firebaseapp.com",
+            projectId: "wrestleswap",
+            storageBucket: "wrestleswap.firebasestorage.app",
+            messagingSenderId: "857051782398",
+            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
+            measurementId: "G-B411WXLF3J"
+        };
+        const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function tryFirestoreFallback() {
+            // Only run if the order-items section still shows the unavailable message
+            const orderItems = document.getElementById('order-items');
+            if (!orderItems || !orderItems.innerHTML.includes('unavailable')) return;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentIntentId = urlParams.get('id');
+            if (!paymentIntentId) return;
+
+            try {
+                // Find the order by paymentIntentId
+                const q = query(collection(db, 'orders'), where('paymentIntentId', '==', paymentIntentId));
+                const snap = await getDocs(q);
+                if (snap.empty) return;
+
+                const orderData = snap.docs[0].data();
+
+                // Fetch product details
+                let product = null;
+                if (orderData.productId) {
+                    const prodSnap = await getDoc(doc(db, 'products', orderData.productId));
+                    if (prodSnap.exists()) {
+                        const p = prodSnap.data();
+                        product = {
+                            name: p.title || p.name || 'Order Item',
+                            condition: p.condition || '',
+                            price: p.price || orderData.productPrice || 0,
+                            image: (p.images && p.images[0]) || p.image || '📦'
+                        };
+                    }
+                }
+
+                if (!product) {
+                    product = {
+                        name: orderData.productTitle || 'Order Item',
+                        condition: '',
+                        price: orderData.productPrice || 0,
+                        image: '📦'
+                    };
+                }
+
+                // Build orderInfo from order record
+                const orderInfo = {
+                    shippingService: orderData.shippingService || 'Standard Shipping',
+                    trackingNumber: orderData.trackingNumber || null,
+                    trackingUrl: orderData.trackingUrl || null,
+                    subtotal: product.price,
+                    shippingCost: orderData.shippingCost || 0,
+                    tax: product.price * 0.08,
+                    total: product.price + (orderData.shippingCost || 0) + product.price * 0.08
+                };
+
+                // Re-render with real data
+                if (typeof displayProduct === 'function') {
+                    displayProduct(product, orderInfo);
+                }
+                if (orderInfo.trackingNumber) {
+                    const trackSection = document.getElementById('tracking-section');
+                    if (trackSection) trackSection.style.display = 'block';
+                    const trackNum = document.getElementById('tracking-number');
+                    if (trackNum) trackNum.textContent = orderInfo.trackingNumber;
+                    if (orderInfo.trackingUrl) {
+                        const trackLink = document.getElementById('track-link');
+                        if (trackLink) trackLink.href = orderInfo.trackingUrl;
+                    }
+                }
+                const shippingMethodEl = document.getElementById('shipping-method');
+                if (shippingMethodEl) shippingMethodEl.textContent = orderInfo.shippingService;
+            } catch (e) {
+                console.warn('Firestore fallback failed:', e);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Run after the main script's loadOrderInfo
+            setTimeout(tryFirestoreFallback, 100);
+        });
+    </script>
     <script type="module" src="js/site-notice.js"></script>
 </body>
 </html>

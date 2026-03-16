@@ -774,9 +774,12 @@
         // ============================================
 
         function createListingCard(listing) {
-            // Determine status - sold takes priority
+            // Determine status - cancelled takes priority over sold
             let statusClass, statusText;
-            if (listing.sold) {
+            if (listing.cancelled) {
+                statusClass = 'status-draft';
+                statusText = '❌ Cancelled';
+            } else if (listing.sold) {
                 statusClass = 'status-sold';
                 statusText = '✅ SOLD';
             } else if (listing.active) {
@@ -830,9 +833,14 @@
                     `;
                 }
             } else if (listing.cancelled) {
-                // CANCELLED ITEM
+                // CANCELLED ITEM - offer relist
                 actionsHtml = `
-                    <span style="color: #dc2626; font-weight: 600;">Order Cancelled</span>
+                    <button class="btn btn-primary" onclick="event.stopPropagation(); reactivateListing('${listing.id}')">
+                        🔄 Relist Item
+                    </button>
+                    <button class="btn btn-danger" onclick="event.stopPropagation(); openDeleteModal('${listing.id}')">
+                        🗑️
+                    </button>
                 `;
             } else {
                 // AVAILABLE ITEM - Show edit/toggle/delete buttons
@@ -850,9 +858,9 @@
             }
 
             return `
-                <div class="listing-card ${soldCardClass}" 
-                     data-id="${listing.id}" 
-                     ${listing.sold ? `onclick="window.location.href='${fulfillmentLink}'" style="cursor: pointer;"` : ''}>
+                <div class="listing-card ${soldCardClass}"
+                     data-id="${listing.id}"
+                     ${listing.sold && !listing.cancelled ? `onclick="window.location.href='${fulfillmentLink}'" style="cursor: pointer;"` : ''}>
                     <div class="listing-image">
                         ${imageDisplay}
                         <span class="status-badge ${statusClass}">${statusText}</span>
@@ -1031,6 +1039,37 @@
         }
 
         // ============================================
+        // RELIST CANCELLED ITEM
+        // ============================================
+
+        async function reactivateListing(listingId) {
+            try {
+                const del = firebase.firestore.FieldValue.delete();
+                await db.collection('products').doc(listingId).update({
+                    sold: false,
+                    active: true,
+                    cancelled: false,
+                    buyerId: del,
+                    soldOrderId: del,
+                    soldAt: del,
+                    soldTimestamp: del,
+                    shippingLabel: del,
+                    trackingNumber: del,
+                    trackingUrl: del,
+                    cancelledAt: del,
+                    cancelledTimestamp: del,
+                    refundId: del,
+                    refundAmount: del,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await renderListings();
+                showInfo('Listing reactivated — it\'s visible to buyers again!');
+            } catch (error) {
+                showError('Failed to relist item: ' + error.message);
+            }
+        }
+
+        // ============================================
         // DELETE FUNCTIONALITY
         // ============================================
 
@@ -1070,7 +1109,7 @@
         // SELLER CANCEL ORDER FUNCTIONALITY
         // ============================================
 
-        const SELLER_CANCEL_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/sellerCancelOrder';
+        const SELLER_CANCEL_ORDER_URL = 'https://sellercancelorder-kebvkf67ma-uc.a.run.app';
         let saleToCancel = null;
 
         function openSellerCancelModal(listingId) {

@@ -262,6 +262,9 @@
 
             <!-- Products Grid -->
             <div class="products-grid" id="products-container"></div>
+            <div style="text-align:center;margin:20px 0;display:none;" id="load-more-wrapper">
+                <button id="load-more-btn" onclick="showMoreProducts()" style="padding:12px 32px;background:#c41e3a;color:white;border:none;border-radius:6px;font-size:15px;cursor:pointer;font-weight:600;">Load More</button>
+            </div>
 
             <!-- No Results -->
             <div class="no-results" id="no-results" style="display: none;">
@@ -326,6 +329,8 @@
         let allProducts = [];
         let currentProducts = [];
         let searchQuery = '';
+        let displayedCount = 0;
+        const SEARCH_PAGE_SIZE = 24;
 
         // Get search query from URL
         function getSearchQuery() {
@@ -538,43 +543,65 @@
             displayProducts();
         }
 
+        function renderProductSlice(products) {
+            return products.map(product => {
+                const imageDisplay = product.images && product.images.length > 0
+                    ? `<img src="${product.images[0]}" alt="${product.name}" loading="lazy">`
+                    : product.icon;
+                const soldClass = product.sold ? 'sold' : '';
+                const soldBadge = product.sold ? '<div class="sold-badge">SOLD</div>' : '';
+                return `
+                    <div class="product-item ${soldClass}" onclick="window.location.href='productdetail.html?id=${product.id}'">
+                        ${soldBadge}
+                        <div class="product-img">${imageDisplay}</div>
+                        <div class="product-details">
+                            <div class="product-name">${product.name}</div>
+                            <div class="product-price">$${product.price.toFixed(2)}</div>
+                            <div class="seller-name">${product.sellerName}</div>
+                            <div class="product-condition">${formatCondition(product.condition)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         // Display products
         function displayProducts() {
             const container = document.getElementById('products-container');
             const noResults = document.getElementById('no-results');
             const resultsCount = document.getElementById('results-count');
+            const loadMoreWrapper = document.getElementById('load-more-wrapper');
 
             if (currentProducts.length === 0) {
                 container.style.display = 'none';
                 noResults.style.display = 'block';
                 resultsCount.innerHTML = `<strong>0 results</strong>`;
+                loadMoreWrapper.style.display = 'none';
             } else {
                 container.style.display = 'grid';
                 noResults.style.display = 'none';
                 resultsCount.innerHTML = `<strong>${currentProducts.length} result${currentProducts.length !== 1 ? 's' : ''}</strong>`;
 
-                container.innerHTML = currentProducts.map(product => {
-                    // Use first image if available, otherwise show icon
-                    const imageDisplay = product.images && product.images.length > 0
-                        ? `<img src="${product.images[0]}" alt="${product.name}">`
-                        : product.icon;
+                displayedCount = Math.min(SEARCH_PAGE_SIZE, currentProducts.length);
+                container.innerHTML = renderProductSlice(currentProducts.slice(0, displayedCount));
 
-                    const soldClass = product.sold ? 'sold' : '';
-                    const soldBadge = product.sold ? '<div class="sold-badge">SOLD</div>' : '';
+                if (currentProducts.length > displayedCount) {
+                    loadMoreWrapper.style.display = 'block';
+                    document.getElementById('load-more-btn').textContent = 'Load More';
+                } else {
+                    loadMoreWrapper.style.display = 'none';
+                }
+            }
+        }
 
-                    return `
-                        <div class="product-item ${soldClass}" onclick="window.location.href='productdetail.html?id=${product.id}'">
-                            ${soldBadge}
-                            <div class="product-img">${imageDisplay}</div>
-                            <div class="product-details">
-                                <div class="product-name">${product.name}</div>
-                                <div class="product-price">$${product.price.toFixed(2)}</div>
-                                <div class="seller-name">${product.sellerName}</div>
-                                <div class="product-condition">${formatCondition(product.condition)}</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+        function showMoreProducts() {
+            const container = document.getElementById('products-container');
+            const loadMoreWrapper = document.getElementById('load-more-wrapper');
+            const nextCount = Math.min(displayedCount + SEARCH_PAGE_SIZE, currentProducts.length);
+            container.insertAdjacentHTML('beforeend', renderProductSlice(currentProducts.slice(displayedCount, nextCount)));
+            displayedCount = nextCount;
+            if (displayedCount >= currentProducts.length) {
+                loadMoreWrapper.style.display = 'none';
             }
         }
 

@@ -41,8 +41,8 @@
             </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
-                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
                 <button class="top-bar-btn" onclick="window.location.href='track.html'">Track Packages</button>
+                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
             </div>
         </div>
     </div>
@@ -72,7 +72,6 @@
     <div class="nav-bar">
         <div class="nav-content">
             <a href="watchlist.html">Saved</a>
-            <a href="search.html">All Categories</a>
             <a href="search.html?q=shoes">Wrestling Shoes</a>
             <a href="search.html?q=singlet">Singlets</a>
             <a href="search.html?q=shirt">Shirts</a>
@@ -120,6 +119,9 @@
 
         <div class="loading-products" id="loading-products">Loading products...</div>
         <div class="products" id="products-container"></div>
+        <div style="text-align:center;margin:20px 0;" id="load-more-wrapper" style="display:none;">
+            <button id="load-more-btn" onclick="loadMoreProducts()" style="padding:12px 32px;background:#c41e3a;color:white;border:none;border-radius:6px;font-size:15px;cursor:pointer;font-weight:600;">Load More</button>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -168,7 +170,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
@@ -211,26 +213,69 @@
             }
         });
 
+        const PAGE_SIZE = 12;
+        let lastProductDoc = null;
+        let allLoaded = false;
+
+        function renderProducts(products, append) {
+            const container = document.getElementById('products-container');
+            const html = products.map(product => {
+                const imageDisplay = product.images && product.images.length > 0
+                    ? `<img src="${product.images[0]}" alt="${product.title}" loading="lazy">`
+                    : '📦';
+                return `
+                    <div class="product-card" onclick="window.location.href='productdetail.html?id=${product.id}'">
+                        <div class="product-image">${imageDisplay}</div>
+                        <div class="product-info">
+                            <div class="product-title">${product.title}</div>
+                            <div class="product-price">$${product.price.toFixed(2)}</div>
+                            <div class="product-seller">${product.sellerName}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            if (append) {
+                container.insertAdjacentHTML('beforeend', html);
+            } else {
+                container.innerHTML = html;
+            }
+        }
+
         // Load products from Firestore
-        async function loadProducts() {
+        async function loadProducts(append) {
             const container = document.getElementById('products-container');
             const loading = document.getElementById('loading-products');
+            const loadMoreWrapper = document.getElementById('load-more-wrapper');
+            const loadMoreBtn = document.getElementById('load-more-btn');
+
+            if (loadMoreBtn) {
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.textContent = 'Loading...';
+            }
 
             try {
-                const q = query(
-                    collection(db, 'products'),
-                    where('active', '==', true),
-                    limit(12)
-                );
+                let q;
+                if (lastProductDoc) {
+                    q = query(
+                        collection(db, 'products'),
+                        where('active', '==', true),
+                        limit(PAGE_SIZE),
+                        startAfter(lastProductDoc)
+                    );
+                } else {
+                    q = query(
+                        collection(db, 'products'),
+                        where('active', '==', true),
+                        limit(PAGE_SIZE)
+                    );
+                }
 
                 const querySnapshot = await getDocs(q);
                 const products = [];
 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    // Skip sold products
                     if (data.sold === true) return;
-
                     products.push({
                         id: doc.id,
                         title: data.title,
@@ -239,40 +284,47 @@
                         images: data.images || [],
                         condition: data.condition || ''
                     });
+                    lastProductDoc = doc;
                 });
 
                 loading.style.display = 'none';
 
-                if (products.length === 0) {
+                if (!append && products.length === 0) {
                     container.innerHTML = '<p style="text-align: center; color: #707070; padding: 40px;">No products available yet. Be the first to list!</p>';
+                    if (loadMoreWrapper) loadMoreWrapper.style.display = 'none';
                     return;
                 }
 
-                container.innerHTML = products.map(product => {
-                    const imageDisplay = product.images && product.images.length > 0
-                        ? `<img src="${product.images[0]}" alt="${product.title}">`
-                        : '📦';
+                renderProducts(products, append);
 
-                    return `
-                        <div class="product-card" onclick="window.location.href='productdetail.html?id=${product.id}'">
-                            <div class="product-image">${imageDisplay}</div>
-                            <div class="product-info">
-                                <div class="product-title">${product.title}</div>
-                                <div class="product-price">$${product.price.toFixed(2)}</div>
-                                <div class="product-seller">${product.sellerName}</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                // Show/hide Load More button
+                if (querySnapshot.docs.length < PAGE_SIZE) {
+                    allLoaded = true;
+                    if (loadMoreWrapper) loadMoreWrapper.style.display = 'none';
+                } else {
+                    if (loadMoreWrapper) loadMoreWrapper.style.display = 'block';
+                    if (loadMoreBtn) {
+                        loadMoreBtn.disabled = false;
+                        loadMoreBtn.textContent = 'Load More';
+                    }
+                }
 
             } catch (error) {
                 console.error('Error loading products:', error);
                 loading.textContent = 'Error loading products. Please refresh.';
+                if (loadMoreBtn) {
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.textContent = 'Load More';
+                }
             }
         }
 
+        window.loadMoreProducts = function() {
+            if (!allLoaded) loadProducts(true);
+        };
+
         // Load products when page loads
-        loadProducts();
+        loadProducts(false);
     </script>
 
     <!-- Search Function -->
