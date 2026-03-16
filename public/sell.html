@@ -345,8 +345,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Ships From (Zip Code)</label>
-                    <input type="text" class="form-input" id="zip-code" placeholder="e.g., 12345">
+                    <label class="form-label">Ships From (Zip Code) <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="zip-code" placeholder="e.g., 12345" maxlength="10" required>
+                    <p class="helper-text">Used to calculate shipping rates for buyers</p>
                 </div>
             </div>
 
@@ -385,25 +386,25 @@
         let currentUser = null;
         let userStripeAccountId = null;
 
-        // Check if user has Stripe account
+        // Check if user has Stripe account and shipping address
         async function checkStripeAccount(user) {
             try {
                 const userDocRef = doc(db, 'users', user.uid);
                 const userDoc = await getDoc(userDocRef);
-                
-                if (!userDoc.exists() || !userDoc.data().stripeAccountId) {
-                    // No Stripe account - show warning and disable form
+                const data = userDoc.exists() ? userDoc.data() : {};
+
+                // Check Stripe account
+                if (!data.stripeAccountId) {
                     document.getElementById('stripe-warning').classList.add('show');
                     document.getElementById('submit-btn').disabled = true;
-                    return null;
                 } else {
-                    // Has Stripe account - hide warning and enable form
                     document.getElementById('stripe-warning').classList.remove('show');
                     document.getElementById('submit-btn').disabled = false;
-                    return userDoc.data().stripeAccountId;
                 }
+
+                return data.stripeAccountId || null;
             } catch (error) {
-                console.error('Error checking Stripe account:', error);
+                console.error('Error checking account setup:', error);
                 return null;
             }
         }
@@ -569,6 +570,14 @@
             const stripeAccountId = window.getStripeAccountId();
             if (!stripeAccountId) {
                 alert('You must connect your Stripe account before listing items. Click the button above to get started.');
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const zipCode = document.getElementById('zip-code').value.trim();
+            if (!/^\d{5}(-\d{4})?$/.test(zipCode)) {
+                alert('Please enter a valid ZIP code (e.g., 12345).');
                 loading.style.display = 'none';
                 submitBtn.disabled = false;
                 return;

@@ -8,39 +8,40 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
     <style>
-        /* Page-specific styles for help.html */
-        body {
-            background-color: #f7f7f7;
-        }
+        body { background-color: #f7f7f7; }
 
-        .top-bar a {
-            color: #000;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-
-        /* Hero Section */
         .hero {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 60px 20px;
             text-align: center;
         }
+        .hero-title { font-size: 42px; margin-bottom: 15px; }
+        .hero-subtitle { font-size: 18px; opacity: 0.9; }
 
-        .hero-title {
-            font-size: 42px;
-            margin-bottom: 15px;
+        .container { margin: 40px auto; }
+
+        /* Topics */
+        .topics-section { margin-bottom: 40px; }
+        .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
         }
-
-        .hero-subtitle {
-            font-size: 18px;
-            opacity: 0.9;
+        .topic-card {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
         }
+        .topic-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-2px); }
+        .topic-icon { font-size: 36px; margin-bottom: 12px; }
+        .topic-title { font-size: 17px; font-weight: bold; color: #333; margin-bottom: 6px; }
+        .topic-description { font-size: 13px; color: #707070; line-height: 1.5; }
 
-        .container {
-            margin: 40px auto;
-        }
-
+        /* FAQ + Contact grid */
         .content-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -48,65 +49,45 @@
             margin-bottom: 40px;
         }
 
-        /* FAQ Section */
         .faq-section {
             background: #fff;
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        .section-title {
-            font-size: 28px;
-            margin-bottom: 25px;
-            color: #333;
-        }
+        .section-title { font-size: 26px; margin-bottom: 24px; color: #333; }
 
         .faq-item {
             margin-bottom: 20px;
             border-bottom: 1px solid #e5e5e5;
             padding-bottom: 20px;
         }
-
-        .faq-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
+        .faq-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 
         .faq-question {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 10px;
+            margin-bottom: 0;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
         }
-
-        .faq-question:hover {
-            color: #3665f3;
-        }
-
-        .faq-toggle {
-            font-size: 20px;
-            color: #3665f3;
-        }
+        .faq-question:hover { color: #3665f3; }
+        .faq-toggle { font-size: 20px; color: #3665f3; flex-shrink: 0; }
 
         .faq-answer {
             font-size: 14px;
-            color: #707070;
-            line-height: 1.6;
+            color: #555;
+            line-height: 1.7;
             display: none;
-            padding-top: 10px;
+            padding-top: 12px;
         }
+        .faq-answer.active { display: block; }
 
-        .faq-answer.active {
-            display: block;
-        }
-
-        /* Contact Card */
+        /* Contact card */
         .contact-card {
             background: #fff;
             padding: 30px;
@@ -114,97 +95,20 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             height: fit-content;
         }
-
-        .contact-title {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #333;
-        }
-
+        .contact-title { font-size: 22px; margin-bottom: 20px; color: #333; }
         .contact-method {
-            margin-bottom: 25px;
-            padding-bottom: 25px;
+            margin-bottom: 24px;
+            padding-bottom: 24px;
             border-bottom: 1px solid #e5e5e5;
         }
+        .contact-method:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .contact-icon { font-size: 30px; margin-bottom: 8px; }
+        .contact-label { font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px; }
+        .contact-info { font-size: 14px; color: #3665f3; text-decoration: none; }
+        .contact-info:hover { text-decoration: underline; }
+        .contact-hours { font-size: 12px; color: #707070; margin-top: 4px; }
 
-        .contact-method:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .contact-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-
-        .contact-label {
-            font-size: 14px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .contact-info {
-            font-size: 14px;
-            color: #3665f3;
-            text-decoration: none;
-        }
-
-        .contact-info:hover {
-            text-decoration: underline;
-        }
-
-        .contact-hours {
-            font-size: 12px;
-            color: #707070;
-            margin-top: 5px;
-        }
-
-        /* Topics Grid */
-        .topics-section {
-            margin-bottom: 40px;
-        }
-
-        .topics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .topic-card {
-            background: #fff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .topic-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transform: translateY(-2px);
-        }
-
-        .topic-icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-        }
-
-        .topic-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 8px;
-        }
-
-        .topic-description {
-            font-size: 14px;
-            color: #707070;
-            line-height: 1.5;
-        }
-
-        /* Contact Form */
+        /* Contact form */
         .contact-form-section {
             background: #fff;
             padding: 30px;
@@ -212,70 +116,38 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 40px;
         }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #333;
-        }
-
-        .form-input,
-        .form-select,
-        .form-textarea {
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #333; }
+        .form-input, .form-select, .form-textarea {
             width: 100%;
-            padding: 12px;
+            padding: 11px 12px;
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 14px;
-            font-family: Arial, sans-serif;
+            font-family: inherit;
+            box-sizing: border-box;
         }
-
-        .form-input:focus,
-        .form-select:focus,
-        .form-textarea:focus {
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
             outline: none;
             border-color: #3665f3;
         }
-
-        .form-textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
+        .form-textarea { min-height: 120px; resize: vertical; }
         .submit-btn {
             background-color: #3665f3;
             color: white;
             border: none;
-            padding: 14px 32px;
+            padding: 13px 30px;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s;
         }
-
-        .submit-btn:hover {
-            background-color: #2348c5;
-        }
-
-        .required {
-            color: #e53238;
-        }
+        .submit-btn:hover { background-color: #2348c5; }
+        .required { color: #e53238; }
 
         @media (max-width: 968px) {
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .hero-title {
-                font-size: 32px;
-            }
+            .content-grid { grid-template-columns: 1fr; }
+            .hero-title { font-size: 30px; }
         }
     </style>
 </head>
@@ -285,9 +157,9 @@
         <div class="top-bar-content">
             <div>
                 <span id="user-menu-wrapper">
-                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
                 </span>
-                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
+                <button class="top-bar-btn" onclick="window.location.href='help.html'" style="font-weight:bold;">Help &amp; Contact</button>
                 <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
             </div>
             <div>
@@ -304,14 +176,15 @@
         </div>
     </div>
 
-    <!-- Hero Section -->
+    <!-- Hero -->
     <div class="hero">
         <h1 class="hero-title">How Can We Help?</h1>
-        <p class="hero-subtitle">Find answers to your questions or get in touch with our support team</p>
+        <p class="hero-subtitle">Find answers to common questions or get in touch with our support team</p>
     </div>
 
     <!-- Main Content -->
     <div class="container">
+
         <!-- Help Topics -->
         <div class="topics-section">
             <h2 class="section-title">Browse Help Topics</h2>
@@ -319,39 +192,45 @@
                 <div class="topic-card" onclick="scrollToFAQ('buying')">
                     <div class="topic-icon">🛍️</div>
                     <div class="topic-title">Buying</div>
-                    <div class="topic-description">Learn how to search, purchase, and receive items</div>
+                    <div class="topic-description">How to search, purchase, and receive items</div>
                 </div>
                 <div class="topic-card" onclick="scrollToFAQ('selling')">
                     <div class="topic-icon">💰</div>
                     <div class="topic-title">Selling</div>
-                    <div class="topic-description">Get help listing items and managing your sales</div>
+                    <div class="topic-description">Listing items, shipping, and getting paid</div>
                 </div>
                 <div class="topic-card" onclick="scrollToFAQ('shipping')">
                     <div class="topic-icon">📦</div>
                     <div class="topic-title">Shipping</div>
-                    <div class="topic-description">Shipping guidelines and tracking information</div>
+                    <div class="topic-description">Shipping rates, tracking, and delivery</div>
+                </div>
+                <div class="topic-card" onclick="scrollToFAQ('refunds')">
+                    <div class="topic-icon">↩️</div>
+                    <div class="topic-title">Cancellations &amp; Refunds</div>
+                    <div class="topic-description">How to cancel an order or request a refund</div>
                 </div>
                 <div class="topic-card" onclick="scrollToFAQ('account')">
                     <div class="topic-icon">👤</div>
                     <div class="topic-title">Account</div>
-                    <div class="topic-description">Manage your profile, settings, and security</div>
+                    <div class="topic-description">Profile, settings, and security</div>
                 </div>
             </div>
         </div>
 
-        <!-- FAQ and Contact Grid -->
+        <!-- FAQ + Contact -->
         <div class="content-grid">
-            <!-- FAQ Section -->
+            <!-- FAQ -->
             <div class="faq-section">
                 <h2 class="section-title">Frequently Asked Questions</h2>
-                
+
+                <!-- BUYING -->
                 <div class="faq-item" data-category="buying">
                     <div class="faq-question" onclick="toggleFAQ(this)">
                         <span>How do I purchase an item?</span>
                         <span class="faq-toggle">+</span>
                     </div>
                     <div class="faq-answer">
-                        To purchase an item, simply click on the listing, review the details, and click "Buy It Now". You'll be prompted to sign in if you haven't already, then proceed to checkout where you can enter your shipping and payment information.
+                        Click on any listing and press <strong>Buy Now</strong>. You'll need to be signed in. At checkout, enter your shipping address and ZIP code — shipping rates are calculated automatically using your ZIP code and the seller's location. Once you confirm your card and complete payment, the order is placed immediately.
                     </div>
                 </div>
 
@@ -361,17 +240,38 @@
                         <span class="faq-toggle">+</span>
                     </div>
                     <div class="faq-answer">
-                        We accept all major credit cards (Visa, Mastercard, American Express, Discover), PayPal, and Venmo. All transactions are secure and encrypted for your protection.
+                        We accept all major credit and debit cards (Visa, Mastercard, American Express, Discover) through Stripe, our secure payment processor. All transactions are encrypted. We do not currently accept PayPal, Venmo, or cash payments.
                     </div>
                 </div>
 
+                <div class="faq-item" data-category="buying">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>How do I track my order?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Once the seller ships your item, a tracking number will appear in <strong>My Orders</strong>. Click the tracking number to follow your shipment on the carrier's website. You can reach My Orders from the dropdown menu next to your name at the top of the page.
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="buying">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>What if the item wasn't as described or never arrived?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Contact us immediately at <a href="mailto:wrestleswap@gmail.com" style="color:#3665f3;">wrestleswap@gmail.com</a> with your order details. If your item hasn't shipped yet you can cancel directly from <strong>My Orders</strong>. For items already in transit, use the <strong>Request Refund</strong> option in your order or reach out to our support team.
+                    </div>
+                </div>
+
+                <!-- SELLING -->
                 <div class="faq-item" data-category="selling">
                     <div class="faq-question" onclick="toggleFAQ(this)">
                         <span>How do I list an item for sale?</span>
                         <span class="faq-toggle">+</span>
                     </div>
                     <div class="faq-answer">
-                        Click the "Sell" button in the top navigation, fill out the listing form with your item details, upload photos, set your price, and click "List Item". Your listing will go live immediately and be visible to all buyers.
+                        Click <strong>Sell</strong> in the top navigation. Fill out the listing form — title, description, condition, price, and photos — and enter your <strong>ZIP code</strong> in the "Ships From" field. This ZIP code is used to calculate real-time shipping rates for buyers. Click <strong>List Item</strong> and your listing goes live immediately.
                     </div>
                 </div>
 
@@ -381,7 +281,48 @@
                         <span class="faq-toggle">+</span>
                     </div>
                     <div class="faq-answer">
-                        We charge a 10% commission on sold items. There are no listing fees or monthly subscriptions. You only pay when your item sells. Payment processing fees may apply depending on your chosen payment method.
+                        Wrestle Swap charges a <strong>10% platform fee</strong> on each sale. There are no listing fees or monthly subscriptions — you only pay when your item sells. Standard Stripe payment processing fees also apply.
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="selling">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>How do I get paid for my sales?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        You must connect a <strong>Stripe Express account</strong> before you can list items. Go to <strong>Settings &gt; Seller Account</strong> and click <strong>Connect Stripe Account</strong>. Once connected and approved, funds from sales are deposited directly to your bank account via Stripe on their standard payout schedule.
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="selling">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>Are there rules about what I can sell?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Wrestle Swap is for wrestling gear only — shoes, singlets, jackets, shorts, bags, and accessories. <strong>Do not ship wrestling shoes in their original box</strong> — shoes must be shipped without box packaging. Listings for non-wrestling items may be removed without notice.
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="selling">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>What happens if I cancel an order as a seller?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Sellers who cancel orders receive a <strong>strike</strong>. After <strong>3 strikes</strong>, your selling privileges are automatically suspended. Cancellations are tracked to protect buyers and maintain marketplace trust. You can view your current strike count in <strong>Settings &gt; Seller Statistics</strong>.
+                    </div>
+                </div>
+
+                <!-- SHIPPING -->
+                <div class="faq-item" data-category="shipping">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>How is shipping calculated?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Shipping rates are calculated in real time at checkout using the seller's ZIP code (set on their listing) and your delivery ZIP code. Rates are provided by Shippo and reflect actual carrier pricing. The cheapest available rate is selected automatically.
                     </div>
                 </div>
 
@@ -391,117 +332,142 @@
                         <span class="faq-toggle">+</span>
                     </div>
                     <div class="faq-answer">
-                        Shipping times vary by seller location and shipping method. Most items ship within 1-3 business days of purchase. Standard shipping typically takes 3-7 business days, while expedited options are available for faster delivery.
+                        Sellers are expected to ship within <strong>3 business days</strong> of receiving an order. Delivery time depends on the carrier and distance — typically 2–7 business days for standard shipping. Tracking information will be added to your order in <strong>My Orders</strong> once the item ships.
                     </div>
                 </div>
 
                 <div class="faq-item" data-category="shipping">
                     <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>How do I track my order?</span>
+                        <span>Do you ship to Hawaii or Alaska?</span>
                         <span class="faq-toggle">+</span>
                     </div>
                     <div class="faq-answer">
-                        Once your item ships, you'll receive a tracking number via email. You can also view tracking information in your account under "My Swaps" > "Purchases". Click on the order to see the current shipping status.
+                        Currently, Wrestle Swap only supports shipping within the contiguous 48 United States. Shipping to Hawaii and Alaska is not available at this time.
                     </div>
                 </div>
 
+                <!-- REFUNDS -->
+                <div class="faq-item" data-category="refunds">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>Can I cancel my order?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes — if the item has not yet shipped, you can cancel from <strong>My Orders</strong> by clicking the order and selecting <strong>Cancel Order</strong>. Cancellations are subject to a small processing fee. Once an item has shipped it can no longer be cancelled, but you may request a refund.
+                    </div>
+                </div>
+
+                <div class="faq-item" data-category="refunds">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>How do I request a refund?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Open <strong>My Orders</strong>, click the order, and select <strong>Request Refund</strong>. Select your reason and submit. Refund requests are reviewed by our team. Approved refunds are returned to your original payment method within 5–7 business days.
+                    </div>
+                </div>
+
+                <!-- ACCOUNT -->
                 <div class="faq-item" data-category="account">
                     <div class="faq-question" onclick="toggleFAQ(this)">
                         <span>How do I reset my password?</span>
                         <span class="faq-toggle">+</span>
                     </div>
                     <div class="faq-answer">
-                        Click "Sign In" and then "Forgot Password". Enter your email address and we'll send you a link to reset your password. The link expires after 24 hours for security purposes.
+                        On the sign-in page, click <strong>Forgot Password</strong>. Enter your email address and we'll send you a reset link. The link expires after 24 hours. If you signed up with Google, your password is managed through your Google account.
                     </div>
                 </div>
 
                 <div class="faq-item" data-category="account">
                     <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>Can I delete my account?</span>
+                        <span>How do I delete my account?</span>
                         <span class="faq-toggle">+</span>
                     </div>
                     <div class="faq-answer">
-                        Yes, you can delete your account at any time by going to Account Settings > Privacy > Delete Account. Please note that this action is permanent and cannot be undone. Make sure to resolve any pending transactions first.
+                        Go to <strong>Settings &gt; Account Actions &gt; Delete Account</strong>. This is permanent and cannot be undone. Make sure any open orders are resolved before deleting your account.
                     </div>
                 </div>
+
                 <div class="faq-item" data-category="account">
                     <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>What if the item wasn't as described or didn't show up?</span>
+                        <span>How do I message a seller?</span>
                         <span class="faq-toggle">+</span>
                     </div>
                     <div class="faq-answer">
-                        Please contact our support team immediately via the contact form below or email wrestleswap@gmail.com. We will investigate the issue and work with you to find a resolution, which may include a refund or replacement.
+                        On any product listing page, click <strong>Contact Seller</strong>. This opens a direct message thread. You can view all your conversations in <strong>Chats</strong> at the top of the page.
                     </div>
                 </div>
-                                 <div class="faq-item" data-category="selling">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>How do I collect money from sales?</span>
-                        <span class="faq-toggle">+</span>
-                    </div>
-                    <div class="faq-answer">
-                        Create a Stripe Express account prompted in the "sell" section, this is a secure way to receive payments directly to your bank account. Once your item sells, the funds will be transferred to your Stripe account minus any applicable fees.
-                </div>
+
             </div>
 
             <!-- Contact Card -->
             <div class="contact-card">
                 <h3 class="contact-title">Get In Touch</h3>
-                
+
                 <div class="contact-method">
                     <div class="contact-icon">📧</div>
                     <div class="contact-label">Email Support</div>
                     <a href="mailto:wrestleswap@gmail.com" class="contact-info">wrestleswap@gmail.com</a>
                     <div class="contact-hours">Response within 24 hours</div>
                 </div>
+
                 <div class="contact-method">
                     <div class="contact-icon">📍</div>
                     <div class="contact-label">Mailing Address</div>
-                    <div style="font-size: 14px; color: #707070; line-height: 1.5;">
+                    <div style="font-size:14px;color:#707070;line-height:1.6;">
                         Wrestle Swap HQ<br>
                         13 Evans Street<br>
-                        Binghamton, NY 13903<br>
+                        Binghamton, NY 13903
+                    </div>
+                </div>
+
+                <div class="contact-method">
+                    <div class="contact-icon">⏱️</div>
+                    <div class="contact-label">Support Hours</div>
+                    <div style="font-size:14px;color:#707070;line-height:1.6;">
+                        Mon – Fri: 9am – 6pm ET<br>
+                        Weekends: Limited support
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Contact Form -->
-        <!-- modify this form HTML and place wherever you want your form -->
-<form action="https://formspree.io/f/xrbnkqva" method="POST">
-    <div class="form-group">
-        <label class="form-label">Name <span class="required">*</span></label>
-        <input type="text" class="form-input" name="name" required>
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">Email <span class="required">*</span></label>
-        <input type="email" class="form-input" name="email" required>
-    </div>
+        <div class="contact-form-section">
+            <h2 class="section-title">Send Us a Message</h2>
+            <form action="https://formspree.io/f/xrbnkqva" method="POST">
                 <div class="form-group">
-                    <label class="form-label">Subject <span class="required">*</span></label>
-                    <select class="form-select" required>
+                    <label class="form-label">Name <span class="required">*</span></label>
+                    <input type="text" class="form-input" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email <span class="required">*</span></label>
+                    <input type="email" class="form-input" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Topic <span class="required">*</span></label>
+                    <select class="form-select" name="topic" required>
                         <option value="">Select a topic</option>
                         <option value="buying">Buying Question</option>
                         <option value="selling">Selling Question</option>
                         <option value="shipping">Shipping Issue</option>
+                        <option value="refund">Cancellation or Refund</option>
                         <option value="account">Account Issue</option>
                         <option value="payment">Payment Problem</option>
                         <option value="technical">Technical Support</option>
                         <option value="other">Other</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Message <span class="required">*</span></label>
-                    <textarea class="form-textarea" placeholder="Please describe your issue or question in detail..." required></textarea>
+                    <textarea class="form-textarea" name="message" placeholder="Please describe your issue or question in detail..." required></textarea>
                 </div>
-
                 <button type="submit" class="submit-btn">Send Message</button>
             </form>
         </div>
-    </div>
 
-    <!-- Firebase SDK for User Greeting -->
+    </div><!-- /.container -->
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -521,12 +487,8 @@
 
         onAuthStateChanged(auth, (user) => {
             const menuWrapper = document.getElementById('user-menu-wrapper');
-
             if (user) {
-                // User is signed in - show dropdown menu
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-
-                // Create the dropdown menu HTML
                 menuWrapper.innerHTML = `
                     <div class="user-menu-container">
                         <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
@@ -536,23 +498,17 @@
                             <a href="listings-manager.html">Your Listings</a>
                             <a href="messages.html">Messages</a>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             } else {
-                // User is not signed in - show simple sign-in button
-                menuWrapper.innerHTML = `
-                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
-                `;
+                menuWrapper.innerHTML = `<button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>`;
             }
         });
     </script>
 
     <script>
-        // Toggle FAQ answers
         function toggleFAQ(element) {
             const answer = element.nextElementSibling;
             const toggle = element.querySelector('.faq-toggle');
-            
             if (answer.classList.contains('active')) {
                 answer.classList.remove('active');
                 toggle.textContent = '+';
@@ -562,25 +518,17 @@
             }
         }
 
-        // Scroll to FAQ category
         function scrollToFAQ(category) {
-            const faqItem = document.querySelector(`[data-category="${category}"]`);
+            const faqItem = document.querySelector('[data-category="' + category + '"]');
             if (faqItem) {
                 faqItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                const question = faqItem.querySelector('.faq-question');
-                setTimeout(() => {
-                    if (!faqItem.querySelector('.faq-answer').classList.contains('active')) {
-                        question.click();
+                setTimeout(function() {
+                    const answer = faqItem.querySelector('.faq-answer');
+                    if (!answer.classList.contains('active')) {
+                        faqItem.querySelector('.faq-question').click();
                     }
-                }, 500);
+                }, 400);
             }
-        }
-
-        // Handle contact form submission
-        function handleContactForm(event) {
-            event.preventDefault();
-            alert('Thank you for your message! We\'ll get back to you within 24 hours. (This is a demo)');
-            event.target.reset();
         }
     </script>
     <script type="module" src="js/site-notice.js"></script>

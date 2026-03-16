@@ -132,13 +132,11 @@ exports.createPaymentIntent = onRequest(
       };
 
       if (sellerStripeAccountId && productPriceInCents > 0) {
-        // Verify the seller's Connect account has transfers capability active
+        // Verify the seller's Connect account can accept charges
         // before attempting a destination charge — avoids a hard 500 error
         const sellerAccount = await stripe.accounts.retrieve(sellerStripeAccountId);
-        const transfersActive = sellerAccount.capabilities &&
-          sellerAccount.capabilities.transfers === 'active';
 
-        if (!transfersActive) {
+        if (!sellerAccount.charges_enabled) {
           return res.status(400).json({
             error: 'The seller has not completed their payment account setup. Please contact the seller or try again later.'
           });
@@ -874,6 +872,28 @@ exports.completeOrder = onRequest(
 
       await db.collection('products').doc(productId).update(updateData);
       console.log('Order completed — product:', productId, 'buyer:', decodedToken.uid);
+
+      // Save order record to orders collection
+      try {
+        const productSnap = await db.collection('products').doc(productId).get();
+        const prod = productSnap.data();
+        await db.collection('orders').add({
+          productId,
+          buyerId: decodedToken.uid,
+          sellerId: prod.userId || null,
+          paymentIntentId,
+          productTitle: prod.title || null,
+          productPrice: prod.price || null,
+          shippingLabel: shippingInfo ? (shippingInfo.label_url || null) : null,
+          trackingNumber: shippingInfo ? (shippingInfo.tracking_number || null) : null,
+          trackingUrl: shippingInfo ? (shippingInfo.tracking_url_provider || null) : null,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdTimestamp: Date.now(),
+          status: 'paid',
+        });
+      } catch (orderErr) {
+        console.error('Order record error:', orderErr.message);
+      }
 
       // Email seller: new order notification
       try {

@@ -811,6 +811,21 @@
     </div>
 
     <!-- User Detail Modal -->
+    <!-- Listing Detail Modal -->
+    <div id="listing-detail-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this){closeListingModal()}">
+        <div class="modal-box" style="max-width:760px;">
+            <div class="modal-header">
+                <span class="modal-title" id="listing-modal-title">Listing Details</span>
+                <button class="modal-close" onclick="closeListingModal()">&#x2715;</button>
+            </div>
+            <div class="modal-body">
+                <div id="listing-modal-content">
+                    <div class="modal-loading"><div class="spinner" style="display:inline-block;width:28px;height:28px;border:3px solid #e5e5e5;border-top-color:#f94545;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:10px;"></div><p>Loading...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="user-detail-modal" class="modal-overlay" style="display:none;" onclick="closeUserModal(event)">
         <div class="modal-box">
             <div class="modal-header">
@@ -872,6 +887,7 @@
             <button class="tab-btn" role="tab" onclick="switchTab('reports', this)">Reports</button>
             <button class="tab-btn" role="tab" onclick="switchTab('reviews', this)">Reviews</button>
             <button class="tab-btn" role="tab" onclick="switchTab('announcements', this)">Announcements</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('messages', this)">Messages</button>
         </div>
 
         <!-- ==============================
@@ -1188,6 +1204,43 @@
             </div>
         </div>
 
+        <!-- ==============================
+             TAB 8: MESSAGES
+             ============================== -->
+        <div class="tab-section" id="tab-messages">
+            <div class="section-header">
+                <span class="section-title">Conversations</span>
+                <button class="refresh-btn" onclick="loadConversations()">Refresh</button>
+            </div>
+
+            <div class="loading-state" id="messages-loading">
+                <div class="spinner"></div>
+                <p>Loading conversations...</p>
+            </div>
+
+            <div class="empty-state" id="messages-empty" style="display:none;">
+                No conversations found.
+            </div>
+
+            <div id="messages-content" style="display:none; gap:0; border:1px solid var(--color-border); border-radius:var(--radius); overflow:hidden; background:#fff;">
+                <!-- Conversations list (left pane) -->
+                <div id="conv-list" style="width:360px;min-width:280px;border-right:1px solid var(--color-border);overflow-y:auto;max-height:640px;flex-shrink:0;display:flex;flex-direction:column;"></div>
+                <!-- Message thread (right pane) -->
+                <div id="conv-thread" style="flex:1;display:flex;flex-direction:column;max-height:640px;">
+                    <div id="conv-thread-empty" style="flex:1;display:flex;align-items:center;justify-content:center;color:#999;font-size:14px;">
+                        Select a conversation to view messages
+                    </div>
+                    <div id="conv-thread-messages" style="display:none;flex-direction:column;height:100%;">
+                        <div id="conv-thread-header" style="padding:14px 18px;border-bottom:1px solid var(--color-border);background:#fafaf8;">
+                            <div id="conv-thread-title" style="font-weight:600;font-size:15px;"></div>
+                            <div id="conv-thread-subtitle" style="font-size:12px;color:#666;margin-top:2px;"></div>
+                        </div>
+                        <div id="conv-thread-body" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div><!-- /.admin-page -->
 
 
@@ -1268,6 +1321,7 @@
             if (name === 'reports') { loadReports(); }
             if (name === 'reviews') { loadReviews(); }
             if (name === 'announcements') { loadAnnouncement(); }
+            if (name === 'messages') { loadConversations(); }
         }
 
         // ============================================
@@ -1428,7 +1482,7 @@
                     ].join(' ').toLowerCase();
 
                     row.innerHTML =
-                        '<td>' + escapeHtml(u.displayName || u.name || '—') + '</td>' +
+                        '<td><span style="color:#3665f3;cursor:pointer;font-weight:500;" onclick="viewUserDetails(\'' + uid + '\')">' + escapeHtml(u.displayName || u.name || '—') + '</span></td>' +
                         '<td>' + escapeHtml(u.email || '—') + '</td>' +
                         '<td><span class="uid-cell" title="' + escapeHtml(uid) + '">' + escapeHtml(uid) + '</span></td>' +
                         '<td id="strikes-cell-' + uid + '">' + strikesEditor + '</td>' +
@@ -1438,7 +1492,7 @@
                         '<td id="actions-cell-' + uid + '"><div class="action-gap">' +
                             toggleSuspendBtn +
                             toggleVerifyBtn +
-                            '<button class="action-btn btn-details" onclick="viewUserDetails(\'' + uid + '\', ' + JSON.stringify(escapeHtml(u.displayName || u.name || uid)) + ')">View Details</button>' +
+                            '<button class="action-btn btn-details" onclick="viewUserDetails(\'' + uid + '\')">View Details</button>' +
                             '<button class="action-btn btn-delete-account" onclick="deleteAccount(\'' + uid + '\', this)">Delete Account</button>' +
                         '</div></td>';
                     tbody.appendChild(row);
@@ -1607,12 +1661,12 @@
         }
 
         // ---- User Detail Modal ----
-        async function viewUserDetails(uid, displayName) {
+        async function viewUserDetails(uid) {
             var modal = document.getElementById('user-detail-modal');
             var titleEl = document.getElementById('modal-user-title');
             var contentEl = document.getElementById('modal-content');
 
-            titleEl.textContent = 'User Details: ' + displayName;
+            titleEl.textContent = 'User Profile';
             contentEl.innerHTML =
                 '<div class="modal-loading">' +
                     '<div class="spinner" style="display:inline-block;width:28px;height:28px;border:3px solid #e5e5e5;border-top-color:#f94545;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:10px;"></div>' +
@@ -1622,16 +1676,57 @@
             document.body.style.overflow = 'hidden';
 
             try {
+                var userDoc = await db.collection('users').doc(uid).get();
+                var u = userDoc.exists ? userDoc.data() : {};
+                titleEl.textContent = u.displayName || u.name || u.email || uid;
+
                 var listingsSnap = await db.collection('products')
                     .where('userId', '==', uid)
-                    .limit(20)
+                    .limit(30)
                     .get();
 
                 var purchasesSnap = await db.collection('products')
                     .where('buyerId', '==', uid)
-                    .limit(20)
+                    .limit(30)
                     .get();
 
+                // Profile header
+                var joinDate = u.createdAt ? formatDate(u.createdAt) : '—';
+                var strikesColor = (u.sellerCancellationCount || 0) >= 3 ? '#dc2626' : (u.sellerCancellationCount || 0) > 0 ? '#d97706' : '#059669';
+                var stripeStatus = u.stripeAccountId
+                    ? '<span style="color:#059669;">&#10003; Connected</span>'
+                    : '<span style="color:#d97706;">Not connected</span>';
+                var suspendedStatus = u.sellerSuspended
+                    ? '<span class="badge badge-red">Suspended</span>'
+                    : '<span class="badge badge-green">Active</span>';
+                var adminBadge = u.isAdmin ? '<span class="badge badge-blue" style="margin-left:6px;">Admin</span>' : '';
+                var verifiedBadge = u.verifiedSeller ? '<span class="badge badge-green" style="margin-left:4px;">&#10003; Verified</span>' : '';
+
+                var profileHtml =
+                    '<div style="background:#fafaf8;border:1px solid #e5e5e5;border-radius:8px;padding:20px;margin-bottom:20px;">' +
+                        '<div style="display:flex;align-items:flex-start;gap:16px;">' +
+                            '<div style="width:64px;height:64px;border-radius:50%;background:#e5e5e5;display:flex;align-items:center;justify-content:center;font-size:26px;color:#999;flex-shrink:0;">' +
+                                (u.displayName ? escapeHtml(u.displayName.charAt(0).toUpperCase()) : '?') +
+                            '</div>' +
+                            '<div style="flex:1;min-width:0;">' +
+                                '<div style="font-size:20px;font-weight:700;color:#1a1a1a;">' + escapeHtml(u.displayName || u.name || '—') + adminBadge + verifiedBadge + '</div>' +
+                                (u.username ? '<div style="font-size:13px;color:#666;margin-top:2px;">@' + escapeHtml(u.username) + '</div>' : '') +
+                                (u.bio ? '<div style="font-size:13px;color:#444;margin-top:8px;line-height:1.5;">' + escapeHtml(u.bio) + '</div>' : '') +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:16px;">' +
+                            infoChip('Email', escapeHtml(u.email || '—')) +
+                            infoChip('Location', escapeHtml(u.location || '—')) +
+                            infoChip('Joined', joinDate) +
+                            infoChip('Status', suspendedStatus) +
+                            infoChip('Strikes', '<span style="color:' + strikesColor + ';font-weight:600;">' + (u.sellerCancellationCount || 0) + ' / 3</span>') +
+                            infoChip('Stripe', stripeStatus) +
+                            infoChip('Listings', listingsSnap.size) +
+                            infoChip('Purchases', purchasesSnap.size) +
+                        '</div>' +
+                    '</div>';
+
+                // Listings
                 var listingsHtml = '';
                 if (listingsSnap.empty) {
                     listingsHtml = '<p class="modal-empty">No listings found.</p>';
@@ -1639,19 +1734,24 @@
                     listingsHtml = '<ul class="modal-list">';
                     listingsSnap.forEach(function(doc) {
                         var p = doc.data();
+                        listingCache[doc.id] = p;
                         var title = escapeHtml(truncate(p.title || p.name || 'Untitled', 50));
                         var price = p.price != null ? '$' + parseFloat(p.price).toFixed(2) : '—';
                         var status = p.sold ? 'Sold' : (p.cancelled ? 'Cancelled' : 'Active');
+                        var statusColor = p.sold ? '#3665f3' : (p.cancelled ? '#dc2626' : '#059669');
                         listingsHtml +=
-                            '<li>' +
-                                '<a href="productdetail.html?id=' + escapeHtml(doc.id) + '" target="_blank">' + title + '</a> ' +
-                                '&mdash; ' + price + ' &mdash; ' +
-                                '<span style="color:#666;">' + status + '</span>' +
+                            '<li style="display:flex;justify-content:space-between;align-items:center;">' +
+                                '<span style="color:#3665f3;cursor:pointer;" onclick="openListingModal(\'' + doc.id + '\')">' + title + '</span>' +
+                                '<span style="display:flex;gap:12px;align-items:center;flex-shrink:0;margin-left:10px;">' +
+                                    '<span style="font-weight:600;">' + price + '</span>' +
+                                    '<span style="color:' + statusColor + ';font-size:12px;">' + status + '</span>' +
+                                '</span>' +
                             '</li>';
                     });
                     listingsHtml += '</ul>';
                 }
 
+                // Purchases
                 var purchasesHtml = '';
                 if (purchasesSnap.empty) {
                     purchasesHtml = '<p class="modal-empty">No purchases found.</p>';
@@ -1659,25 +1759,27 @@
                     purchasesHtml = '<ul class="modal-list">';
                     purchasesSnap.forEach(function(doc) {
                         var p = doc.data();
+                        listingCache[doc.id] = p;
                         var title = escapeHtml(truncate(p.title || p.name || 'Untitled', 50));
                         var price = p.price != null ? '$' + parseFloat(p.price).toFixed(2) : '—';
                         purchasesHtml +=
-                            '<li>' +
-                                '<a href="productdetail.html?id=' + escapeHtml(doc.id) + '" target="_blank">' + title + '</a> ' +
-                                '&mdash; ' + price +
+                            '<li style="display:flex;justify-content:space-between;align-items:center;">' +
+                                '<span style="color:#3665f3;cursor:pointer;" onclick="openListingModal(\'' + doc.id + '\')">' + title + '</span>' +
+                                '<span style="font-weight:600;flex-shrink:0;margin-left:10px;">' + price + '</span>' +
                             '</li>';
                     });
                     purchasesHtml += '</ul>';
                 }
 
                 contentEl.innerHTML =
+                    profileHtml +
                     '<div class="modal-two-col">' +
                         '<div>' +
-                            '<div class="modal-section-title">Their Listings (' + listingsSnap.size + ')</div>' +
+                            '<div class="modal-section-title">Listings (' + listingsSnap.size + ')</div>' +
                             listingsHtml +
                         '</div>' +
                         '<div>' +
-                            '<div class="modal-section-title">Their Purchases (' + purchasesSnap.size + ')</div>' +
+                            '<div class="modal-section-title">Purchases (' + purchasesSnap.size + ')</div>' +
                             purchasesHtml +
                         '</div>' +
                     '</div>';
@@ -1686,6 +1788,90 @@
                 console.error('Error loading user details:', err);
                 contentEl.innerHTML = '<p style="color:#dc2626;">Error loading user data: ' + escapeHtml(err.message) + '</p>';
             }
+        }
+
+        // Cache so we can look up product data by ID without passing it inline in onclick
+        var listingCache = {};
+
+        // ---- Listing Detail Modal ----
+        function openListingModal(productId) {
+            var d = listingCache[productId];
+            if (!d) { alert('Listing data not found.'); return; }
+            var modal = document.getElementById('listing-detail-modal');
+            var titleEl = document.getElementById('listing-modal-title');
+            var contentEl = document.getElementById('listing-modal-content');
+
+            titleEl.textContent = truncate(d.title || d.name || 'Listing', 60);
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            var status = d.cancelled ? '<span class="badge badge-red">Cancelled</span>'
+                : d.sold ? '<span class="badge badge-blue">Sold</span>'
+                : '<span class="badge badge-green">Active</span>';
+
+            var conditionMap = { new: 'New', likenew: 'Used – Like New', good: 'Used – Good', fair: 'Used – Fair' };
+            var condition = conditionMap[d.condition] || escapeHtml(d.condition || '—');
+            var price = d.price != null ? '$' + parseFloat(d.price).toFixed(2) : '—';
+            var images = d.images && d.images.length ? d.images : [];
+            var mainImg = images[0] || '';
+            var imgHtml = mainImg
+                ? '<img src="' + escapeHtml(mainImg) + '" style="width:100%;max-height:320px;object-fit:contain;border-radius:6px;background:#f5f5f5;" onerror="this.style.display=\'none\'">'
+                : '<div style="width:100%;height:200px;background:#f5f5f5;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:14px;">No image</div>';
+
+            var thumbsHtml = '';
+            if (images.length > 1) {
+                thumbsHtml = '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">';
+                images.forEach(function(url) {
+                    thumbsHtml += '<img src="' + escapeHtml(url) + '" style="width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid #e5e5e5;cursor:pointer;" onclick="document.getElementById(\'listing-main-img\').src=this.src">';
+                });
+                thumbsHtml += '</div>';
+            }
+
+            var createdDate = d.createdAt ? formatDate(d.createdAt) : '—';
+            var soldDate = d.soldTimestamp ? new Date(d.soldTimestamp).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '—';
+
+            contentEl.innerHTML =
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
+                    '<div>' +
+                        '<div id="listing-main-img-wrap">' + imgHtml.replace('<img ', '<img id="listing-main-img" ') + '</div>' +
+                        thumbsHtml +
+                    '</div>' +
+                    '<div style="display:flex;flex-direction:column;gap:12px;">' +
+                        '<div style="display:flex;align-items:center;gap:8px;">' + status + (d.adminFlagged ? '<span class="badge badge-red">Flagged</span>' : '') + '</div>' +
+                        '<div style="font-size:26px;font-weight:700;color:#1a1a1a;">' + price + '</div>' +
+                        '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+                            row2('Category', escapeHtml(d.category || '—')) +
+                            row2('Condition', condition) +
+                            row2('Brand', escapeHtml(d.brand || '—')) +
+                            row2('Size', escapeHtml(d.size || '—')) +
+                            row2('Gender', escapeHtml(d.gender || '—')) +
+                            row2('Ships From', escapeHtml(d.zipCode || '—')) +
+                            row2('Views', d.views != null ? d.views : '—') +
+                            row2('Listed', createdDate) +
+                            (d.sold ? row2('Sold', soldDate) : '') +
+                            row2('Seller UID', '<span style="font-family:monospace;font-size:11px;">' + escapeHtml(d.userId || '—') + '</span>') +
+                            row2('Seller', escapeHtml(d.sellerName || d.sellerEmail || '—')) +
+                        '</table>' +
+                        '<a href="productdetail.html?id=' + escapeHtml(productId) + '" target="_blank" style="font-size:13px;color:#3665f3;">Open full listing &rarr;</a>' +
+                    '</div>' +
+                '</div>' +
+                (d.description ? '<div style="margin-top:20px;"><div class="modal-section-title">Description</div><p style="font-size:13px;color:#444;line-height:1.6;white-space:pre-wrap;">' + escapeHtml(d.description) + '</p></div>' : '');
+        }
+
+        function infoChip(label, value) {
+            return '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:6px;padding:8px 12px;">' +
+                '<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;">' + label + '</div>' +
+                '<div style="font-size:13px;font-weight:600;color:#1a1a1a;">' + value + '</div>' +
+            '</div>';
+        }
+
+        function row2(label, value) {
+            return '<tr><td style="padding:5px 8px 5px 0;color:#888;width:110px;vertical-align:top;">' + label + '</td><td style="padding:5px 0;color:#1a1a1a;font-weight:500;">' + value + '</td></tr>';
+        }
+
+        function closeListingModal() {
+            document.getElementById('listing-detail-modal').style.display = 'none';
+            document.body.style.overflow = '';
         }
 
         function closeUserModal(event) {
@@ -1757,6 +1943,7 @@
 
             items.forEach(function(item) {
                 var d = item.data;
+                listingCache[item.id] = d;  // cache for modal lookup
                 var statusKey = getListingStatus(d);
                 var statusBadge = statusKey === 'active'
                     ? '<span class="badge badge-green">Active</span>'
@@ -1782,7 +1969,7 @@
                 row.dataset.flagged = d.adminFlagged === true ? 'true' : 'false';
 
                 row.innerHTML =
-                    '<td>' + escapeHtml(truncate(d.title || d.name, 45)) + '</td>' +
+                    '<td><span style="color:#3665f3;cursor:pointer;font-weight:500;" onclick="openListingModal(\'' + escapeHtml(item.id) + '\')">' + escapeHtml(truncate(d.title || d.name, 45)) + '</span></td>' +
                     '<td>' + (d.price != null ? '$' + parseFloat(d.price).toFixed(2) : '—') + '</td>' +
                     '<td><span class="uid-cell" title="' + sellerUid + '">' + sellerUid + '</span></td>' +
                     '<td>' + statusBadge + '</td>' +
@@ -2528,6 +2715,140 @@
                 console.error('Error dismissing announcement:', err);
                 alert('Failed to dismiss announcement: ' + err.message);
             }
+        }
+
+        // ============================================
+        // TAB 8: MESSAGES
+        // ============================================
+
+        var allConversations = [];
+
+        async function loadConversations() {
+            document.getElementById('messages-loading').style.display = 'flex';
+            document.getElementById('messages-empty').style.display = 'none';
+            document.getElementById('messages-content').style.display = 'none';
+
+            try {
+                var snap = await db.collection('conversations')
+                    .orderBy('lastMessageAt', 'desc')
+                    .limit(200)
+                    .get();
+
+                allConversations = [];
+                snap.forEach(function(doc) {
+                    allConversations.push({ id: doc.id, ...doc.data() });
+                });
+
+                document.getElementById('messages-loading').style.display = 'none';
+
+                if (allConversations.length === 0) {
+                    document.getElementById('messages-empty').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('messages-content').style.display = 'flex';
+                renderConversationList(allConversations);
+
+            } catch (e) {
+                console.error('Error loading conversations:', e);
+                document.getElementById('messages-loading').style.display = 'none';
+                document.getElementById('messages-empty').textContent = 'Error loading conversations: ' + e.message;
+                document.getElementById('messages-empty').style.display = 'block';
+            }
+        }
+
+        function renderConversationList(convs) {
+            var list = document.getElementById('conv-list');
+            list.innerHTML = '';
+
+            convs.forEach(function(conv) {
+                var buyer = escHtml(conv.buyerName || conv.buyerId || 'Unknown buyer');
+                var seller = escHtml(conv.sellerName || conv.sellerId || 'Unknown seller');
+                var product = conv.productName ? escHtml(conv.productName) : '';
+                var preview = conv.lastMessage ? escHtml(conv.lastMessage.substring(0, 70)) : '<em style="color:#aaa">No messages</em>';
+                var time = conv.lastMessageAt ? new Date(conv.lastMessageAt.toDate()).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
+
+                var item = document.createElement('div');
+                item.style.cssText = 'padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background 0.15s;';
+                item.onmouseenter = function() { this.style.background = '#f7f7f7'; };
+                item.onmouseleave = function() { this.style.background = ''; };
+                item.innerHTML =
+                    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
+                        '<div style="font-size:13px;font-weight:600;color:#1a1a1a;line-height:1.3;">' + buyer + ' &rarr; ' + seller + '</div>' +
+                        '<div style="font-size:11px;color:#999;white-space:nowrap;flex-shrink:0;">' + time + '</div>' +
+                    '</div>' +
+                    (product ? '<div style="font-size:11px;color:#3665f3;margin-top:2px;font-weight:600;">' + product + '</div>' : '') +
+                    '<div style="font-size:12px;color:#666;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + preview + '</div>';
+
+                item.onclick = function() {
+                    document.querySelectorAll('#conv-list > div').forEach(function(el) {
+                        el.style.background = '';
+                        el.style.borderLeft = '';
+                    });
+                    item.style.background = '#f0f4ff';
+                    item.style.borderLeft = '3px solid #3665f3';
+                    openConversationThread(conv);
+                };
+
+                list.appendChild(item);
+            });
+        }
+
+        async function openConversationThread(conv) {
+            var header = document.getElementById('conv-thread-header');
+            var body = document.getElementById('conv-thread-body');
+            var title = document.getElementById('conv-thread-title');
+            var subtitle = document.getElementById('conv-thread-subtitle');
+
+            document.getElementById('conv-thread-empty').style.display = 'none';
+            document.getElementById('conv-thread-messages').style.display = 'flex';
+            body.innerHTML = '<div style="color:#999;font-size:13px;">Loading messages...</div>';
+
+            var buyer = escHtml(conv.buyerName || conv.buyerId || 'Unknown buyer');
+            var seller = escHtml(conv.sellerName || conv.sellerId || 'Unknown seller');
+            title.innerHTML = buyer + ' &rarr; ' + seller;
+            subtitle.textContent = conv.productName ? 'Re: ' + conv.productName : 'Conversation ID: ' + conv.id;
+
+            try {
+                var snap = await db.collection('conversations').doc(conv.id)
+                    .collection('messages')
+                    .orderBy('timestamp', 'asc')
+                    .get();
+
+                body.innerHTML = '';
+
+                if (snap.empty) {
+                    body.innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:20px;">No messages in this conversation.</div>';
+                    return;
+                }
+
+                snap.forEach(function(doc) {
+                    var msg = doc.data();
+                    var isBuyer = msg.senderId === conv.buyerId;
+                    var senderLabel = escHtml(msg.senderName || (isBuyer ? (conv.buyerName || 'Buyer') : (conv.sellerName || 'Seller')));
+                    var text = escHtml(msg.text || '');
+                    var time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+                    var bgColor = isBuyer ? '#e8f0fe' : '#f0fdf4';
+                    var align = isBuyer ? 'flex-start' : 'flex-end';
+
+                    var bubble = document.createElement('div');
+                    bubble.style.cssText = 'display:flex;flex-direction:column;align-items:' + align + ';max-width:75%;align-self:' + align + ';';
+                    bubble.innerHTML =
+                        '<div style="font-size:11px;color:#999;margin-bottom:2px;">' + senderLabel + ' &middot; ' + time + '</div>' +
+                        '<div style="background:' + bgColor + ';padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word;">' + text + '</div>';
+                    body.appendChild(bubble);
+                });
+
+                body.scrollTop = body.scrollHeight;
+
+            } catch (e) {
+                console.error('Error loading messages:', e);
+                body.innerHTML = '<div style="color:#dc2626;font-size:13px;">Error loading messages: ' + e.message + '</div>';
+            }
+        }
+
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
     </script>
 </body>
