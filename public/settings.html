@@ -378,15 +378,48 @@
                     document.getElementById('bio').value = d.bio || '';
                     currentUsername = d.username || '';
 
-                    // Stripe
+                    // Stripe — always check live status from Stripe API
                     if (d.stripeAccountId) {
                         document.getElementById('stripe-status').innerHTML = '<span style="color:#28a745;">✓ Connected</span>';
                         document.getElementById('stripe-manage-btn').style.display = 'inline-block';
                         document.getElementById('stripe-warning').style.display = 'none';
-                        if (d.stripePayoutsEnabled)
-                            document.getElementById('payouts-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
-                        if (d.stripeChargesEnabled)
-                            document.getElementById('charges-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
+                        document.getElementById('charges-enabled').innerHTML = '<span style="color:#888;">Checking…</span>';
+                        document.getElementById('payouts-enabled').innerHTML  = '<span style="color:#888;">Checking…</span>';
+
+                        // Hit the cloud function to get live charges_enabled from Stripe
+                        try {
+                            const token = await user.getIdToken();
+                            const resp = await fetch('https://checksellerstatus-kebvkf67ma-uc.a.run.app', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                body: JSON.stringify({ userId: user.uid })
+                            });
+                            const status = await resp.json();
+                            document.getElementById('charges-enabled').innerHTML = status.chargesEnabled
+                                ? '<span style="color:#28a745;">✓ Yes</span>'
+                                : '<span style="color:#dc3545;">✗ No — <a href="stripe-express-prompt.html" style="color:#dc3545;">Complete setup</a></span>';
+                            document.getElementById('payouts-enabled').innerHTML = status.payoutsEnabled
+                                ? '<span style="color:#28a745;">✓ Yes</span>'
+                                : '<span style="color:#dc3545;">✗ No</span>';
+
+                            if (!status.chargesEnabled) {
+                                document.getElementById('stripe-warning').innerHTML =
+                                    '<p><strong>Action Required:</strong> Your Stripe account is connected but charges are not yet enabled. ' +
+                                    'Please <a href="stripe-express-prompt.html">complete your Stripe setup</a> to accept payments.</p>';
+                                document.getElementById('stripe-warning').style.display = 'block';
+                            }
+                        } catch (e) {
+                            console.warn('Could not fetch live Stripe status:', e);
+                            // Fall back to cached Firestore values
+                            if (d.stripeChargesEnabled)
+                                document.getElementById('charges-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
+                            else
+                                document.getElementById('charges-enabled').innerHTML = '<span style="color:#dc3545;">✗ No</span>';
+                            if (d.stripePayoutsEnabled)
+                                document.getElementById('payouts-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
+                            else
+                                document.getElementById('payouts-enabled').innerHTML = '<span style="color:#dc3545;">✗ No</span>';
+                        }
                     } else {
                         document.getElementById('stripe-connect-btn').style.display = 'inline-block';
                         document.getElementById('stripe-warning').style.display = 'block';

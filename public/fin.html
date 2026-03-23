@@ -1293,6 +1293,12 @@
 
             // Admin confirmed — reveal the page and load dashboard
             currentUser = user;
+            var greetName = user.displayName || user.email.split('@')[0] || 'Admin';
+            var greetBtn = document.querySelector('.top-bar-btn[onclick*="sign-in"]');
+            if (greetBtn) {
+                greetBtn.textContent = 'Hi, ' + greetName + '!';
+                greetBtn.onclick = function() { window.location.href = 'profile.html'; };
+            }
             document.getElementById('auth-gate').style.display = 'none';
             loadDashboard();
         });
@@ -1694,8 +1700,10 @@
                 var joinDate = u.createdAt ? formatDate(u.createdAt) : '—';
                 var strikesColor = (u.sellerCancellationCount || 0) >= 3 ? '#dc2626' : (u.sellerCancellationCount || 0) > 0 ? '#d97706' : '#059669';
                 var stripeStatus = u.stripeAccountId
-                    ? '<span style="color:#059669;">&#10003; Connected</span>'
-                    : '<span style="color:#d97706;">Not connected</span>';
+                    ? (u.stripeChargesEnabled === true
+                        ? '<span style="color:#059669;">&#10003; Connected &amp; Active</span>'
+                        : '<span style="color:#d97706;">&#9888; Connected (charges not enabled)</span>')
+                    : '<span style="color:#dc2626;">Not connected</span>';
                 var suspendedStatus = u.sellerSuspended
                     ? '<span class="badge badge-red">Suspended</span>'
                     : '<span class="badge badge-green">Active</span>';

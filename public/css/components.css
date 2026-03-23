@@ -320,6 +320,12 @@ input:checked + .slider:before {
     margin-top: 4px;
 }
 
+.product-zip {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 3px;
+}
+
 /* Item cards (profile page) */
 .item-card {
     border: 1px solid #e0e0e0;

@@ -369,6 +369,8 @@
                         brand: (data.brand || 'other').toLowerCase(),
                         condition: data.condition,
                         size: data.size,
+                        sellerName: data.sellerName || '',
+                        zipCode: data.zipCode || '',
                         shipping: getShippingDisplay(data),
                         icon: getCategoryIcon(data.category),
                         images: data.images || [],
@@ -559,6 +561,7 @@
                             <div class="product-price">$${product.price.toFixed(2)}</div>
                             <div class="seller-name">${product.sellerName}</div>
                             <div class="product-condition">${formatCondition(product.condition)}</div>
+                            ${product.zipCode ? `<div class="product-zip">Ships from ${product.zipCode}</div>` : ''}
                         </div>
                     </div>
                 `;

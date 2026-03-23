@@ -26,7 +26,8 @@
       "Bash(cd \"C:/Users/finna/OneDrive/Desktop/SWAPS\" && firebase functions:delete deleteSoldProducts --region us-central1 --force 2>&1)",
       "Bash(grep:*)",
       "Bash(git:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(cd \"C:\\\\Users\\\\finna\\\\OneDrive\\\\Desktop\\\\SWAPS\" && firebase firestore:rules:get 2>&1)"
     ]
   }
 }
