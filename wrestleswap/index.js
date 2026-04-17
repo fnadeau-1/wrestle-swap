@@ -76,6 +76,13 @@ exports.createPaymentIntent = onRequest(
       return res.status(204).send('');
     }
 
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     try {
       const stripe = require('stripe')(stripeSecret.value());
       // Never trust amounts or sellerStripeAccountId from the frontend
@@ -349,6 +356,12 @@ exports.shippingRates = onRequest(
     }
 
     try {
+      await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
       const Shippo = require('shippo');
       const shippoKey = shippoSecret.value();
 
@@ -499,6 +512,12 @@ exports.shippoGetRates = onRequest(
 
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    try {
+      await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     try {
