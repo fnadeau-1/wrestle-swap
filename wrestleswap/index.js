@@ -3,6 +3,12 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 
+// Allowed origins for CORS — add your custom domain here when you get one
+const ALLOWED_ORIGINS = [
+  'https://wrestleswap.web.app',
+  'https://wrestleswap.firebaseapp.com',
+];
+
 admin.initializeApp();
 
 const db = admin.firestore();
@@ -70,7 +76,7 @@ const SELLER_STRIKES_LIMIT = 3;
 // --- STRIPE PAYMENT INTENT WITH CONNECT ---
 // Shipping costs go to platform, product price (minus 10% fee) goes to seller
 exports.createPaymentIntent = onRequest(
-  { cors: true, secrets: [stripeSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -189,7 +195,7 @@ const CANCELLATION_FEE_PERCENT = 0.05;
 
 // --- CANCEL ORDER / REFUND ---
 exports.cancelOrder = onRequest(
-  { cors: true, secrets: [stripeSecret, shippoSecret, sendgridSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, shippoSecret, sendgridSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -344,7 +350,7 @@ exports.cancelOrder = onRequest(
 
 // --- SHIPPO SHIPPING RATES ---
 exports.shippingRates = onRequest(
-  { cors: true, secrets: [shippoSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -420,7 +426,7 @@ exports.shippingRates = onRequest(
 
 // --- STRIPE CONNECT: Create Connected Account for Sellers ---
 exports.createConnectedAccount = onRequest(
-  { cors: true, secrets: [stripeSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -503,7 +509,7 @@ exports.createConnectedAccount = onRequest(
 
 // --- SHIPPO: Get Shipping Rates (for checkout) ---
 exports.shippoGetRates = onRequest(
-  { cors: true, secrets: [shippoSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -586,7 +592,7 @@ exports.shippoGetRates = onRequest(
 
 // --- SHIPPO: Create Shipping Label ---
 exports.shippoCreateLabel = onRequest(
-  { cors: true, secrets: [shippoSecret, sendgridSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret, sendgridSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -674,7 +680,7 @@ exports.shippoCreateLabel = onRequest(
 
 // --- STRIPE CONNECT: Check Seller Status ---
 exports.checkSellerStatus = onRequest(
-  { cors: true, secrets: [stripeSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -733,7 +739,7 @@ exports.checkSellerStatus = onRequest(
 // firebase functions:secrets:set RECAPTCHA_API_KEY
 /*
 exports.verifyRecaptcha = onRequest(
-  { cors: true, secrets: [recaptchaApiKey] },
+  { cors: ALLOWED_ORIGINS, secrets: [recaptchaApiKey] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -835,7 +841,7 @@ exports.verifyRecaptcha = onRequest(
 
 // --- COMPLETE ORDER (marks product sold after server-verified payment) ---
 exports.completeOrder = onRequest(
-  { cors: true, secrets: [stripeSecret, sendgridSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -941,7 +947,7 @@ exports.completeOrder = onRequest(
 
 // --- SELLER CANCEL ORDER (full refund to buyer, strike against seller) ---
 exports.sellerCancelOrder = onRequest(
-  { cors: true, secrets: [stripeSecret, sendgridSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -1242,7 +1248,7 @@ exports.checkOverdueOrders = onSchedule(
 // Deletes Firebase Auth record, Firestore user doc, and username reservation.
 // Caller must be authenticated and have isAdmin == true in their Firestore doc.
 exports.adminDeleteUser = onRequest(
-  { cors: true },
+  { cors: ALLOWED_ORIGINS },
   async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(204).send('');
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -1303,7 +1309,7 @@ exports.adminDeleteUser = onRequest(
 // Accepts: productId (required), refundAmount in cents (optional, defaults to full), relist (boolean, default true)
 // Caller must be authenticated and have isAdmin == true in their Firestore doc.
 exports.adminIssueRefund = onRequest(
-  { cors: true },
+  { cors: ALLOWED_ORIGINS },
   async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(204).send('');
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
