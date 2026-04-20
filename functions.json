@@ -1,6 +1,6 @@
 {
   "name": "wrestleswap-functions",
-  "description": "Cloud Functions for Wrestle Swap",
+  "description": "Cloud Functions for GrappleTrade",
   "scripts": {
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",

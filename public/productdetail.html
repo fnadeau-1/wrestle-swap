@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Details | Wrestle Swap</title>
+    <title>Product Details | GrappleTrade</title>
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
@@ -306,7 +306,7 @@
 
     <div class="main-header">
         <div class="header-content">
-            <a href="index.html" class="logo">Wrestle Swap</a>
+            <a href="index.html" class="logo">GrappleTrade</a>
         </div>
     </div>
 
@@ -519,7 +519,7 @@
         }
 
         function displayProduct(product) {
-            document.title = `${product.name || 'Product'} | Wrestle Swap`;
+            document.title = `${product.name || 'Product'} | GrappleTrade`;
             document.getElementById('breadcrumb-title').textContent = product.name || 'Product';
             document.getElementById('product-title').textContent = product.name || product.title || 'Product';
             document.getElementById('product-condition').textContent = product.condition ? `Condition: ${product.condition}` : '';
@@ -738,12 +738,12 @@
         }
 
         function getWatchlist() {
-            const watchlist = localStorage.getItem('wrestleSwapWatchlist');
+            const watchlist = localStorage.getItem('grappleTradeWatchlist');
             return watchlist ? JSON.parse(watchlist) : [];
         }
 
         function saveWatchlist(watchlist) {
-            localStorage.setItem('wrestleSwapWatchlist', JSON.stringify(watchlist));
+            localStorage.setItem('grappleTradeWatchlist', JSON.stringify(watchlist));
             updateWatchlistCount();
         }
 
@@ -910,7 +910,7 @@
 
         // Fallback address if seller hasn't set one
         const FALLBACK_FROM_ADDRESS = {
-            name: 'Wrestle Swap',
+            name: 'GrappleTrade',
             street1: '123 Wrestling Way',
             city: 'Chicago',
             state: 'IL',
@@ -1077,7 +1077,7 @@
         <div class="signin-modal">
             <div class="signin-modal-icon">🔒</div>
             <h2>Sign In to Purchase</h2>
-            <p>You need to be signed in to buy items on Wrestle Swap. It only takes a moment!</p>
+            <p>You need to be signed in to buy items on GrappleTrade. It only takes a moment!</p>
             <div class="signin-modal-buttons">
                 <button class="btn btn-secondary" onclick="document.getElementById('signin-modal-overlay').classList.remove('show')">Cancel</button>
                 <button class="btn btn-primary" onclick="window.location.href='sign-in.html?redirect=' + encodeURIComponent(window.location.href)">Sign In</button>

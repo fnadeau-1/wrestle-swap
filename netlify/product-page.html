@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASICS Matflex 6 Wrestling Shoes | Wrestle Swap</title>
+    <title>ASICS Matflex 6 Wrestling Shoes | GrappleTrade</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background-color: #f7f7f7; }
@@ -116,7 +116,7 @@
     </div>
     <div class="main-header">
         <div class="header-content">
-            <a href="index.html" class="logo">Wrestle Swap</a>
+            <a href="index.html" class="logo">GrappleTrade</a>
         </div>
     </div>
     <div class="breadcrumb">
@@ -309,12 +309,12 @@
 
         // Cart functions
         function getCart() { 
-            const cart = localStorage.getItem('wrestleSwapCart'); 
+            const cart = localStorage.getItem('grappleTradeCart'); 
             return cart ? JSON.parse(cart) : []; 
         }
 
         function saveCart(cart) { 
-            localStorage.setItem('wrestleSwapCart', JSON.stringify(cart)); 
+            localStorage.setItem('grappleTradeCart', JSON.stringify(cart)); 
             updateCartCount(); 
         }
 
@@ -331,12 +331,12 @@
 
         // Watchlist functions
         function getWatchlist() { 
-            const watchlist = localStorage.getItem('wrestleSwapWatchlist'); 
+            const watchlist = localStorage.getItem('grappleTradeWatchlist'); 
             return watchlist ? JSON.parse(watchlist) : []; 
         }
 
         function saveWatchlist(watchlist) { 
-            localStorage.setItem('wrestleSwapWatchlist', JSON.stringify(watchlist)); 
+            localStorage.setItem('grappleTradeWatchlist', JSON.stringify(watchlist)); 
             updateWatchlistCount(); 
         }
 

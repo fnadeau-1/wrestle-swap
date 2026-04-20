@@ -57,8 +57,12 @@
 
 .main-header {
     background-color: #fff;
-    padding: 12px 0;
-    border-bottom: 1px solid #e5e5e5;
+    padding: 14px 0;
+    border-bottom: none;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .main-header.bg-gray {
@@ -75,18 +79,32 @@
 }
 
 .logo {
-    font-size: 28px;
-    font-weight: bold;
+    font-family: 'Impact', 'Arial Narrow', Arial, sans-serif;
+    font-size: 0;
     color: #c41e3a;
     text-decoration: none;
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1;
+    letter-spacing: 0.07em;
+    transition: opacity 0.15s;
+}
+
+.logo::before {
+    content: 'GRAPPLE';
+    font-size: 43px;
+    display: block;
+}
+
+.logo::after {
+    content: 'TRADE';
+    font-size: 32px;
+    display: block;
 }
 
 .logo:hover {
-    text-decoration: underline;
-}
-
-.logo-large {
-    font-size: 32px;
+    opacity: 0.75;
+    text-decoration: none;
 }
 
 .search-container {
@@ -108,7 +126,7 @@
 
 .nav-bar {
     background-color: #fff;
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid #f0f0f0;
     padding: 10px 0;
 }
 
@@ -163,38 +181,44 @@
    =========================================== */
 
 .banner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4f6ef7 0%, #6d3fc8 100%);
     color: white;
-    padding: 60px 40px;
-    border-radius: 8px;
-    margin-bottom: 30px;
+    padding: 64px 40px;
+    border-radius: 16px;
+    margin-bottom: 32px;
     text-align: center;
 }
 
 .banner h1 {
     font-size: 42px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     color: white;
+    letter-spacing: -0.03em;
 }
 
 .banner p {
-    font-size: 20px;
-    margin-bottom: 24px;
+    font-size: 19px;
+    margin-bottom: 28px;
+    opacity: 0.9;
 }
 
 .banner-btn {
     background-color: white;
-    color: #667eea;
+    color: #4f6ef7;
     border: none;
-    padding: 14px 32px;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 4px;
+    padding: 14px 36px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
     cursor: pointer;
+    transition: all 0.18s ease;
+    letter-spacing: 0.01em;
 }
 
 .banner-btn:hover {
-    background-color: #f0f0f0;
+    background-color: #f0f4ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
 }
 
 /* ===========================================
@@ -203,8 +227,8 @@
 
 .footer {
     background-color: #fff;
-    border-top: 1px solid #e5e5e5;
-    padding: 40px 0 20px;
+    border-top: 1px solid #ebebeb;
+    padding: 48px 0 24px;
     margin-top: 60px;
 }
 
@@ -229,15 +253,16 @@
 
 .footer-column a {
     display: block;
-    color: #707070;
+    color: #6b7280;
     text-decoration: none;
     font-size: 12px;
     margin-bottom: 8px;
+    transition: color 0.15s;
 }
 
 .footer-column a:hover {
-    color: #333;
-    text-decoration: underline;
+    color: #111;
+    text-decoration: none;
 }
 
 .footer-bottom {
@@ -256,8 +281,9 @@
     width: 260px;
     background: #fff;
     padding: 20px;
-    border-radius: 4px;
+    border-radius: 12px;
     height: fit-content;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
 }
 
 .filter-section {
@@ -323,14 +349,15 @@
 
 .results-header {
     background: #fff;
-    padding: 16px 20px;
-    border-radius: 4px;
+    padding: 14px 20px;
+    border-radius: 10px;
     margin-bottom: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
 .results-count {
@@ -346,9 +373,19 @@
 
 .sort-by select {
     padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.sort-by select:focus {
+    outline: none;
+    border-color: #3665f3;
+    box-shadow: 0 0 0 3px rgba(54, 101, 243, 0.12);
 }
 
 /* ===========================================

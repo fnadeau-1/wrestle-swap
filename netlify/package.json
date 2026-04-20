@@ -1,7 +1,7 @@
 {
   "name": "wrestle-swap-functions",
   "version": "1.0.0",
-  "description": "Serverless functions for Wrestle Swap",
+  "description": "Serverless functions for GrappleTrade",
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
     "node-fetch": "^2.6.7"

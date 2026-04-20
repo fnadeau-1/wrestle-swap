@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Listings - Wrestle Swap</title>
+    <title>My Listings - GrappleTrade</title>
     <link rel="stylesheet" href="css/base.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -645,7 +645,7 @@
             <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
                 <strong style="color: #dc2626;">⚠️ Seller Strike Warning</strong>
                 <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">
-                    Cancelling a sale counts as a strike against your account. After <strong>3 strikes</strong> you will no longer be able to sell on Wrestle Swap.
+                    Cancelling a sale counts as a strike against your account. After <strong>3 strikes</strong> you will no longer be able to sell on GrappleTrade.
                 </p>
                 <p id="sellerCancelStrikeDetails" style="margin: 8px 0 0 0; color: #333; font-size: 14px; font-weight: 600;"></p>
             </div>
@@ -1180,7 +1180,7 @@
 
             if (suspended) {
                 title.textContent = '🚫 Account Suspended';
-                msg.innerHTML = `You have reached <strong>${count} cancellations</strong> and can no longer sell on Wrestle Swap. If you believe this is an error, please contact support.`;
+                msg.innerHTML = `You have reached <strong>${count} cancellations</strong> and can no longer sell on GrappleTrade. If you believe this is an error, please contact support.`;
             } else {
                 title.textContent = '⚠️ Strike Recorded';
                 msg.innerHTML = `You have <strong>${count} of 3</strong> strikes. You have <strong>${strikesRemaining} strike${strikesRemaining !== 1 ? 's' : ''} remaining</strong> before you can no longer sell on this site.<br><br>The buyer has been fully refunded.`;

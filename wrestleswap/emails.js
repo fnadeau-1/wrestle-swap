@@ -1,13 +1,13 @@
-// emails.js — SendGrid email helper for Wrestle Swap
+// emails.js — SendGrid email helper for GrappleTrade
 // NOTE: Change FROM_EMAIL to a sender you've verified in your SendGrid account.
 // Either add it as a Single Sender or verify the full domain at:
 // https://app.sendgrid.com/settings/sender_auth
 
 const sgMail = require('@sendgrid/mail');
 
-const FROM_EMAIL = 'noreply@wrestleswap.com';
-const FROM_NAME = 'Wrestle Swap';
-const SITE_URL = 'https://wrestleswap.web.app';
+const FROM_EMAIL = 'noreply@grappletrade.com';
+const FROM_NAME = 'GrappleTrade';
+const SITE_URL = 'https://grappletrade.web.app';
 
 function init(apiKey) {
   sgMail.setApiKey(apiKey);
@@ -26,7 +26,7 @@ function wrap(bodyHtml) {
         <tr>
           <td style="background:#c41e3a;padding:24px 30px;text-align:center;">
             <a href="${SITE_URL}" style="text-decoration:none;">
-              <span style="color:white;font-size:26px;font-weight:bold;letter-spacing:1px;">Wrestle Swap</span>
+              <span style="color:white;font-size:26px;font-weight:bold;letter-spacing:1px;">GrappleTrade</span>
             </a>
           </td>
         </tr>
@@ -40,8 +40,8 @@ function wrap(bodyHtml) {
         <tr>
           <td style="background:#f9f9f9;padding:20px 40px;text-align:center;border-top:1px solid #e5e5e5;">
             <p style="margin:0;color:#999;font-size:12px;">
-              &copy; 2026 Wrestle Swap &nbsp;&middot;&nbsp;
-              <a href="${SITE_URL}" style="color:#999;text-decoration:underline;">wrestleswap.web.app</a>
+              &copy; 2026 GrappleTrade &nbsp;&middot;&nbsp;
+              <a href="${SITE_URL}" style="color:#999;text-decoration:underline;">grappletrade.web.app</a>
             </p>
           </td>
         </tr>
@@ -166,7 +166,7 @@ async function sendSellerCancelledToSeller(sellerEmail, { productName, strikeCou
   const warningBlock = suspended
     ? alertBox('#f8d7da', '#dc3545', `
         <strong>Your selling account has been suspended</strong> after ${strikeCount} cancellations.
-        You can no longer list or sell items on Wrestle Swap. If you believe this is in error,
+        You can no longer list or sell items on GrappleTrade. If you believe this is in error,
         please contact support.
       `)
     : alertBox('#fff8e1', '#ffc107', `
@@ -215,7 +215,7 @@ async function sendOverdueCancelledToSeller(sellerEmail, { productName, strikeCo
   const warningBlock = suspended
     ? alertBox('#f8d7da', '#dc3545', `
         <strong>Your selling account has been suspended</strong> after ${strikeCount} failures to ship.
-        You can no longer list or sell items on Wrestle Swap. Contact support if you believe this is
+        You can no longer list or sell items on GrappleTrade. Contact support if you believe this is
         in error.
       `)
     : alertBox('#fff8e1', '#ffc107', `

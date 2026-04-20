@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Orders - Wrestle Swap</title>
+    <title>My Orders - GrappleTrade</title>
     <link rel="stylesheet" href="css/base.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -688,11 +688,6 @@
             <p>Loading your orders...</p>
         </div>
 
-        <div class="loading" id="loadingState" style="display:none;">
-            <div class="spinner"></div>
-            <p>Loading your orders...</p>
-        </div>
-
         <div class="orders-grid" id="ordersGrid" style="display: none;"></div>
 
         <div class="empty-state" id="emptyState" style="display: none;">
@@ -1321,6 +1316,7 @@
             cancelBtn.disabled = true;
 
             try {
+                if (!auth.currentUser) throw new Error('You must be signed in to cancel an order.');
                 // Get Firebase ID token to prove identity to the Cloud Function
                 const idToken = await auth.currentUser.getIdToken();
 
@@ -1413,6 +1409,7 @@
 
             try {
                 const user = auth.currentUser;
+                if (!user) throw new Error('You must be signed in to submit a refund request.');
 
                 // Create refund request in Firestore
                 await db.collection('refundRequests').add({
@@ -1555,12 +1552,13 @@
 
             try {
                 const user = auth.currentUser;
-                
+                if (!user) throw new Error('You must be signed in to submit a review.');
+
                 await db.collection('products').doc(orderId).update({
                     review: {
                         rating: selectedRating,
                         text: reviewText,
-                        createdAt: Date.now(),
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         userId: user.uid,
                         userName: user.displayName || user.email || 'Anonymous'
                     },

@@ -12,11 +12,21 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
+::selection {
+    background: rgba(54, 101, 243, 0.15);
+    color: #1a1a1a;
+}
+
 /* Body */
 body {
     font-family: 'DM Sans', Arial, sans-serif;
-    background-color: #f7f7f7;
+    background-color: #f4f4f6;
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
 }
 
 body.bg-white {
@@ -34,27 +44,30 @@ a:hover {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #333;
-    font-weight: bold;
+    color: #1a1a1a;
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 /* Page titles */
 .page-title {
     font-size: 32px;
     margin-bottom: 10px;
-    color: #333;
+    color: #111;
+    letter-spacing: -0.02em;
 }
 
 .page-subtitle {
-    font-size: 16px;
-    color: #707070;
+    font-size: 15px;
+    color: #6b7280;
     margin-bottom: 30px;
 }
 
 .section-title {
-    font-size: 24px;
-    margin-bottom: 20px;
+    font-size: 22px;
+    margin-bottom: 18px;
     font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 /* Helper text */
