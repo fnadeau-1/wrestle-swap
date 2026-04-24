@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Orders - GrappleTrade</title>
+    <title>My Orders</title>
     <link rel="stylesheet" href="css/base.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -640,6 +644,7 @@
             }
         }
     </style>
+    <link rel="icon" href="favicon.png" type="image/png">
 </head>
 <body>
     <!-- Top Bar -->
@@ -656,6 +661,13 @@
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
                 <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <a href="index.html" class="logo"></a>
         </div>
     </div>
 
@@ -1284,7 +1296,7 @@
                 const orderDoc = await db.collection('products').doc(orderId).get();
                 if (orderDoc.exists) {
                     orderToCancelData = orderDoc.data();
-                    const orderTotal = orderToCancelData.price || 0;
+                    const orderTotal = parseFloat(orderToCancelData.price || 0);
                     const cancellationFee = (orderTotal * 0.05).toFixed(2);
                     const refundAmount = (orderTotal * 0.95).toFixed(2);
 
@@ -1365,7 +1377,7 @@
                 const orderDoc = await db.collection('products').doc(orderId).get();
                 if (orderDoc.exists) {
                     orderToRefundData = orderDoc.data();
-                    const orderTotal = orderToRefundData.price || 0;
+                    const orderTotal = parseFloat(orderToRefundData.price || 0);
                     const refundFee = (orderTotal * 0.05).toFixed(2);
                     const refundAmount = (orderTotal * 0.95).toFixed(2);
 
@@ -1635,22 +1647,24 @@
         function showError(message) {
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
+            errorDiv.style.display = 'block';
             errorDiv.textContent = message;
-            
+
             const container = document.querySelector('.container');
             container.insertBefore(errorDiv, container.firstChild);
-            
+
             setTimeout(() => errorDiv.remove(), 5000);
         }
 
         function showInfo(message) {
             const infoDiv = document.createElement('div');
             infoDiv.className = 'info-message';
+            infoDiv.style.cssText = 'display:block;background:#ecf4ff;color:#1d4ed8;padding:12px 16px;border-radius:10px;border-left:4px solid #3665f3;margin-bottom:20px;font-size:14px;';
             infoDiv.textContent = message;
-            
+
             const container = document.querySelector('.container');
             container.insertBefore(infoDiv, container.firstChild);
-            
+
             setTimeout(() => infoDiv.remove(), 5000);
         }
 

@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In | GrappleTrade</title>
@@ -8,12 +12,25 @@
     <script src="https://www.google.com/recaptcha/enterprise.js?render=6LcM51YsAAAAAJIK9J6ztDQhKET0FdHvOBZ9p9Ah" async defer></script>
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            background: url('https://nwhof.org/img/fb4b203a-6847-4772-914c-e01723e9f4ec/FI_vB7YVcAAjuMb.jpg?fm=jpg&q=80&fit=max&crop=743%2C418%2C52%2C0') center center / cover no-repeat fixed;
+            min-height: 90vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 40px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 0;
+        }
+
+        .auth-container {
+            position: relative;
+            z-index: 1;
         }
 
         .auth-container {
@@ -124,6 +141,7 @@
             }
         }
     </style>
+    <link rel="icon" href="favicon.png" type="image/png">
 </head>
 <body>
     <div class="auth-container">
