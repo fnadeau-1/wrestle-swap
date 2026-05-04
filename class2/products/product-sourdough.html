@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Country Sourdough - Fresh Roots Market</title>
+  <link rel="stylesheet" href="product_detail.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav>
+    <a href="index.html" class="logo">Fresh<span>Roots</span></a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">Our Story</a></li>
+      <li><a href="products.html">Shop</a></li>
+      <li><a href="order.html">Pre-Order</a></li>
+    </ul>
+    <a href="order.html" class="nav-btn">🛒 Pre-Order</a>
+  </nav>
+
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb">
+    <a href="index.html">Home</a>
+    <span class="sep">/</span>
+    <a href="products.html">Shop</a>
+    <span class="sep">/</span>
+    <span>Country Sourdough</span>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="section">
+    <div class="detail-grid">
+
+      <!-- LEFT: Product Image -->
+      <div class="detail-img" style="background-color: #fdefd4;">
+        🍞
+      </div>
+
+      <!-- RIGHT: Product Info -->
+      <div class="detail-info">
+
+        <span class="detail-vendor">Rise &amp; Shine Bakery</span>
+        <h1>Country Sourdough</h1>
+
+        <span class="detail-badge badge-limited">Low Stock</span>
+
+        <div class="detail-price">
+          $9.00 <small>/ loaf</small>
+        </div>
+
+        <p class="detail-desc">
+          Long ferment, crackly crust, open crumb. Baked fresh at 5am every Saturday morning.
+        </p>
+
+        <div class="detail-buttons">
+          <a href="order.html" class="btn-order">Pre-Order Now →</a>
+          <a href="products.html" class="btn-back">← Back to Shop</a>
+        </div>
+
+        <!-- INFO TABS -->
+        <div class="info-tabs">
+          <div class="tab-buttons">
+            <button class="tab-btn active" onclick="showTab('description', this)">Description</button>
+            <button class="tab-btn" onclick="showTab('seasonal', this)">Seasonal Info</button>
+            <button class="tab-btn" onclick="showTab('storage', this)">Storage Tips</button>
+          </div>
+
+          <div class="tab-panel active" id="tab-description">
+            <p>Our sourdough uses a 14-year-old starter and a 24-hour cold ferment. We mill our own flour from local wheat and bake each loaf in a Dutch oven for that perfect crust.</p>
+          </div>
+
+          <div class="tab-panel" id="tab-seasonal">
+            <p>Baked every Saturday in limited quantities. We recommend pre-ordering to guarantee your loaf.</p>
+            <ul>
+              <li>Baked: Every Saturday</li>
+              <li>Available: While supplies last</li>
+              <li>Pre-order recommended</li>
+            </ul>
+          </div>
+
+          <div class="tab-panel" id="tab-storage">
+            <p>Store cut-side down on a cutting board for the first day. After that, wrap in a beeswax wrap or paper bag.</p>
+            <ul>
+              <li>Day 1: cut-side down on board</li>
+              <li>Days 2–3: wrap in paper bag</li>
+              <li>Freeze slices for up to 1 month</li>
+              <li>Never store in plastic — it softens the crust</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RELATED PRODUCTS -->
+  <div class="related-section">
+    <h2>You Might Also Like</h2>
+    <div class="related-grid">
+      <a href="product-honey.html" class="related-card">
+        <div class="related-card-img" style="background-color: #fff8e1;">🍯</div>
+        <div class="related-card-body">
+          <div class="related-card-name">Wildflower Honey</div>
+          <div class="related-card-price">$12.00 / jar</div>
+        </div>
+      </a>
+      <a href="product-jam.html" class="related-card">
+        <div class="related-card-img" style="background-color: #fdeaea;">🍓</div>
+        <div class="related-card-body">
+          <div class="related-card-name">Strawberry Jam</div>
+          <div class="related-card-price">$8.00 / jar</div>
+        </div>
+      </a>
+      <a href="product-tomatoes.html" class="related-card">
+        <div class="related-card-img" style="background-color: #d8f3dc;">🍅</div>
+        <div class="related-card-body">
+          <div class="related-card-name">Heirloom Tomatoes</div>
+          <div class="related-card-price">$6.50 / lb</div>
+        </div>
+      </a>
+      <a href="product-eggs.html" class="related-card">
+        <div class="related-card-img" style="background-color: #fef9ec;">🥚</div>
+        <div class="related-card-body">
+          <div class="related-card-name">Free-Range Eggs</div>
+          <div class="related-card-price">$7.00 / dozen</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-logo">Fresh<span>Roots</span> Market</span>
+    <p>Saturdays 7am–2pm &bull; Downtown Pavilion &bull; <a href="about.html">Get Directions</a></p>
+  </footer>
+
+  <script>
+    function showTab(tabName, clickedBtn) {
+      var panels = document.querySelectorAll('.tab-panel');
+      for (var i = 0; i < panels.length; i++) {
+        panels[i].classList.remove('active');
+      }
+      var btns = document.querySelectorAll('.tab-btn');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.remove('active');
+      }
+      document.getElementById('tab-' + tabName).classList.add('active');
+      clickedBtn.classList.add('active');
+    }
+  </script>
+
+</body>
+</html>
