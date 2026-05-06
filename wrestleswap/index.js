@@ -3,10 +3,14 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 
-// Allowed origins for CORS — add your custom domain here when you get one
+// Allowed origins for CORS
 const ALLOWED_ORIGINS = [
   'https://wrestleswap.web.app',
   'https://wrestleswap.firebaseapp.com',
+  'https://grappletrade.com',
+  'https://www.grappletrade.com',
+  'http://localhost:5500',
+  'http://localhost:5000',
 ];
 
 admin.initializeApp();
@@ -368,12 +372,9 @@ exports.shippingRates = onRequest(
     }
 
     try {
-      const Shippo = require('shippo');
+      const { Shippo } = require('shippo');
       const shippoKey = shippoSecret.value();
-
-      const shippoClient = (typeof Shippo === 'function')
-        ? Shippo(shippoKey)
-        : new Shippo.Shippo(shippoKey);
+      const shippoClient = new Shippo({ apiKeyHeader: shippoKey });
 
       const { zipCode, senderAddress } = req.body;
 
@@ -384,8 +385,8 @@ exports.shippingRates = onRequest(
         return res.status(400).json({ error: 'Invalid zip code format' });
       }
 
-      const shipment = await shippoClient.shipment.create({
-        address_from: {
+      const shipment = await shippoClient.shipments.create({
+        addressFrom: {
           name: sanitizeString(senderAddress.name, 100) || "Seller",
           street1: sanitizeString(senderAddress.street1, 100),
           city: sanitizeString(senderAddress.city, 100),
@@ -393,7 +394,7 @@ exports.shippingRates = onRequest(
           zip: sanitizeString(senderAddress.zip, 20),
           country: sanitizeString(senderAddress.country, 10) || "US"
         },
-        address_to: {
+        addressTo: {
           name: "Buyer",
           street1: "123 Main St",
           city: "San Francisco",
@@ -405,9 +406,9 @@ exports.shippingRates = onRequest(
           length: senderAddress.parcel?.length || "10",
           width: senderAddress.parcel?.width || "10",
           height: senderAddress.parcel?.height || "5",
-          distance_unit: "in",
+          distanceUnit: "in",
           weight: senderAddress.parcel?.weight || "2",
-          mass_unit: "lb"
+          massUnit: "lb"
         }],
         async: false
       });

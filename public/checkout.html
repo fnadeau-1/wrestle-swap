@@ -8,6 +8,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout | GrappleTrade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
@@ -767,11 +770,18 @@
                 console.log('Shipping from:', fromAddress.city, fromAddress.state);
                 console.log('Requesting shipping rates via Cloud Function...');
 
+                // Get Firebase auth token (required by cloud function)
+                const idToken = await window.getIdToken();
+                if (!idToken) {
+                    throw new Error('Please sign in to calculate shipping');
+                }
+
                 // Call Cloud Function to get shipping rates (secure - API key stored in secrets)
                 const response = await fetch(SHIPPO_GET_RATES_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
                     },
                     body: JSON.stringify({
                         addressFrom: fromAddress,

@@ -2,9 +2,6 @@
    BASE STYLES - Reset, Typography, Body
    =========================================== */
 
-/* Google Fonts - Consolidated single request */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-
 /* Reset */
 * {
     margin: 0;
@@ -24,7 +21,7 @@ html {
 /* Body */
 body {
     font-family: 'DM Sans', Arial, sans-serif;
-    background-color: #f4f4f6;
+    background-color: #ffffff;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
 }

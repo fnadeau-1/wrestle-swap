@@ -8,6 +8,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wrestling Shoes, Gear & Apparel | GrappleTrade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+    <link rel="preload" as="image" href="https://ichef.bbci.co.uk/ace/standard/1024/cpsprodpb/51b5/live/5e197ee0-542f-11ef-83c8-57b3c4afe583.jpg">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
@@ -18,11 +22,11 @@
         }
 
 .banner {
-    background: url("https://images.unsplash.com/photo-1544919982-b61976f0ba43?w=1600&q=85");
+    background: url("https://ichef.bbci.co.uk/ace/standard/1024/cpsprodpb/51b5/live/5e197ee0-542f-11ef-83c8-57b3c4afe583.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    background-attachment: fixed; /* ← this is the magic line */
+    /* background-attachment: fixed; /* ← this is the magic line */
 }
 
         .logo {
@@ -56,7 +60,7 @@
     <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
-            <a href="index.html" class="logo"></a>
+            <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
             <div class="search-container">
                 <div class="search-box">
                     <input
@@ -86,7 +90,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container">
+    <main class="container">
         <!-- Banner -->
         <div class="banner">
             <h1>Buy & Sell Wrestling Gear</h1>
@@ -98,23 +102,23 @@
         <h2 class="section-title">Explore Popular Categories</h2>
         <div class="categories">
             <div class="category-card" onclick="window.location.href='search.html?q=shoes'">
-                <img src="https://cdn11.bigcommerce.com/s-ob1gxw6h/images/stencil/1280x1280/products/1815/16182/Untitled_design_60__78315.1727788914.png?c=20" alt="Wrestling Shoes" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;">
+                <img src="https://cdn11.bigcommerce.com/s-ob1gxw6h/images/stencil/1280x1280/products/1815/16182/Untitled_design_60__78315.1727788914.png?c=20" alt="Wrestling Shoes" width="80" height="80" loading="lazy" style="object-fit: contain; margin-bottom: 10px;">
                 <div class="category-name">Wrestling Shoes</div>
             </div>
             <div class="category-card" onclick="window.location.href='search.html?q=singlet'">
-                <img src="https://www.wrestlingmart.com/cdn/shop/files/NIKEUSAWRESTLINGWOMENSCLOUDSINGLET-RED-QR.jpg?crop=center&height=1200&v=1744832852&width=1200" alt="Singlets" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;">
+                <img src="https://www.wrestlingmart.com/cdn/shop/files/NIKEUSAWRESTLINGWOMENSCLOUDSINGLET-RED-QR.jpg?crop=center&height=1200&v=1744832852&width=1200" alt="Singlets" width="80" height="80" loading="lazy" style="object-fit: contain; margin-bottom: 10px;">
                 <div class="category-name">Singlets</div>
             </div>
             <div class="category-card" onclick="window.location.href='search.html?q=Shirt'">
-                <img src="https://images.footballfanatics.com/usa-wrestling/mens-heather-gray-usa-wrestling-radiating-victory-t-shirt_ss5_p-200582126+pv-1+u-qyxjpp1vyzbbqjic0ara+v-bntg3xaqmktnhj5tbivy.jpg?_hv=2&w=1018" alt="Shirts" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;">
+                <img src="https://images.footballfanatics.com/usa-wrestling/mens-heather-gray-usa-wrestling-radiating-victory-t-shirt_ss5_p-200582126+pv-1+u-qyxjpp1vyzbbqjic0ara+v-bntg3xaqmktnhj5tbivy.jpg?_hv=2&w=1018" alt="Shirts" width="80" height="80" loading="lazy" style="object-fit: contain; margin-bottom: 10px;">
                 <div class="category-name">Shirts</div>
             </div>
             <div class="category-card" onclick="window.location.href='search.html?q=Shorts'">
-                <img src="https://www.flowholdsd.com/cdn/shop/files/IMG_1427_jpg-min_720x.png?v=1698344274" alt="Shorts" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;">
+                <img src="https://www.flowholdsd.com/cdn/shop/files/IMG_1427_jpg-min_720x.png?v=1698344274" alt="Shorts" width="80" height="80" loading="lazy" style="object-fit: contain; margin-bottom: 10px;">
                 <div class="category-name">Shorts</div>
             </div>
             <div class="category-card" onclick="window.location.href='search.html?q=bags'">
-                <img src="https://cliffkeen.com/cdn/shop/files/MBP13-WH_1.png?crop=center&height=1200&v=1709304359&width=1200" alt="Bags" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;">
+                <img src="https://cliffkeen.com/cdn/shop/files/MBP13-WH_1.png?crop=center&height=1200&v=1709304359&width=1200" alt="Bags" width="80" height="80" loading="lazy" style="object-fit: contain; margin-bottom: 10px;">
                 <div class="category-name">Bags</div>
             </div>
         </div>
@@ -124,10 +128,10 @@
 
         <div class="loading-products" id="loading-products">Loading products...</div>
         <div class="products" id="products-container"></div>
-        <div style="text-align:center;margin:20px 0;" id="load-more-wrapper" style="display:none;">
+        <div style="text-align:center;margin:20px 0;display:none;" id="load-more-wrapper">
             <button id="load-more-btn" onclick="loadMoreProducts()" style="padding:12px 32px;background:#c41e3a;color:white;border:none;border-radius:6px;font-size:15px;cursor:pointer;font-weight:600;">Load More</button>
         </div>
-    </div>
+    </main>
 
     <!-- Footer -->
     <div class="footer">

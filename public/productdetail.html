@@ -8,6 +8,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Details | GrappleTrade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
@@ -47,6 +50,8 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+            transition: transform 0.15s ease;
+            cursor: zoom-in;
         }
 
         .main-image img {
@@ -910,7 +915,7 @@
         }
 
         // Cloud Function URL for shipping rates
-        const SHIPPO_RATES_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/shippoGetRates';
+        const SHIPPO_RATES_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/shippingRates';
 
         // Fallback address if seller hasn't set one
         const FALLBACK_FROM_ADDRESS = {
@@ -954,10 +959,17 @@
                 return;
             }
 
+            // Require sign-in to get shipping rates (cloud function needs auth token)
+            const user = window.getCurrentUser();
+            if (!user) {
+                resultsDiv.innerHTML = '<div class="shipping-error">Please sign in to see shipping rates</div>';
+                return;
+            }
+
             resultsDiv.innerHTML = '<div class="shipping-loading">⏳ Calculating shipping rates...</div>';
 
             try {
-                // Get seller's shipping address
+                // Get seller's shipping address (falls back to default if not available)
                 let fromAddress = FALLBACK_FROM_ADDRESS;
                 if (currentProduct.userId) {
                     const sellerAddress = await getSellerAddress(currentProduct.userId);
@@ -966,35 +978,25 @@
                     }
                 }
 
+                // Get Firebase auth token to authenticate the request
+                const idToken = await user.getIdToken();
+
                 // Call Cloud Function for shipping rates
-                // Note: Cloud Function expects addressFrom, addressTo (not fromAddress, toAddress)
                 const response = await fetch(SHIPPO_RATES_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
                     body: JSON.stringify({
-                        addressFrom: {
+                        zipCode: zipCode,
+                        senderAddress: {
                             name: fromAddress.name || 'Seller',
                             street1: fromAddress.street1,
                             city: fromAddress.city,
                             state: fromAddress.state,
                             zip: fromAddress.zip,
                             country: fromAddress.country || 'US'
-                        },
-                        addressTo: {
-                            name: 'Customer',
-                            street1: '123 Main St',
-                            city: 'Anytown',
-                            state: 'CA',
-                            zip: zipCode,
-                            country: 'US'
-                        },
-                        parcel: {
-                            length: '10',
-                            width: '8',
-                            height: '4',
-                            weight: '1',
-                            distance_unit: 'in',
-                            mass_unit: 'lb'
                         }
                     })
                 });
@@ -1003,9 +1005,10 @@
                     throw new Error('Failed to get rates');
                 }
 
-                const data = await response.json();
-                if (data.rates && data.rates.length > 0) {
-                    displayCheapestRate(data.rates);
+                // Cloud function returns the rates array directly
+                const rates = await response.json();
+                if (rates && rates.length > 0) {
+                    displayCheapestRate(rates);
                 } else {
                     resultsDiv.innerHTML = '<div class="shipping-error">No shipping rates available for this location</div>';
                 }
@@ -1072,6 +1075,29 @@
                 initializePage();
             } else {
                 window.addEventListener('firebaseReady', initializePage);
+            }
+
+            // Cursor-tracked zoom on product image
+            var container = document.querySelector('.main-image-container');
+            if (container) {
+                container.addEventListener('mousemove', function(e) {
+                    var rect = container.getBoundingClientRect();
+                    var x = ((e.clientX - rect.left) / rect.width) * 100;
+                    var y = ((e.clientY - rect.top) / rect.height) * 100;
+                    var img = container.querySelector('.main-image');
+                    if (img) img.style.transformOrigin = x + '% ' + y + '%';
+                });
+                container.addEventListener('mouseenter', function() {
+                    var img = container.querySelector('.main-image');
+                    if (img) img.style.transform = 'scale(2)';
+                });
+                container.addEventListener('mouseleave', function() {
+                    var img = container.querySelector('.main-image');
+                    if (img) {
+                        img.style.transform = '';
+                        img.style.transformOrigin = '';
+                    }
+                });
             }
         });
     </script>

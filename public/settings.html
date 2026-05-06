@@ -1,13 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Settings | GrappleTrade</title>
+    <title>Account Settings | Wrestle Swap</title>
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
@@ -58,7 +54,8 @@
             </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
-                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
+                <button class="top-bar-btn" onclick="window.location.href='settings.html'"
+                >Settings</button>
             </div>
         </div>
     </div>
@@ -66,7 +63,7 @@
     <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
-            <a href="index.html" class="logo">GrappleTrade</a>
+            <a href="index.html" class="logo">Wrestle Swap</a>
             <div class="search-container">
                 <div class="search-box">
                     <input type="text" class="search-input" id="search-input"
@@ -382,48 +379,15 @@
                     document.getElementById('bio').value = d.bio || '';
                     currentUsername = d.username || '';
 
-                    // Stripe — always check live status from Stripe API
+                    // Stripe
                     if (d.stripeAccountId) {
                         document.getElementById('stripe-status').innerHTML = '<span style="color:#28a745;">✓ Connected</span>';
                         document.getElementById('stripe-manage-btn').style.display = 'inline-block';
                         document.getElementById('stripe-warning').style.display = 'none';
-                        document.getElementById('charges-enabled').innerHTML = '<span style="color:#888;">Checking…</span>';
-                        document.getElementById('payouts-enabled').innerHTML  = '<span style="color:#888;">Checking…</span>';
-
-                        // Hit the cloud function to get live charges_enabled from Stripe
-                        try {
-                            const token = await user.getIdToken();
-                            const resp = await fetch('https://checksellerstatus-kebvkf67ma-uc.a.run.app', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                                body: JSON.stringify({ userId: user.uid })
-                            });
-                            const status = await resp.json();
-                            document.getElementById('charges-enabled').innerHTML = status.chargesEnabled
-                                ? '<span style="color:#28a745;">✓ Yes</span>'
-                                : '<span style="color:#dc3545;">✗ No — <a href="stripe-express-prompt.html" style="color:#dc3545;">Complete setup</a></span>';
-                            document.getElementById('payouts-enabled').innerHTML = status.payoutsEnabled
-                                ? '<span style="color:#28a745;">✓ Yes</span>'
-                                : '<span style="color:#dc3545;">✗ No</span>';
-
-                            if (!status.chargesEnabled) {
-                                document.getElementById('stripe-warning').innerHTML =
-                                    '<p><strong>Action Required:</strong> Your Stripe account is connected but charges are not yet enabled. ' +
-                                    'Please <a href="stripe-express-prompt.html">complete your Stripe setup</a> to accept payments.</p>';
-                                document.getElementById('stripe-warning').style.display = 'block';
-                            }
-                        } catch (e) {
-                            console.warn('Could not fetch live Stripe status:', e);
-                            // Fall back to cached Firestore values
-                            if (d.stripeChargesEnabled)
-                                document.getElementById('charges-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
-                            else
-                                document.getElementById('charges-enabled').innerHTML = '<span style="color:#dc3545;">✗ No</span>';
-                            if (d.stripePayoutsEnabled)
-                                document.getElementById('payouts-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
-                            else
-                                document.getElementById('payouts-enabled').innerHTML = '<span style="color:#dc3545;">✗ No</span>';
-                        }
+                        if (d.stripePayoutsEnabled)
+                            document.getElementById('payouts-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
+                        if (d.stripeChargesEnabled)
+                            document.getElementById('charges-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
                     } else {
                         document.getElementById('stripe-connect-btn').style.display = 'inline-block';
                         document.getElementById('stripe-warning').style.display = 'block';
