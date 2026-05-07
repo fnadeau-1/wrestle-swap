@@ -953,6 +953,23 @@
         // STRIPE INTEGRATION
         // ============================================
 
+        function showPaymentOverlay(title, message) {
+            document.getElementById('overlay-title').textContent = title;
+            document.getElementById('overlay-message').textContent = message;
+            document.getElementById('payment-overlay').classList.add('active');
+            window.onbeforeunload = () => 'Your payment is being processed. Do not leave this page — you may be charged.';
+        }
+
+        function updatePaymentOverlay(title, message) {
+            document.getElementById('overlay-title').textContent = title;
+            document.getElementById('overlay-message').textContent = message;
+        }
+
+        function hidePaymentOverlay() {
+            document.getElementById('payment-overlay').classList.remove('active');
+            window.onbeforeunload = null;
+        }
+
         function initializeStripe() {
             // Initialize Stripe
             const stripe = Stripe('pk_test_51SVkt7GuAs8IZaZv5J9AezLqjENqgpK1MWVMze9O7fUY5h8ZUAmvC2uHavTLzKloXToKxvFDtGeJ9jE3umH9Uvxp00168b1lMz'); 
@@ -999,6 +1016,7 @@
                 // Disable submit button to prevent multiple submissions
                 submitButton.disabled = true;
                 submitButton.textContent = 'Processing...';
+                showPaymentOverlay('Processing Payment', 'Please do not close or navigate away from this page.');
 
                 try {
                     console.log('Step 1: Getting seller Stripe account...');
@@ -1086,6 +1104,7 @@
 
                     if (result.error) {
                         console.error('Payment error:', result.error);
+                        hidePaymentOverlay();
                         const errorElement = document.getElementById('card-errors');
                         errorElement.textContent = result.error.message;
                         submitButton.disabled = false;
@@ -1096,6 +1115,7 @@
                         // Step 4: Create shipping label with Shippo
                         console.log('Step 4: Creating shipping label...');
                         submitButton.textContent = 'Creating shipping label...';
+                        updatePaymentOverlay('Payment Confirmed!', 'Creating your shipping label — almost done, do not close this page.');
                         
                         let shippingInfo = null;
                         try {
@@ -1108,6 +1128,7 @@
                         
                         // Step 5: Complete order via Cloud Function (verifies payment + marks sold)
                         console.log('Step 5: Completing order via Cloud Function...');
+                        updatePaymentOverlay('Finalizing Your Order', 'Your order is being confirmed — almost there!');
                         const soldSuccess = await completeOrder(
                             checkoutProduct.id,
                             result.paymentIntent.id,
@@ -1136,10 +1157,9 @@
                         // Keep product in session for confirmation page
                         sessionStorage.setItem('checkoutProduct', JSON.stringify(productForSeller));
                         
-                        alert('Payment successful! Order ID: ' + result.paymentIntent.id);
-                        
+                        updatePaymentOverlay('Order Complete!', 'Redirecting you to your receipt...');
 
-                        
+
                         console.log('Seller fulfillment page:', 
                             'seller-order-fulfillment.html?productId=' + checkoutProduct.id + '&orderId=' + result.paymentIntent.id);
                         
@@ -1151,7 +1171,9 @@
                     }
                 } catch (err) {
                     console.error('Full error details:', err);
-                    alert('Payment failed: ' + err.message);
+                    hidePaymentOverlay();
+                    const cardErrors = document.getElementById('card-errors');
+                    if (cardErrors) cardErrors.textContent = 'Payment failed: ' + err.message;
                     submitButton.disabled = false;
                     submitButton.textContent = 'Complete Purchase';
                 }
@@ -1166,6 +1188,19 @@
             loadCheckoutProduct();
         });
     </script>
+    <!-- Payment Processing Overlay -->
+    <style>
+        @keyframes pay-spin { to { transform: rotate(360deg); } }
+        #payment-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 9999; align-items: center; justify-content: center; }
+        #payment-overlay.active { display: flex; }
+    </style>
+    <div id="payment-overlay">
+        <div style="background:white;border-radius:14px;padding:44px 36px;max-width:420px;width:90%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.35);">
+            <div style="width:52px;height:52px;border:5px solid #e5e5e5;border-top-color:#c41e3a;border-radius:50%;animation:pay-spin 0.9s linear infinite;margin:0 auto 22px;"></div>
+            <h3 id="overlay-title" style="font-size:20px;margin-bottom:10px;color:#1a1a1a;">Processing Payment</h3>
+            <p id="overlay-message" style="color:#666;font-size:14px;line-height:1.6;margin:0;">Please do not close or navigate away from this page.</p>
+        </div>
+    </div>
     <script type="module" src="js/site-notice.js"></script>
 </body>
 </html>

@@ -1108,7 +1108,7 @@ exports.checkOverdueOrders = onSchedule(
   { schedule: 'every 24 hours', secrets: [stripeSecret, sendgridSecret] },
   async (event) => {
     const stripe = require('stripe')(stripeSecret.value());
-    const fourteenDaysAgo = Date.now() - (14 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgo = Date.now() - (10 * 24 * 60 * 60 * 1000);
 
     console.log('Overdue order check — cutoff:', new Date(fourteenDaysAgo).toISOString());
 
@@ -1197,7 +1197,7 @@ exports.checkOverdueOrders = onSchedule(
           cancelled: true,
           cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
           cancelledBy: 'system',
-          cancellationReason: 'Seller failed to ship within 14 days',
+          cancellationReason: 'Seller failed to ship within 10 days',
           ...(refundId ? { refundId } : {})
         });
 

@@ -81,7 +81,7 @@ async function sendOrderPlacedSeller(sellerEmail, { productName, buyerName }) {
       <strong>${escHtml(buyerName)}</strong> just purchased <strong>${escHtml(productName)}</strong>.
     </p>
     ${alertBox('#fff8e1', '#ffc107', `
-      <strong>Ship within 14 days.</strong> If you do not ship by then, the order will be automatically
+      <strong>Ship within 10 days.</strong> If you do not ship by then, the order will be automatically
       cancelled and you will receive a strike against your seller account.
     `)}
     <p style="color:#555;font-size:14px;line-height:1.6;">
@@ -228,7 +228,7 @@ async function sendOverdueCancelledToSeller(sellerEmail, { productName, strikeCo
     <h2 style="color:#333;margin-top:0;">Failure to Ship Notice</h2>
     <p style="color:#555;font-size:15px;line-height:1.6;">
       Your order for <strong>${escHtml(productName)}</strong> was automatically cancelled because
-      it was not shipped within 14 days. The buyer has been fully refunded.
+      it was not shipped within 10 days. The buyer has been fully refunded.
     </p>
     ${warningBlock}
     <p style="color:#555;font-size:14px;line-height:1.6;">

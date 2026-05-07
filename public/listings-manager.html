@@ -553,6 +553,9 @@
             </div>
         </div>
 
+        <!-- Ship-by deadline alerts — populated by renderListings() -->
+        <div id="ship-alerts" style="display:none; margin-bottom: 16px;"></div>
+
         <div id="loading-state" style="text-align:center;padding:60px 20px;color:#707070;">
             <div class="spinner"></div>
             <p>Loading your listings...</p>
@@ -922,6 +925,34 @@
 
             grid.style.display = 'grid';
             grid.innerHTML = listings.map(listing => createListingCard(listing)).join('');
+
+            // Ship-by deadline alerts
+            const alertContainer = document.getElementById('ship-alerts');
+            const pendingShipments = listings.filter(l => l.sold && !l.cancelled && !l.trackingNumber);
+            if (pendingShipments.length > 0) {
+                alertContainer.innerHTML = pendingShipments.map(l => {
+                    const daysSinceSale = l.soldTimestamp ? Math.floor((Date.now() - l.soldTimestamp) / (1000 * 60 * 60 * 24)) : 0;
+                    const daysLeft = Math.max(0, 10 - daysSinceSale);
+                    const urgent = daysLeft <= 2;
+                    const bg = urgent ? '#fdecea' : '#fff8e1';
+                    const border = urgent ? '#dc3545' : '#ffc107';
+                    const icon = daysLeft === 0 ? '🚨' : urgent ? '⚠️' : '📦';
+                    const msg = daysLeft === 0
+                        ? 'This order will be <strong>auto-cancelled today</strong> if not shipped!'
+                        : `You have <strong>${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong> to ship or the order will be automatically cancelled and the buyer fully refunded.`;
+                    return `<div style="background:${bg};border-left:5px solid ${border};border-radius:6px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;">
+                        <span style="font-size:22px;flex-shrink:0;">${icon}</span>
+                        <div style="flex:1;">
+                            <strong style="font-size:14px;color:#1a1a1a;">${urgent ? 'ACTION REQUIRED — ' : ''}Ship "${l.title || 'your item'}"</strong>
+                            <p style="margin:4px 0 0;font-size:13px;color:#555;line-height:1.5;">${msg} <a href="seller-order-fulfillment.html?productId=${l.id}" style="color:#c41e3a;font-weight:600;">View order →</a></p>
+                        </div>
+                    </div>`;
+                }).join('');
+                alertContainer.style.display = 'block';
+            } else {
+                alertContainer.innerHTML = '';
+                alertContainer.style.display = 'none';
+            }
 
             // Calculate stats
             const stats = {
