@@ -1023,10 +1023,12 @@
                     // Send only productId and shippingCost — the Cloud Function fetches
                     // the real product price from Firestore and calculates tax server-side.
                     // Never send amounts from the frontend where they could be tampered with.
+                    const idToken = await window.getIdToken();
                     const response = await fetch('https://createpaymentintent-kebvkf67ma-uc.a.run.app', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`,
                         },
                         body: JSON.stringify({
                             productId: checkoutProduct.id,
