@@ -22,16 +22,19 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAdmin()
         || (request.auth != null && request.auth.uid == userId)
-        || resource.data.keys().hasOnly(['displayName', 'username', 'photoURL', 'createdAt', 'email']);
-      // Admins can write anything (unsuspend sellers, etc.)
-      // Regular users can write their own doc but cannot touch penalty/suspension fields
-      allow write: if isAdmin()
+        || request.auth != null;
+      // New users can create their own profile document
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Admins can update anything; regular users can update their own doc
+      // but cannot touch penalty/suspension fields
+      allow update: if isAdmin()
         || (request.auth != null
           && request.auth.uid == userId
           && !('sellerSuspended' in request.resource.data.diff(resource.data).affectedKeys())
           && !('sellerCancellationCount' in request.resource.data.diff(resource.data).affectedKeys())
           && !('sellerPenalties' in request.resource.data.diff(resource.data).affectedKeys())
           && !('isAdmin' in request.resource.data.diff(resource.data).affectedKeys()));
+      allow delete: if isAdmin();
     }
 
     // Usernames collection (for username uniqueness)

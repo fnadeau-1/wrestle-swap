@@ -237,6 +237,7 @@
         }
 
         async function executeRecaptcha(action) {
+            if (typeof grecaptcha === 'undefined') throw new Error('reCAPTCHA not loaded');
             await new Promise(resolve => grecaptcha.enterprise.ready(resolve));
             return await grecaptcha.enterprise.execute(RECAPTCHA_SITE_KEY, { action });
         }

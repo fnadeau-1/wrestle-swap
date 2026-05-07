@@ -9,6 +9,10 @@
     ],
     "headers": [
       {
+        "source": "**",
+        "headers": [{"key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups"}]
+      },
+      {
         "source": "**/*.html",
         "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]
       },
