@@ -417,7 +417,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, query, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, collection, query, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
@@ -466,6 +466,9 @@
         window.getCurrentUser = () => currentUser;
         window.getDoc = getDoc;
         window.setDoc = setDoc;
+        window.updateDoc = updateDoc;
+        window.arrayUnion = arrayUnion;
+        window.arrayRemove = arrayRemove;
         window.doc = doc;
         window.collection = collection;
         window.query = query;
@@ -746,36 +749,23 @@
             });
         }
 
-        function getWatchlist() {
-            const watchlist = localStorage.getItem('grappleTradeWatchlist');
-            return watchlist ? JSON.parse(watchlist) : [];
-        }
-
-        function saveWatchlist(watchlist) {
-            localStorage.setItem('grappleTradeWatchlist', JSON.stringify(watchlist));
-            updateWatchlistCount();
-        }
-
-        function updateWatchlistCount() {
-            const watchlist = getWatchlist();
-            const badge = document.getElementById('watchlist-count');
-            if (!badge) return;
-            if (watchlist.length > 0) {
-                badge.textContent = watchlist.length;
-                badge.style.display = 'inline-block';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-
-        function checkWatchlistStatus() {
+        async function checkWatchlistStatus() {
             if (!currentProduct) return;
-            const watchlist = getWatchlist();
-            const isInWatchlist = watchlist.some(item => item.id === currentProduct.id);
-            if (isInWatchlist) {
-                document.getElementById('watchlist-btn').classList.add('in-watchlist');
-                document.getElementById('heart-icon').textContent = '♥';
-                document.getElementById('watchlist-text').textContent = 'In Watchlist';
+            const user = window.getCurrentUser();
+            if (!user) return;
+            try {
+                const watchlistRef = window.doc(window.firebaseDb, 'watchlists', user.uid);
+                const watchlistDoc = await window.getDoc(watchlistRef);
+                if (watchlistDoc.exists()) {
+                    const products = watchlistDoc.data().products || [];
+                    if (products.includes(currentProduct.id)) {
+                        document.getElementById('watchlist-btn').classList.add('in-watchlist');
+                        document.getElementById('heart-icon').textContent = '♥';
+                        document.getElementById('watchlist-text').textContent = 'In Watchlist';
+                    }
+                }
+            } catch (err) {
+                console.error('Error checking watchlist status:', err);
             }
         }
 
@@ -894,24 +884,46 @@
             window.location.href = 'checkout.html';
         }
 
-        function toggleWatchlist() {
+        async function toggleWatchlist() {
             if (!currentProduct) return;
-            const watchlist = getWatchlist();
-            const existingIndex = watchlist.findIndex(item => item.id === currentProduct.id);
-            if (existingIndex > -1) {
-                watchlist.splice(existingIndex, 1);
-                document.getElementById('watchlist-btn').classList.remove('in-watchlist');
-                document.getElementById('heart-icon').textContent = '♡';
-                document.getElementById('watchlist-text').textContent = 'Add to Watchlist';
-                showToast('Removed from watchlist');
-            } else {
-                watchlist.push({ ...currentProduct, addedAt: new Date().toISOString() });
-                document.getElementById('watchlist-btn').classList.add('in-watchlist');
-                document.getElementById('heart-icon').textContent = '♥';
-                document.getElementById('watchlist-text').textContent = 'In Watchlist';
-                showToast('Added to watchlist!');
+            const user = window.getCurrentUser();
+            if (!user) {
+                document.getElementById('signin-modal-overlay').classList.add('show');
+                return;
             }
-            saveWatchlist(watchlist);
+
+            const watchlistRef = window.doc(window.firebaseDb, 'watchlists', user.uid);
+
+            try {
+                const watchlistDoc = await window.getDoc(watchlistRef);
+                const products = watchlistDoc.exists() ? (watchlistDoc.data().products || []) : [];
+                const isInWatchlist = products.includes(currentProduct.id);
+
+                if (isInWatchlist) {
+                    await window.updateDoc(watchlistRef, {
+                        products: window.arrayRemove(currentProduct.id)
+                    });
+                    document.getElementById('watchlist-btn').classList.remove('in-watchlist');
+                    document.getElementById('heart-icon').textContent = '♡';
+                    document.getElementById('watchlist-text').textContent = 'Add to Watchlist';
+                    showToast('Removed from watchlist');
+                } else {
+                    if (!watchlistDoc.exists()) {
+                        await window.setDoc(watchlistRef, { products: [currentProduct.id] });
+                    } else {
+                        await window.updateDoc(watchlistRef, {
+                            products: window.arrayUnion(currentProduct.id)
+                        });
+                    }
+                    document.getElementById('watchlist-btn').classList.add('in-watchlist');
+                    document.getElementById('heart-icon').textContent = '♥';
+                    document.getElementById('watchlist-text').textContent = 'In Watchlist';
+                    showToast('Added to watchlist!');
+                }
+            } catch (err) {
+                console.error('Error updating watchlist:', err);
+                showToast('Failed to update watchlist', 'error');
+            }
         }
 
         // Cloud Function URL for shipping rates
