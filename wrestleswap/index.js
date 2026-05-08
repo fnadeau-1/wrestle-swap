@@ -7,6 +7,8 @@ const admin = require("firebase-admin");
 const ALLOWED_ORIGINS = [
   'https://wrestleswap.web.app',
   'https://wrestleswap.firebaseapp.com',
+  'https://grappletrade.web.app',
+  'https://grappletrade.firebaseapp.com',
   'https://grappletrade.com',
   'https://www.grappletrade.com',
   'http://localhost:5500',
@@ -489,8 +491,8 @@ exports.createConnectedAccount = onRequest(
 
       const accountLink = await stripe.accountLinks.create({
         account: stripeAccountId,
-        refresh_url: refreshUrl || 'https://yourwebsite.com/seller-onboarding.html',
-        return_url: returnUrl || 'https://yourwebsite.com/seller-dashboard.html',
+        refresh_url: refreshUrl || 'https://grappletrade.web.app/stripe-express-prompt.html',
+        return_url: returnUrl || 'https://grappletrade.web.app/sell.html',
         type: 'account_onboarding',
       });
 
@@ -721,6 +723,13 @@ exports.checkSellerStatus = onRequest(
       const stripeAccountId = userDoc.data().stripeAccountId;
       const account = await stripe.accounts.retrieve(stripeAccountId);
 
+      // Persist current Stripe account status to Firestore so settings.html can display it
+      await db.collection('users').doc(userId).set({
+        stripeChargesEnabled: account.charges_enabled,
+        stripePayoutsEnabled: account.payouts_enabled,
+        stripeDetailsSubmitted: account.details_submitted,
+      }, { merge: true });
+
       res.json({
         connected: true,
         chargesEnabled: account.charges_enabled,
@@ -861,7 +870,7 @@ exports.completeOrder = onRequest(
 
     try {
       const stripe = require('stripe')(stripeSecret.value());
-      const { paymentIntentId, productId, shippingInfo, packageDimensions } = req.body;
+      const { paymentIntentId, productId, shippingInfo, packageDimensions, buyerShippingAddress } = req.body;
 
       if (!paymentIntentId || !productId) {
         return res.status(400).json({ error: 'paymentIntentId and productId are required' });
@@ -896,13 +905,18 @@ exports.completeOrder = onRequest(
         updateData.packageDimensions = packageDimensions;
       }
 
+      if (buyerShippingAddress) {
+        updateData.buyerShippingAddress = buyerShippingAddress;
+      }
+
       await db.collection('products').doc(productId).update(updateData);
       console.log('Order completed — product:', productId, 'buyer:', decodedToken.uid);
 
       // Save order record to orders collection
+      let prod = null;
       try {
         const productSnap = await db.collection('products').doc(productId).get();
-        const prod = productSnap.data();
+        prod = productSnap.data();
         await db.collection('orders').add({
           productId,
           buyerId: decodedToken.uid,
@@ -913,6 +927,7 @@ exports.completeOrder = onRequest(
           shippingLabel: shippingInfo ? (shippingInfo.label_url || null) : null,
           trackingNumber: shippingInfo ? (shippingInfo.tracking_number || null) : null,
           trackingUrl: shippingInfo ? (shippingInfo.tracking_url_provider || null) : null,
+          buyerShippingAddress: buyerShippingAddress || null,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           createdTimestamp: Date.now(),
           status: 'paid',
@@ -921,18 +936,32 @@ exports.completeOrder = onRequest(
         console.error('Order record error:', orderErr.message);
       }
 
-      // Email seller: new order notification
+      // Email seller and buyer about the new order
       try {
         emails.init(sendgridSecret.value());
-        const freshProduct = await db.collection('products').doc(productId).get();
-        const prod = freshProduct.data();
+        if (!prod) {
+          const freshSnap = await db.collection('products').doc(productId).get();
+          prod = freshSnap.data();
+        }
         const sellerEmail = await getUserEmail(prod.userId);
+        const buyerEmail = await getUserEmail(decodedToken.uid);
         const buyerRecord = await admin.auth().getUser(decodedToken.uid);
+        const sellerRecord = prod.userId ? await admin.auth().getUser(prod.userId).catch(() => null) : null;
         const buyerName = buyerRecord.displayName || buyerRecord.email.split('@')[0];
-        await emails.sendOrderPlacedSeller(sellerEmail, {
-          productName: prod.title || 'your item',
-          buyerName,
-        });
+        const sellerName = sellerRecord
+          ? (sellerRecord.displayName || sellerRecord.email.split('@')[0])
+          : 'the seller';
+        await Promise.all([
+          emails.sendOrderPlacedSeller(sellerEmail, {
+            productName: prod.title || 'your item',
+            buyerName,
+          }),
+          emails.sendOrderPlacedBuyer(buyerEmail, {
+            productName: prod.title || 'your item',
+            orderId: paymentIntentId,
+            sellerName,
+          }),
+        ]);
       } catch (emailErr) {
         console.error('Email error (completeOrder):', emailErr.message);
       }
@@ -1102,19 +1131,19 @@ exports.sellerCancelOrder = onRequest(
   }
 );
 
-// --- CHECK OVERDUE ORDERS (runs daily — auto-cancels unshipped orders older than 14 days) ---
+// --- CHECK OVERDUE ORDERS (runs daily — auto-cancels unshipped orders older than 10 days) ---
 // Note: requires a Firestore composite index on (sold ASC, soldTimestamp ASC)
 exports.checkOverdueOrders = onSchedule(
   { schedule: 'every 24 hours', secrets: [stripeSecret, sendgridSecret] },
   async (event) => {
     const stripe = require('stripe')(stripeSecret.value());
-    const fourteenDaysAgo = Date.now() - (10 * 24 * 60 * 60 * 1000);
+    const tenDaysAgo = Date.now() - (10 * 24 * 60 * 60 * 1000);
 
-    console.log('Overdue order check — cutoff:', new Date(fourteenDaysAgo).toISOString());
+    console.log('Overdue order check — cutoff:', new Date(tenDaysAgo).toISOString());
 
     const snapshot = await db.collection('products')
       .where('sold', '==', true)
-      .where('soldTimestamp', '<=', fourteenDaysAgo)
+      .where('soldTimestamp', '<=', tenDaysAgo)
       .get();
 
     // Filter in JS: exclude already-cancelled and orders that have a tracking number
@@ -1310,7 +1339,7 @@ exports.adminDeleteUser = onRequest(
 // Accepts: productId (required), refundAmount in cents (optional, defaults to full), relist (boolean, default true)
 // Caller must be authenticated and have isAdmin == true in their Firestore doc.
 exports.adminIssueRefund = onRequest(
-  { cors: ALLOWED_ORIGINS },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(204).send('');
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });

@@ -867,16 +867,22 @@
             try {
                 console.log('Creating shipping label with rate:', selectedShippingRate);
 
+                // Get Firebase auth token (required by Cloud Function)
+                const idToken = await window.getIdToken();
+                if (!idToken) throw new Error('Not authenticated');
+
                 // Purchase the shipping label using Cloud Function
                 const response = await fetch(SHIPPO_CREATE_LABEL_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`,
                     },
                     body: JSON.stringify({
                         rateObjectId: selectedShippingRate.object_id,
                         labelFileType: 'PDF',
-                        async: false
+                        async: false,
+                        productId: checkoutProduct.id,
                     })
                 });
 
@@ -912,7 +918,18 @@
                 const idToken = await window.getIdToken();
                 if (!idToken) throw new Error('Not authenticated');
 
-                const body = { productId, paymentIntentId };
+                // Collect buyer's shipping address from the form fields
+                const buyerShippingAddress = {
+                    name: (document.getElementById('first-name').value.trim() + ' ' + document.getElementById('last-name').value.trim()).trim(),
+                    street1: document.getElementById('address').value.trim(),
+                    street2: (document.getElementById('address2').value || '').trim(),
+                    city: document.getElementById('city').value.trim(),
+                    state: document.getElementById('state').value.trim(),
+                    zip: document.getElementById('zip').value.trim(),
+                    country: 'US',
+                };
+
+                const body = { productId, paymentIntentId, buyerShippingAddress };
 
                 if (shippingInfo) {
                     body.shippingInfo = shippingInfo;
@@ -1151,7 +1168,11 @@
                             trackingNumber: shippingInfo?.tracking_number,
                             trackingUrl: shippingInfo?.tracking_url_provider,
                             labelUrl: shippingInfo?.label_url,
-                            shippingService: selectedShippingRate ? `${selectedShippingRate.provider} ${selectedShippingRate.servicelevel.name}` : 'Standard Shipping'
+                            shippingService: selectedShippingRate ? `${selectedShippingRate.provider} ${selectedShippingRate.servicelevel.name}` : 'Standard Shipping',
+                            subtotal: subtotal,
+                            shippingCost: shippingCost,
+                            tax: tax,
+                            total: total,
                         }));
 
                         // Keep product in session for confirmation page

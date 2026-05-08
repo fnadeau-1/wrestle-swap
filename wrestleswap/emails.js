@@ -188,6 +188,28 @@ async function sendSellerCancelledToSeller(sellerEmail, { productName, strikeCou
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ORDER PLACED — notify buyer
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendOrderPlacedBuyer(buyerEmail, { productName, orderId, sellerName }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">Your order is confirmed!</h2>
+    <p style="color:#555;font-size:15px;line-height:1.6;">
+      Thanks for your purchase! <strong>${escHtml(productName)}</strong> is on its way soon.
+    </p>
+    ${alertBox('#d4edda', '#28a745', `
+      <strong>Order ID:</strong> ${escHtml(orderId)}<br>
+      <strong>Sold by:</strong> ${escHtml(sellerName)}<br>
+      The seller has up to <strong>10 days</strong> to ship. You will receive a tracking email once it ships.
+    `)}
+    <p style="color:#555;font-size:14px;line-height:1.6;">
+      You can view your order or cancel it (subject to a 5% fee) from your Orders page.
+    </p>
+    ${btn(`${SITE_URL}/my-orders.html`, 'View Your Orders', '#3665f3')}
+  `);
+  await send(buyerEmail, `Order Confirmed: ${productName}`, html);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // AUTO-CANCEL (overdue) — notify buyer
 // ─────────────────────────────────────────────────────────────────────────────
 async function sendOverdueCancelledToBuyer(buyerEmail, { productName, refundAmount }) {
@@ -195,7 +217,7 @@ async function sendOverdueCancelledToBuyer(buyerEmail, { productName, refundAmou
     <h2 style="color:#333;margin-top:0;">Your order has been automatically cancelled</h2>
     <p style="color:#555;font-size:15px;line-height:1.6;">
       Your order for <strong>${escHtml(productName)}</strong> was automatically cancelled because
-      the seller did not ship within 14 days.
+      the seller did not ship within 10 days.
     </p>
     ${alertBox('#d4edda', '#28a745', `
       You will receive a <strong>full refund of $${refundAmount}</strong>.
@@ -273,6 +295,7 @@ function escHtml(str) {
 
 module.exports = {
   init,
+  sendOrderPlacedBuyer,
   sendOrderPlacedSeller,
   sendBuyerCancelledToBuyer,
   sendBuyerCancelledToSeller,

@@ -677,7 +677,7 @@
                 <div class="alert-title">⚠️ Important Notes:</div>
                 <div class="alert-text">
                     <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
-                        <li>Ship within <strong>2 business days</strong> to maintain good seller ratings</li>
+                        <li>Ship within <strong>10 days</strong> — orders not shipped by then are automatically cancelled and the buyer fully refunded</li>
                         <li>The shipping cost has already been paid - you don't need to pay anything</li>
                         <li>Do NOT write on or damage the shipping label</li>
                         <li>Keep a copy of this page for your records</li>
@@ -852,9 +852,9 @@
             const displayOrderId = orderId || (orderInfo?.orderId) || 'N/A';
             document.getElementById('order-id').textContent = displayOrderId;
 
-            // Display order date
-            const orderDate = new Date();
-            document.getElementById('order-date').textContent = orderDate.toLocaleDateString('en-US', {
+            // Display order date — use actual soldTimestamp from Firestore if available
+            const orderTs = (product && product.soldTimestamp) ? new Date(product.soldTimestamp) : new Date();
+            document.getElementById('order-date').textContent = orderTs.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
@@ -919,41 +919,152 @@
                 }
             }
 
-            // Display shipping address (this would come from the order)
-            // For now, showing placeholder
-            document.getElementById('shipping-address').innerHTML = `
-                <div class="address-title">Buyer's Shipping Address:</div>
-                <div class="address-line">
-                    <strong>Note:</strong> The complete shipping address is printed on the shipping label.<br>
-                    Please use the downloaded label for accurate address information.
-                </div>
-            `;
+            // Display buyer's shipping address if stored, otherwise point to label
+            const addr = product && product.buyerShippingAddress;
+            if (addr && addr.street1) {
+                document.getElementById('shipping-address').innerHTML = `
+                    <div class="address-title">Buyer's Shipping Address:</div>
+                    <div class="address-line">${addr.name || ''}</div>
+                    <div class="address-line">${addr.street1}${addr.street2 ? ', ' + addr.street2 : ''}</div>
+                    <div class="address-line">${addr.city}, ${addr.state} ${addr.zip}</div>
+                    <div class="address-line">${addr.country || 'US'}</div>
+                `;
+            } else {
+                document.getElementById('shipping-address').innerHTML = `
+                    <div class="address-title">Buyer's Shipping Address:</div>
+                    <div class="address-line">
+                        The complete shipping address is printed on the shipping label.
+                        Please use the downloaded label for accurate address information.
+                    </div>
+                `;
+            }
+
+            // Show mark-as-shipped form if no tracking number yet
+            const hasTracking = orderInfo?.trackingNumber || (product && product.trackingNumber);
+            if (!hasTracking && productId) {
+                const labelSection = document.getElementById('label-section');
+                if (labelSection) {
+                    labelSection.insertAdjacentHTML('afterend', `
+                        <div id="mark-shipped-section" style="background:white;border-radius:8px;padding:28px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+                            <h2 style="font-size:20px;color:#333;margin:0 0 6px;">📬 Record Shipment</h2>
+                            <p style="color:#707070;font-size:14px;margin:0 0 20px;">No shipping label was generated automatically. Enter your tracking details below to update the buyer.</p>
+                            <div style="margin-bottom:14px;">
+                                <label style="display:block;font-weight:600;margin-bottom:6px;">Tracking Number <span style="color:#e53238;">*</span></label>
+                                <input type="text" id="manual-tracking-number" placeholder="e.g. 9400111899223397644220"
+                                    style="width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:6px;font-size:15px;box-sizing:border-box;">
+                            </div>
+                            <div style="margin-bottom:14px;">
+                                <label style="display:block;font-weight:600;margin-bottom:6px;">Carrier</label>
+                                <select id="manual-carrier" style="width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:6px;font-size:15px;background:white;">
+                                    <option value="">Select carrier</option>
+                                    <option value="USPS">USPS</option>
+                                    <option value="UPS">UPS</option>
+                                    <option value="FedEx">FedEx</option>
+                                    <option value="DHL">DHL</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div id="mark-shipped-error" style="display:none;color:#c62828;font-size:14px;margin-bottom:10px;"></div>
+                            <button id="mark-shipped-btn" onclick="markAsShipped()"
+                                style="background:#c41e3a;color:white;border:none;padding:12px 28px;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;">
+                                Mark as Shipped
+                            </button>
+                        </div>
+                    `);
+                }
+            }
         }
 
         function displayProduct(product) {
             const orderItemsDiv = document.getElementById('order-items');
-            
-            // Determine if image is URL or emoji
-            const isImageUrl = product.image && (
-                product.image.startsWith('http://') || 
-                product.image.startsWith('https://') || 
-                product.image.startsWith('data:image')
+
+            // Support both field naming conventions (title from Firestore, name from sessionStorage)
+            const displayName = product.name || product.title || 'Product';
+            // Support both images[] array (from Firestore) and image string (from sessionStorage)
+            const imageUrl = product.image || (product.images && product.images[0]) || null;
+
+            const isImageUrl = imageUrl && (
+                imageUrl.startsWith('http://') ||
+                imageUrl.startsWith('https://') ||
+                imageUrl.startsWith('data:image')
             );
 
-            const imageHtml = isImageUrl 
-                ? `<img src="${product.image}" alt="${product.name}">`
-                : product.image || '📦';
+            const imageHtml = isImageUrl
+                ? `<img src="${imageUrl}" alt="${displayName}">`
+                : '📦';
 
             orderItemsDiv.innerHTML = `
                 <div class="order-item">
                     <div class="item-image">${imageHtml}</div>
                     <div class="item-details">
-                        <div class="item-name">${product.name || 'Product'}</div>
+                        <div class="item-name">${displayName}</div>
                         ${product.condition ? `<div class="item-condition">Condition: ${product.condition}</div>` : ''}
                         <div class="item-price">Sold for: $${(product.price || 0).toFixed(2)}</div>
                     </div>
                 </div>
             `;
+        }
+
+        // Write tracking number to Firestore directly (seller has write permission on their product)
+        async function markAsShipped() {
+            const trackingNumber = document.getElementById('manual-tracking-number').value.trim();
+            const carrier = document.getElementById('manual-carrier').value;
+            const errorEl = document.getElementById('mark-shipped-error');
+            const btn = document.getElementById('mark-shipped-btn');
+
+            if (!trackingNumber) {
+                errorEl.textContent = 'Please enter a tracking number.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            // Build a tracking URL for common carriers
+            const trackingUrls = {
+                USPS: `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`,
+                UPS: `https://www.ups.com/track?tracknum=${trackingNumber}`,
+                FedEx: `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`,
+                DHL: `https://www.dhl.com/en/express/tracking.html?AWB=${trackingNumber}`,
+            };
+            const trackingUrl = trackingUrls[carrier] || null;
+
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            errorEl.style.display = 'none';
+
+            try {
+                const productRef = window.doc(window.firebaseDb, 'products', productId);
+                await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")
+                    .then(({ updateDoc }) => updateDoc(productRef, {
+                        trackingNumber,
+                        trackingUrl: trackingUrl || null,
+                        shipped: true,
+                    }));
+
+                // Update the UI to show the tracking number
+                document.getElementById('tracking-number').textContent = trackingNumber;
+                if (document.getElementById('tracking-number-display')) {
+                    document.getElementById('tracking-number-display').textContent = trackingNumber;
+                }
+                if (trackingUrl) {
+                    const trackBtn = document.getElementById('track-shipment-btn');
+                    if (trackBtn) { trackBtn.href = trackingUrl; trackBtn.style.display = ''; }
+                }
+
+                // Hide the form and show success
+                const section = document.getElementById('mark-shipped-section');
+                if (section) {
+                    section.innerHTML = `<div style="background:#d4edda;border-left:4px solid #28a745;padding:16px;border-radius:6px;">
+                        <strong style="color:#155724;">Shipment recorded!</strong>
+                        <p style="margin:6px 0 0;color:#155724;font-size:14px;">Tracking number saved. The buyer has been notified via email.</p>
+                    </div>`;
+                }
+            } catch (err) {
+                console.error('markAsShipped error:', err);
+                errorEl.textContent = 'Failed to save: ' + err.message;
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Mark as Shipped';
+            }
         }
 
         // loadOrderDetails is called by onAuthStateChanged after ownership is verified.
