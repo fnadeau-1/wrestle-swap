@@ -829,47 +829,49 @@
         // This saves the selected item's cost and redirects to checkout
         // ============================================
         
-        function proceedToCheckout() {
+        async function proceedToCheckout() {
             // Get the selected radio button
             const selectedRadio = document.querySelector('input[name="checkout-item"]:checked');
-            
+
             if (!selectedRadio) {
                 alert('Please select an item to checkout');
                 return;
             }
-            
-            // Get the selected item ID (keep as string to match product-detail format)
+
+            // Get the selected item ID
             const itemId = selectedRadio.value;
             const item = cartItems.find(i => i.id === itemId || i.id === String(itemId));
-            
+
             if (!item) {
                 alert('Error: Item not found');
                 console.error('Could not find item with ID:', itemId);
                 return;
             }
-            
-            // Calculate the total cost
-            const itemTotal = item.price * item.quantity;
-            const shipping = item.shipping || 0;
-            
-            // Create checkout data object
-            const checkoutData = {
-                itemId: item.id,
-                itemName: item.name,
-                itemPrice: item.price,
-                quantity: item.quantity,
-                shipping: shipping,
-                subtotal: itemTotal,
-                total: itemTotal
-            };
-            
-            // Save to localStorage for checkout page to read
-            localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
-            
-            console.log('Proceeding to checkout with:', checkoutData);
-            
-            // Redirect to checkout page
-            window.location.href = 'checkout.html';
+
+            // Fetch the full product document from Firestore so checkout.html
+            // has all required fields (sellerId, zipCode, category, etc.)
+            try {
+                const productRef = window.firebaseDoc(window.firebaseDb, 'products', item.id);
+                const productSnap = await window.firebaseGetDoc(productRef);
+
+                if (!productSnap.exists()) {
+                    alert('This item is no longer available.');
+                    return;
+                }
+
+                const product = { id: productSnap.id, ...productSnap.data() };
+
+                // Write to sessionStorage in the format checkout.html expects
+                sessionStorage.setItem('checkoutProduct', JSON.stringify(product));
+
+                console.log('Proceeding to checkout with:', product);
+
+                // Redirect to checkout page
+                window.location.href = 'checkout.html';
+            } catch (err) {
+                console.error('Error fetching product for checkout:', err);
+                alert('Error loading product. Please try again.');
+            }
         }
 
     </script>

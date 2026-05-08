@@ -688,7 +688,7 @@
 
                 querySnapshot.forEach((doc) => {
                     const productData = doc.data();
-                    if (doc.id !== currentProduct.id && !productData.sold) {
+                    if (doc.id !== currentProduct.id && !productData.sold && productData.active !== false) {
                         products.push({
                             id: doc.id,
                             ...productData
