@@ -707,18 +707,21 @@
                     item.className = 'related-item';
                     item.onclick = () => window.location.href = `productdetail.html?id=${product.id}`;
 
-                    const imageHtml = product.image
-                        ? (isImageURL(product.image)
-                            ? `<img src="${product.image}" alt="${product.name}">`
-                            : product.image)
+                    const productName = product.name || product.title || 'Product';
+                    const productImage = product.image || (product.images && product.images[0]) || null;
+
+                    const imageHtml = productImage
+                        ? (isImageURL(productImage)
+                            ? `<img src="${productImage}" alt="${productName}">`
+                            : productImage)
                         : '📦';
 
-                    const imageClass = isImageURL(product.image) ? '' : 'emoji';
+                    const imageClass = isImageURL(productImage) ? '' : 'emoji';
 
                     item.innerHTML = `
                         <div class="related-image ${imageClass}">${imageHtml}</div>
                         <div class="related-info">
-                            <div class="related-name">${product.name || 'Product'}</div>
+                            <div class="related-name">${productName}</div>
                             <div class="related-price">$${(product.price || 0).toFixed(2)}</div>
                         </div>
                     `;
