@@ -436,10 +436,8 @@
 
         // Perform new search
         function performSearch() {
-            const query = document.getElementById('search-input').value;
-            if (query.trim()) {
-                window.location.href = 'search.html?q=' + encodeURIComponent(query);
-            }
+            const query = document.getElementById('search-input').value.trim();
+            window.location.href = query ? 'search.html?q=' + encodeURIComponent(query) : 'search.html';
         }
 
         // Toggle size filter visibility
