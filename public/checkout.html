@@ -1184,8 +1184,8 @@
                         console.log('Seller fulfillment page:', 
                             'seller-order-fulfillment.html?productId=' + checkoutProduct.id + '&orderId=' + result.paymentIntent.id);
                         
-                        // Redirect to confirmation page
-                        window.location.href = 'order-confirmation.html?id=' + result.paymentIntent.id;
+                        // Redirect to orders page
+                        window.location.href = 'my-orders.html';
                     } else {
                         console.log('Unexpected payment status:', result.paymentIntent?.status);
                         throw new Error('Unexpected payment status: ' + (result.paymentIntent?.status || 'unknown'));
@@ -1222,6 +1222,5 @@
             <p id="overlay-message" style="color:#666;font-size:14px;line-height:1.6;margin:0;">Please do not close or navigate away from this page.</p>
         </div>
     </div>
-    <script type="module" src="js/site-notice.js"></script>
 </body>
 </html>
