@@ -917,6 +917,13 @@ exports.completeOrder = onRequest(
       try {
         const productSnap = await db.collection('products').doc(productId).get();
         prod = productSnap.data();
+
+        // Derive shipping cost from verified Stripe payment intent amount
+        const prodPriceCents = Math.round((prod.price || 0) * 100);
+        const taxCents = Math.round(prodPriceCents * 0.08);
+        const shippingCents = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
+        const shippingCost = shippingCents / 100;
+
         await db.collection('orders').add({
           productId,
           buyerId: decodedToken.uid,
@@ -924,6 +931,7 @@ exports.completeOrder = onRequest(
           paymentIntentId,
           productTitle: prod.title || null,
           productPrice: prod.price || null,
+          shippingCost,
           shippingLabel: shippingInfo ? (shippingInfo.label_url || null) : null,
           trackingNumber: shippingInfo ? (shippingInfo.tracking_number || null) : null,
           trackingUrl: shippingInfo ? (shippingInfo.tracking_url_provider || null) : null,

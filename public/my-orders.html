@@ -1210,19 +1210,19 @@
                         <div style="background: #f9fafb; padding: 16px; border-radius: 8px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>Subtotal:</span>
-                                <span>$${parseFloat(order.price || 0).toFixed(2)}</span>
+                                <span>$${parseFloat(order.productPrice || 0).toFixed(2)}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>Shipping:</span>
-                                <span>${order.shippingCost > 0 ? '$' + parseFloat(order.shippingCost).toFixed(2) : 'FREE'}</span>
+                                <span>${parseFloat(order.shippingCost || 0) > 0 ? '$' + parseFloat(order.shippingCost).toFixed(2) : 'FREE'}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>Tax:</span>
-                                <span>$${(parseFloat(order.price || 0) * 0.08).toFixed(2)}</span>
+                                <span>$${(parseFloat(order.productPrice || 0) * 0.08).toFixed(2)}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 2px solid var(--color-border); font-size: 1.2rem; font-weight: 700;">
                                 <span>Total:</span>
-                                <span>$${(parseFloat(order.price || 0) + parseFloat(order.shippingCost || 0) + (parseFloat(order.price || 0) * 0.08)).toFixed(2)}</span>
+                                <span>$${(parseFloat(order.productPrice || 0) + parseFloat(order.shippingCost || 0) + (parseFloat(order.productPrice || 0) * 0.08)).toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
