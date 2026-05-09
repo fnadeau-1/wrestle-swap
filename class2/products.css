@@ -79,76 +79,6 @@ body { overflow-x: hidden; }
 }
 
 /* =============================================
-   FILTER BAR
-   ============================================= */
-.filter-bar-section {
-  max-width: 1100px;
-  margin: 2.5rem auto 1.5rem;
-  padding: 0 5%;
-}
-
-.filter-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  padding: 1rem 1.25rem;
-  background: var(--warm-white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.filter-label {
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-right: 0.5rem;
-}
-
-.filter-btn {
-  background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 500;
-  padding: 0.45rem 1rem;
-  border-radius: 50px;
-  border: 1.5px solid var(--border);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.filter-btn:hover {
-  border-color: var(--honey-light);
-  color: var(--earth);
-  background: rgba(232,160,32,0.06);
-}
-.filter-btn.active {
-  background: var(--earth);
-  color: #fff;
-  border-color: var(--earth);
-}
-
-.filter-info {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-.filter-info span {
-  font-weight: 600;
-  color: var(--earth);
-}
-
-/* =============================================
    PRODUCTS GRID
    ============================================= */
 .shop-section {
@@ -256,37 +186,6 @@ body { overflow-x: hidden; }
 .badge-ltd  { background: #fdeaea; color: #9b2335; }
 
 /* =============================================
-   EMPTY STATE
-   ============================================= */
-.empty-state {
-  display: none;
-  text-align: center;
-  padding: 4rem 1rem;
-  background: var(--warm-white);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-  margin-top: 1rem;
-}
-.empty-state.show { display: block; }
-
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: 0.75rem;
-}
-
-.empty-state h3 {
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  color: var(--earth);
-  margin-bottom: 0.5rem;
-}
-
-.empty-state p {
-  font-size: 0.92rem;
-  color: var(--text-muted);
-}
-
-/* =============================================
    CTA STRIP
    ============================================= */
 .cta-strip {
@@ -352,30 +251,18 @@ body { overflow-x: hidden; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* stagger card animations */
-.shop-card:nth-child(1)  { animation-delay: 0.05s; }
-.shop-card:nth-child(2)  { animation-delay: 0.10s; }
-.shop-card:nth-child(3)  { animation-delay: 0.15s; }
-.shop-card:nth-child(4)  { animation-delay: 0.20s; }
-.shop-card:nth-child(5)  { animation-delay: 0.25s; }
-.shop-card:nth-child(6)  { animation-delay: 0.30s; }
-.shop-card:nth-child(7)  { animation-delay: 0.35s; }
-.shop-card:nth-child(8)  { animation-delay: 0.40s; }
-
-/* =============================================
-   FOOTER OVERRIDE
-   ============================================= */
-footer {
-  background: var(--earth);
-  color: rgba(255,255,255,0.75);
-}
+.shop-card:nth-child(1) { animation-delay: 0.05s; }
+.shop-card:nth-child(2) { animation-delay: 0.10s; }
+.shop-card:nth-child(3) { animation-delay: 0.15s; }
+.shop-card:nth-child(4) { animation-delay: 0.20s; }
+.shop-card:nth-child(5) { animation-delay: 0.25s; }
+.shop-card:nth-child(6) { animation-delay: 0.30s; }
 
 /* =============================================
    RESPONSIVE
    ============================================= */
 @media (max-width: 900px) {
   .shop-grid { grid-template-columns: repeat(2, 1fr); }
-  .filter-bar { padding: 0.85rem 1rem; }
   .cta-inner { padding: 2rem 1.5rem; }
   .cta-inner h2 { font-size: 1.4rem; }
 }
@@ -384,7 +271,5 @@ footer {
   nav ul { display: none; }
   .shop-header h1 { font-size: 2.2rem; }
   .shop-grid { grid-template-columns: 1fr; }
-  .filter-bar { flex-direction: column; align-items: flex-start; }
-  .filter-info { font-size: 0.8rem; }
   .cta-inner { flex-direction: column; align-items: flex-start; text-align: left; }
 }

@@ -428,14 +428,6 @@ body { overflow-x: hidden; }
 }
 
 /* =============================================
-   FOOTER OVERRIDE — match index page footer style
-   ============================================= */
-footer {
-  background: var(--earth);
-  color: rgba(255,255,255,0.75);
-}
-
-/* =============================================
    RESPONSIVE
    ============================================= */
 @media (max-width: 900px) {

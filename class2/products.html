@@ -49,32 +49,13 @@
   </section>
 
   <!-- =====================
-       FILTER BAR
-       ===================== -->
-  <section class="filter-bar-section">
-    <div class="filter-bar">
-      <div class="filter-group">
-        <span class="filter-label">Filter:</span>
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="produce">Produce</button>
-        <button class="filter-btn" data-filter="bakery">Bakery</button>
-        <button class="filter-btn" data-filter="pantry">Pantry</button>
-        <button class="filter-btn" data-filter="dairy">Dairy &amp; Eggs</button>
-      </div>
-      <div class="filter-info">
-        <span id="product-count">8</span> products
-      </div>
-    </div>
-  </section>
-
-  <!-- =====================
        PRODUCTS GRID
        ===================== -->
   <section class="shop-section">
     <div class="shop-grid">
 
       <!-- Wildflower Honey -->
-      <a href="products/product-honey.html" class="shop-card" data-category="pantry">
+      <a href="products/product-honey.html" class="shop-card">
         <div class="shop-card-img" style="background-color:#fff8e1;">🍯</div>
         <div class="shop-card-body">
           <div class="shop-card-vendor">Bee Haven Apiary</div>
@@ -88,7 +69,7 @@
       </a>
 
       <!-- Heirloom Tomatoes -->
-      <a href="products/product-tomatoes.html" class="shop-card" data-category="produce">
+      <a href="products/product-tomatoes.html" class="shop-card">
         <div class="shop-card-img" style="background-color:#d8f3dc;">🍅</div>
         <div class="shop-card-body">
           <div class="shop-card-vendor">Sunny Acres Farm</div>
@@ -102,7 +83,7 @@
       </a>
 
       <!-- Country Sourdough -->
-      <a href="products/product-sourdough.html" class="shop-card" data-category="bakery">
+      <a href="products/product-sourdough.html" class="shop-card">
         <div class="shop-card-img" style="background-color:#fdefd4;">🍞</div>
         <div class="shop-card-body">
           <div class="shop-card-vendor">Rise &amp; Shine Bakery</div>
@@ -116,7 +97,7 @@
       </a>
 
       <!-- Free-Range Eggs -->
-      <a href="products/product-eggs.html" class="shop-card" data-category="dairy">
+      <a href="products/product-eggs.html" class="shop-card">
         <div class="shop-card-img" style="background-color:#fef9ec;">🥚</div>
         <div class="shop-card-body">
           <div class="shop-card-vendor">Cluck &amp; Grow Farm</div>
@@ -130,7 +111,7 @@
       </a>
 
       <!-- Strawberry Jam -->
-      <a href="products/product-jam.html" class="shop-card" data-category="pantry">
+      <a href="products/product-jam.html" class="shop-card">
         <div class="shop-card-img" style="background-color:#fdeaea;">🍓</div>
         <div class="shop-card-body">
           <div class="shop-card-vendor">Jammy Jar Co.</div>
@@ -144,7 +125,7 @@
       </a>
 
       <!-- Mixed Lettuce Bundle -->
-      <a href="products/product-lettuce.html" class="shop-card" data-category="produce">
+      <a href="products/product-lettuce.html" class="shop-card">
         <div class="shop-card-img" style="background-color:#f0f4e8;">🥬</div>
         <div class="shop-card-body">
           <div class="shop-card-vendor">Green Valley Greens</div>
@@ -157,41 +138,6 @@
         </div>
       </a>
 
-      <!-- Fresh Blueberries -->
-      <a href="#" class="shop-card" data-category="produce">
-        <div class="shop-card-img" style="background-color:#e8e1f5;">🫐</div>
-        <div class="shop-card-body">
-          <div class="shop-card-vendor">Hilltop Berry Farm</div>
-          <div class="shop-card-name">Fresh Blueberries</div>
-          <p class="shop-card-desc">Plump, sweet blueberries hand-picked at peak ripeness. 1 pint container.</p>
-          <div class="shop-card-footer">
-            <div class="shop-card-price">$5.00 <small>/ pint</small></div>
-            <span class="shop-badge badge-new">In Season</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- Goat Cheese -->
-      <a href="#" class="shop-card" data-category="dairy">
-        <div class="shop-card-img" style="background-color:#fffaf0;">🧀</div>
-        <div class="shop-card-body">
-          <div class="shop-card-vendor">Maple Hollow Creamery</div>
-          <div class="shop-card-name">Fresh Goat Cheese</div>
-          <p class="shop-card-desc">Soft, tangy chèvre made in small batches. Plain or herbed varieties.</p>
-          <div class="shop-card-footer">
-            <div class="shop-card-price">$10.00 <small>/ 6 oz</small></div>
-            <span class="shop-badge badge-best">Crowd Pleaser</span>
-          </div>
-        </div>
-      </a>
-
-    </div>
-
-    <!-- "No results" message — hidden by default -->
-    <div class="empty-state" id="empty-state">
-      <div class="empty-icon">🌾</div>
-      <h3>No products in this category</h3>
-      <p>Check back next Saturday — our vendors rotate seasonally.</p>
     </div>
   </section>
 
@@ -216,50 +162,6 @@
     <p>Saturdays 7am–2pm &bull; Downtown Pavilion &bull; <a href="about.html">Get Directions</a></p>
   </footer>
 
-  <!-- =====================
-       FILTER SCRIPT
-       ===================== -->
-  <script>
-    // Category filtering
-    var filterBtns = document.querySelectorAll('.filter-btn');
-    var cards = document.querySelectorAll('.shop-card');
-    var emptyState = document.getElementById('empty-state');
-    var productCount = document.getElementById('product-count');
-
-    for (var i = 0; i < filterBtns.length; i++) {
-      filterBtns[i].addEventListener('click', function() {
-        var filter = this.getAttribute('data-filter');
-
-        // toggle active button
-        for (var j = 0; j < filterBtns.length; j++) {
-          filterBtns[j].classList.remove('active');
-        }
-        this.classList.add('active');
-
-        // show/hide cards
-        var visibleCount = 0;
-        for (var k = 0; k < cards.length; k++) {
-          var category = cards[k].getAttribute('data-category');
-          if (filter === 'all' || filter === category) {
-            cards[k].style.display = '';
-            visibleCount++;
-          } else {
-            cards[k].style.display = 'none';
-          }
-        }
-
-        // update count
-        productCount.textContent = visibleCount;
-
-        // toggle empty state
-        if (visibleCount === 0) {
-          emptyState.classList.add('show');
-        } else {
-          emptyState.classList.remove('show');
-        }
-      });
-    }
-  </script>
 
 </body>
 </html>
