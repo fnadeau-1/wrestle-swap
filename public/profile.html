@@ -306,7 +306,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
@@ -351,36 +351,97 @@
 
         async function loadUserProfile(userId) {
             try {
-                const q = query(collection(db, 'products'), where('userId', '==', userId));
-                const productsSnapshot = await getDocs(q);
+                // Load user data from Firestore users collection
+                const userDocSnap = await getDoc(doc(db, 'users', userId));
+                const userData = userDocSnap.exists() ? userDocSnap.data() : {};
 
-                const allProducts = [];
-                productsSnapshot.forEach(doc => {
-                    allProducts.push({ id: doc.id, ...doc.data() });
-                });
+                // Determine display name: own profile uses Auth data, others use Firestore
+                let displayName, username, bio, photoURL;
+                if (isOwnProfile && currentUser) {
+                    displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
+                    username = userData.username || currentUser.email?.split('@')[0] || 'user';
+                    bio = userData.bio || '';
+                    photoURL = currentUser.photoURL || null;
+                } else {
+                    displayName = userData.displayName || userData.username || 'GrappleTrade User';
+                    username = userData.username || userId.substring(0, 8);
+                    bio = userData.bio || '';
+                    photoURL = userData.photoURL || null;
+                }
 
-                const soldProducts = allProducts.filter(p => p.sold);
-                const activeProducts = allProducts.filter(p => !p.sold && p.active);
+                // Load active products
+                const productsSnap = await getDocs(
+                    query(collection(db, 'products'), where('userId', '==', userId), where('active', '==', true))
+                );
+                const soldSnap = await getDocs(
+                    query(collection(db, 'products'), where('userId', '==', userId), where('sold', '==', true))
+                );
+                const activeProducts = productsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.sold);
 
-                const reviews = soldProducts
-                    .filter(p => p.review)
-                    .map(p => ({ ...p.review, productName: p.title, productId: p.id }));
-
+                // Load reviews from sellerRatings collection
+                const ratingsSnap = await getDocs(
+                    query(collection(db, 'sellerRatings'), where('sellerId', '==', userId))
+                );
+                const reviews = ratingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 const totalReviews = reviews.length;
                 const averageRating = totalReviews > 0
-                    ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+                    ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / totalReviews
                     : 0;
 
-                displayProfile(userId, {
-                    itemsSold: soldProducts.length,
-                    activeListings: activeProducts.length,
-                    totalReviews: totalReviews,
-                    averageRating: averageRating,
-                    reviews: reviews
-                });
+                document.getElementById('profile-name').textContent = displayName;
+                document.getElementById('profile-username').textContent = '@' + username;
+                document.getElementById('profile-bio').textContent = bio || 'No bio yet.';
+
+                if (photoURL) {
+                    const imgEl = document.createElement('img');
+                    imgEl.src = photoURL;
+                    imgEl.className = 'profile-image';
+                    imgEl.style.cssText = 'width:150px;height:150px;border-radius:50%;object-fit:cover;border:4px solid #c41e3a;';
+                    document.getElementById('profile-image').replaceWith(imgEl);
+                }
+
+                document.getElementById('items-sold').textContent = soldSnap.size;
+                document.getElementById('active-listings').textContent = activeProducts.length;
+                document.getElementById('total-reviews').textContent = totalReviews;
+
+                if (totalReviews > 0) {
+                    document.getElementById('rating-container').style.display = 'flex';
+                    document.getElementById('rating-value').textContent = averageRating.toFixed(1);
+                    document.getElementById('rating-count').textContent = `(${totalReviews} review${totalReviews !== 1 ? 's' : ''})`;
+                    const fullStars = Math.floor(averageRating);
+                    const hasHalf = averageRating % 1 >= 0.5;
+                    document.getElementById('rating-stars').textContent =
+                        '★'.repeat(fullStars) + (hasHalf ? '☆' : '') + '☆'.repeat(5 - fullStars - (hasHalf ? 1 : 0));
+                }
+
+                const badgesContainer = document.getElementById('profile-badges');
+                badgesContainer.innerHTML = '';
+                if (totalReviews >= 10 && averageRating >= 4.5) {
+                    badgesContainer.innerHTML += '<span class="badge verified">✓ Verified Seller</span>';
+                }
+                if (soldSnap.size >= 20) {
+                    badgesContainer.innerHTML += '<span class="badge trusted">🛡️ Trusted Trader</span>';
+                }
+                const memberSince = userData.createdAt
+                    ? new Date(userData.createdAt.toDate ? userData.createdAt.toDate() : userData.createdAt).getFullYear()
+                    : new Date().getFullYear();
+                badgesContainer.innerHTML += `<span class="badge member-since">📅 Member since ${memberSince}</span>`;
+
+                const actionButtons = document.getElementById('action-buttons');
+                if (isOwnProfile) {
+                    actionButtons.innerHTML = `
+                        <a href="listings-manager.html" class="btn btn-primary">My Listings</a>
+                        <a href="my-orders.html" class="btn btn-primary">My Orders</a>
+                        <a href="sell.html" class="btn btn-secondary">Add Listing</a>
+                    `;
+                } else {
+                    actionButtons.innerHTML = `
+                        <button class="btn btn-primary" id="contact-seller-btn" onclick="contactSeller('${userId}', '${displayName.replace(/'/g, "\\'")}')">💬 Message Seller</button>
+                    `;
+                }
 
                 displayProducts(activeProducts);
-                displayReviews(reviews);
+                displayReviews(reviews, userId);
 
                 document.getElementById('loadingState').style.display = 'none';
                 document.getElementById('profileContainer').style.display = 'block';
@@ -391,22 +452,41 @@
             }
         }
 
-        function displayProfile(userId, stats) {
-            let displayName = 'User';
-            let email = '';
-            let photoURL = null;
-
-            if (currentUser && (isOwnProfile || userId === currentUser.uid)) {
-                displayName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
-                email = currentUser.email;
-                photoURL = currentUser.photoURL;
-            } else {
-                displayName = 'Wrestler';
-                email = 'user@example.com';
+        async function contactSeller(sellerId, sellerName) {
+            if (!currentUser) {
+                window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.href);
+                return;
             }
+            const btn = document.getElementById('contact-seller-btn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Opening chat...'; }
+            try {
+                // Use a stable conversation ID for general (non-product) messages
+                const conversationId = `general_${currentUser.uid}_${sellerId}`;
+                const convRef = doc(db, 'conversations', conversationId);
+                await setDoc(convRef, {
+                    productId: null,
+                    productName: 'General Inquiry',
+                    buyerId: currentUser.uid,
+                    buyerName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Buyer',
+                    sellerId,
+                    sellerName,
+                    participants: [currentUser.uid, sellerId],
+                    lastMessageAt: serverTimestamp(),
+                    lastMessage: null,
+                    unreadBuyer: 0,
+                    unreadSeller: 0,
+                }, { merge: true });
+                window.location.href = `messages.html?conv=${conversationId}`;
+            } catch (err) {
+                console.error('contactSeller error:', err);
+                if (btn) { btn.disabled = false; btn.textContent = '💬 Message Seller'; }
+                alert('Failed to open chat. Please try again.');
+            }
+        }
 
-            document.getElementById('profile-name').textContent = displayName;
-            document.getElementById('profile-username').textContent = '@' + (email.split('@')[0]);
+        function displayProfile(userId, stats) {
+            // Legacy stub — profile rendering is now done inside loadUserProfile
+            void userId; void stats;
 
             if (photoURL) {
                 const imgElement = document.createElement('img');
@@ -501,15 +581,18 @@
             container.style.display = 'flex';
             emptyState.style.display = 'none';
 
-            reviews.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            // Sort newest first — handle Firestore Timestamp or plain number
+            reviews.sort((a, b) => {
+                const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt || 0);
+                const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt || 0);
+                return tb - ta;
+            });
 
             container.innerHTML = reviews.map(review => {
-                const reviewDate = review.createdAt
-                    ? formatRelativeTime(review.createdAt)
-                    : 'Recently';
-
-                const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
-                const initial = (review.userName || 'A')[0].toUpperCase();
+                const ts = review.createdAt?.toMillis ? review.createdAt.toMillis() : (review.createdAt || null);
+                const reviewDate = ts ? formatRelativeTime(ts) : 'Recently';
+                const stars = '★'.repeat(review.rating || 0) + '☆'.repeat(5 - (review.rating || 0));
+                const initial = (review.buyerName || 'A')[0].toUpperCase();
 
                 return `
                     <div class="review-card">
@@ -517,13 +600,13 @@
                             <div class="reviewer-info">
                                 <div class="reviewer-avatar">${initial}</div>
                                 <div>
-                                    <div class="reviewer-name">${review.userName || 'Anonymous'}</div>
+                                    <div class="reviewer-name">${review.buyerName || 'Anonymous'}</div>
                                     <div class="review-date">${reviewDate}</div>
                                 </div>
                             </div>
                             <div class="review-stars">${stars}</div>
                         </div>
-                        <p class="review-text">${review.text}</p>
+                        ${review.text ? `<p class="review-text">${review.text}</p>` : ''}
                         ${review.productName ? `<p class="review-product">Product: ${review.productName}</p>` : ''}
                     </div>
                 `;
@@ -550,5 +633,6 @@
         }
     </script>
     <script type="module" src="js/site-notice.js"></script>
+    <script type="module" src="js/notifications.js"></script>
 </body>
 </html>

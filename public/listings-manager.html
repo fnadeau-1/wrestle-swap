@@ -548,6 +548,14 @@
                 <div class="stat-label">Total Value</div>
                 <div class="stat-value" id="totalValue">-</div>
             </div>
+            <div class="stat-card" style="border-left:3px solid var(--color-success);">
+                <div class="stat-label">Total Earned</div>
+                <div class="stat-value" id="totalEarned" style="color:var(--color-success);">-</div>
+            </div>
+            <div class="stat-card" style="border-left:3px solid #f59e0b;">
+                <div class="stat-label">Pending Payout</div>
+                <div class="stat-value" id="pendingPayout" style="color:#d97706;">-</div>
+            </div>
         </div>
 
         <!-- Ship-by deadline alerts — populated by renderListings() -->
@@ -952,10 +960,18 @@
             }
 
             // Calculate stats
+            const soldListings = listings.filter(l => l.sold);
             const stats = {
                 totalListings: listings.length,
                 activeListings: listings.filter(l => l.active && !l.sold).length,
-                totalValue: listings.filter(l => !l.sold).reduce((sum, l) => sum + ((l.price || 0) * (l.stock || 0)), 0)
+                totalValue: listings.filter(l => !l.sold).reduce((sum, l) => sum + ((l.price || 0) * (l.stock || 0)), 0),
+                // sellerReceivesCents is stored in cents on the product doc after a sale completes
+                totalEarned: soldListings
+                    .filter(l => l.sellerPaidOut)
+                    .reduce((sum, l) => sum + ((l.sellerReceivesCents || 0) / 100), 0),
+                pendingPayout: soldListings
+                    .filter(l => !l.sellerPaidOut && !l.cancelled)
+                    .reduce((sum, l) => sum + ((l.sellerReceivesCents || 0) / 100), 0),
             };
             updateStatsDisplay(stats);
         }
@@ -964,6 +980,8 @@
             document.getElementById('totalListings').textContent = stats.totalListings;
             document.getElementById('activeListings').textContent = stats.activeListings;
             document.getElementById('totalValue').textContent = `$${parseFloat(stats.totalValue).toFixed(2)}`;
+            document.getElementById('totalEarned').textContent = `$${parseFloat(stats.totalEarned || 0).toFixed(2)}`;
+            document.getElementById('pendingPayout').textContent = `$${parseFloat(stats.pendingPayout || 0).toFixed(2)}`;
         }
 
         function showError(message) {
@@ -1289,5 +1307,6 @@
         });
     </script>
     <script type="module" src="js/site-notice.js"></script>
+    <script type="module" src="js/notifications.js"></script>
 </body>
 </html>

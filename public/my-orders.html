@@ -848,33 +848,50 @@
 
             console.log('Fetching orders for user:', user.uid);
 
-            // Query for products purchased by this user
-            const query = db.collection('products')
+            // Active orders: query products collection (sold=true, buyerId=user)
+            const activeSnapshot = await db.collection('products')
                 .where('sold', '==', true)
-                .where('buyerId', '==', user.uid);
-
-            const snapshot = await query.get();
-
-            console.log('Found', snapshot.size, 'orders for this user');
-
-            if (snapshot.empty) {
-                return [];
-            }
+                .where('buyerId', '==', user.uid)
+                .get();
 
             const orders = [];
-            snapshot.forEach(doc => {
+            activeSnapshot.forEach(doc => {
+                orders.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Cancelled orders: query orders collection (cancelled=true, buyerId=user)
+            // These are invisible in the products collection because sold is set to false on cancel
+            const cancelledSnapshot = await db.collection('orders')
+                .where('buyerId', '==', user.uid)
+                .where('cancelled', '==', true)
+                .get();
+
+            cancelledSnapshot.forEach(doc => {
+                const d = doc.data();
+                // Normalize to match the shape renderOrderCard expects
                 orders.push({
-                    id: doc.id,
-                    ...doc.data()
+                    id: d.productId,          // product ID so cancel/review ops still work
+                    _ordersDocId: doc.id,
+                    title: d.productTitle || 'Order',
+                    price: d.productPrice || 0,
+                    images: d.productImages || [],
+                    condition: d.productCondition || null,
+                    shippingCost: d.shippingCost || 0,
+                    soldTimestamp: d.createdTimestamp || 0,
+                    soldOrderId: d.paymentIntentId || null,
+                    cancelled: true,
+                    cancelledAt: d.cancelledAt || null,
+                    cancelledBy: d.cancelledBy || null,
+                    refundId: d.refundId || null,
+                    trackingNumber: d.trackingNumber || null,
+                    delivered: d.delivered || false,
                 });
             });
 
+            console.log('Found', orders.length, 'orders for this user');
+
             // Sort by date (newest first)
-            orders.sort((a, b) => {
-                const dateA = a.soldTimestamp || 0;
-                const dateB = b.soldTimestamp || 0;
-                return dateB - dateA;
-            });
+            orders.sort((a, b) => (b.soldTimestamp || 0) - (a.soldTimestamp || 0));
 
             return orders;
         }
@@ -957,8 +974,8 @@
                                     // Delivered - can contact support if item wasn't as expected
                                     return `<button class="btn btn-secondary" onclick="window.location.href='help.html?subject=Order Issue&orderId=${order.id}'">Contact Support</button>`;
                                 } else if (isShipped) {
-                                    // Shipped but not delivered - can request refund
-                                    return `<button class="btn btn-secondary" onclick="openRefundRequestModal('${order.id}')">Request Refund</button>`;
+                                    // Shipped but not delivered - can confirm delivery or request refund
+                                    return `<button class="btn btn-primary" onclick="confirmDelivery('${order.id}')">I Received This</button>`;
                                 } else {
                                     // Not shipped yet - can cancel
                                     return `<button class="btn btn-danger" onclick="openCancelModal('${order.id}')">Cancel Order</button>`;
@@ -1210,7 +1227,7 @@
                         <div style="background: #f9fafb; padding: 16px; border-radius: 8px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>Subtotal:</span>
-                                <span>$${parseFloat(order.productPrice || 0).toFixed(2)}</span>
+                                <span>$${parseFloat(order.price || 0).toFixed(2)}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>Shipping:</span>
@@ -1218,11 +1235,11 @@
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>Tax:</span>
-                                <span>$${(parseFloat(order.productPrice || 0) * 0.08).toFixed(2)}</span>
+                                <span>$${(parseFloat(order.price || 0) * 0.08).toFixed(2)}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 2px solid var(--color-border); font-size: 1.2rem; font-weight: 700;">
                                 <span>Total:</span>
-                                <span>$${(parseFloat(order.productPrice || 0) + parseFloat(order.shippingCost || 0) + (parseFloat(order.productPrice || 0) * 0.08)).toFixed(2)}</span>
+                                <span>$${(parseFloat(order.price || 0) + parseFloat(order.shippingCost || 0) + (parseFloat(order.price || 0) * 0.08)).toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
@@ -1236,11 +1253,12 @@
                                 // Delivered - show contact support option
                                 return `<a href="help.html?subject=Order Issue&orderId=${orderId}" class="btn btn-secondary">Contact Support</a>`;
                             } else if (isShipped) {
-                                // Shipped but not delivered - can request refund
+                                // Shipped but not delivered - can confirm delivery or request refund
                                 if (order.refundRequested) {
                                     return '<span style="color: #d97706; font-size: 14px; font-weight: 500;">Refund Requested</span>';
                                 }
-                                return `<button class="btn btn-secondary" onclick="closeOrderModal(); openRefundRequestModal('${orderId}')">Request Refund</button>`;
+                                return `<button class="btn btn-primary" onclick="closeOrderModal(); confirmDelivery('${orderId}')">I Received This</button>
+                                        <button class="btn btn-secondary" onclick="closeOrderModal(); openRefundRequestModal('${orderId}')">Request Refund</button>`;
                             } else {
                                 // Not shipped - can cancel
                                 return `<button class="btn btn-danger" onclick="openCancelModal('${orderId}')">Cancel Order</button>`;
@@ -1279,10 +1297,41 @@
         }
 
         // ============================================
+        // CONFIRM DELIVERY
+        // ============================================
+
+        async function confirmDelivery(productId) {
+            if (!confirm('Confirm that you received this item? This will complete the transaction.')) return;
+            try {
+                if (!auth.currentUser) throw new Error('You must be signed in.');
+                const idToken = await auth.currentUser.getIdToken();
+                const response = await fetch(CONFIRM_DELIVERY_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`,
+                    },
+                    body: JSON.stringify({ productId }),
+                });
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || `Error ${response.status}`);
+                }
+                await renderOrders();
+                // Auto-open the order modal so review form appears immediately
+                openOrderModal(productId);
+            } catch (err) {
+                console.error('confirmDelivery error:', err);
+                alert('Failed to confirm delivery: ' + err.message);
+            }
+        }
+
+        // ============================================
         // CANCEL ORDER FUNCTIONALITY
         // ============================================
 
         const CANCEL_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/cancelOrder';
+        const CONFIRM_DELIVERY_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/confirmDelivery';
         let orderToCancel = null;
         let orderToCancelData = null;
 
@@ -1723,5 +1772,6 @@
         });
     </script>
     <script type="module" src="js/site-notice.js"></script>
+    <script type="module" src="js/notifications.js"></script>
 </body>
 </html>

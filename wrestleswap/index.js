@@ -48,9 +48,26 @@ async function getUserEmail(uid) {
 const stripeSecret = defineSecret("STRIPE_SKEY");
 const shippoSecret = defineSecret("SHIPPO_API_KEY");
 const sendgridSecret = defineSecret("SENDGRID_API_KEY");
+const shippoWebhookSecret = defineSecret("SHIPPO_WEBHOOK_SECRET");
 // const recaptchaApiKey = defineSecret("RECAPTCHA_API_KEY"); // Uncomment after setting secret
 
 const emails = require('./emails');
+
+// Write an in-app notification to Firestore (fires-and-forgets — never throws)
+async function createNotification(userId, { icon, message, link }) {
+  if (!userId) return;
+  try {
+    await db.collection('notifications').doc(userId).collection('items').add({
+      icon: icon || '🔔',
+      message,
+      link: link || null,
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    console.error('createNotification error:', e.message);
+  }
+}
 
 // --- DELETE OLD SOLD PRODUCTS (runs automatically every 30 days) ---
 // Converted from HTTP to scheduled — no public endpoint means no abuse vector
@@ -82,7 +99,7 @@ const SELLER_STRIKES_LIMIT = 3;
 // --- STRIPE PAYMENT INTENT WITH CONNECT ---
 // Shipping costs go to platform, product price (minus 10% fee) goes to seller
 exports.createPaymentIntent = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, shippoSecret] },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -98,7 +115,7 @@ exports.createPaymentIntent = onRequest(
     try {
       const stripe = require('stripe')(stripeSecret.value());
       // Never trust amounts or sellerStripeAccountId from the frontend
-      const { currency = 'usd', productId, shippingCost = 0 } = req.body;
+      const { currency = 'usd', productId, rateObjectId } = req.body;
 
       if (!productId) {
         return res.status(400).json({ error: 'productId is required' });
@@ -115,8 +132,27 @@ exports.createPaymentIntent = onRequest(
         return res.status(400).json({ error: 'This item has already been sold' });
       }
 
+      // Prevent a seller from buying their own listing
+      if (productData.userId === decodedToken.uid) {
+        return res.status(403).json({ error: 'You cannot purchase your own listing' });
+      }
+
       const productPriceInCents = Math.round((productData.price || 0) * 100);
-      const shippingInCents = Math.max(0, Math.round((shippingCost || 0) * 100));
+
+      // Verify shipping cost server-side via Shippo — never trust client-sent amount
+      let shippingInCents = 0;
+      if (rateObjectId) {
+        const shippoKey = shippoSecret.value();
+        const rateRes = await fetch(`https://api.goshippo.com/rates/${rateObjectId}`, {
+          headers: { 'Authorization': `ShippoToken ${shippoKey}` },
+        });
+        if (!rateRes.ok) {
+          return res.status(400).json({ error: 'Invalid shipping rate. Please recalculate shipping.' });
+        }
+        const rate = await rateRes.json();
+        shippingInCents = Math.round(parseFloat(rate.amount || 0) * 100);
+      }
+
       const taxInCents = Math.round(productPriceInCents * 0.08);
       const amount = productPriceInCents + shippingInCents + taxInCents;
 
@@ -150,36 +186,32 @@ exports.createPaymentIntent = onRequest(
         metadata: { productId },
       };
 
+      // Escrow model: funds go to platform, seller is paid out only after delivery confirmed.
+      // This protects buyers — no destination charge, no immediate transfer to seller.
       if (sellerStripeAccountId && productPriceInCents > 0) {
-        // Verify the seller's Connect account can accept charges
-        // before attempting a destination charge — avoids a hard 500 error
         const sellerAccount = await stripe.accounts.retrieve(sellerStripeAccountId);
-
-        if (!sellerAccount.charges_enabled) {
+        if (!sellerAccount.payouts_enabled) {
           return res.status(400).json({
             error: 'The seller has not completed their payment account setup. Please contact the seller or try again later.'
           });
         }
-
         const platformFeeOnProduct = Math.round(productPriceInCents * PLATFORM_FEE_PERCENT);
-        const sellerReceives = productPriceInCents - platformFeeOnProduct;
-        const applicationFeeAmount = amount - sellerReceives;
+        const sellerReceivesCents = productPriceInCents - platformFeeOnProduct;
 
-        console.log('Using Stripe Connect - destination charge');
-        console.log('  Platform fee (10% of product):', platformFeeOnProduct);
-        console.log('  Total application fee:', applicationFeeAmount);
-        console.log('  Seller receives:', sellerReceives);
+        console.log('Escrow mode — seller paid at confirmed delivery');
+        console.log('  Seller receives at delivery:', sellerReceivesCents, 'cents');
+        console.log('  Platform fee (10%):', platformFeeOnProduct, 'cents');
 
-        paymentIntentOptions.application_fee_amount = applicationFeeAmount;
-        paymentIntentOptions.transfer_data = { destination: sellerStripeAccountId };
+        // Store seller payout info in Stripe metadata so completeOrder can save it to Firestore
         paymentIntentOptions.metadata = {
           productId,
-          sellerAccountId: sellerStripeAccountId,
-          platformFee: platformFeeOnProduct,
-          sellerReceives,
+          sellerStripeAccountId,
+          sellerReceivesCents: String(sellerReceivesCents),
+          platformFeeCents: String(platformFeeOnProduct),
         };
       } else {
-        console.log('No seller Stripe account - payment goes to platform');
+        console.log('No seller Stripe account — payment stays on platform');
+        paymentIntentOptions.metadata = { productId };
       }
 
       const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
@@ -241,6 +273,9 @@ exports.cancelOrder = onRequest(
       if (!productData.sold || productData.cancelled) {
         return res.status(400).json({ error: 'Order is not in a cancellable state' });
       }
+      if (productData.trackingNumber || productData.shipped) {
+        return res.status(400).json({ error: 'This order has already been shipped and cannot be cancelled. Please use Request Refund instead.' });
+      }
 
       // Retrieve payment intent and verify it belongs to this product
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -255,8 +290,9 @@ exports.cancelOrder = onRequest(
       const chargeId = paymentIntent.latest_charge;
       const originalAmount = paymentIntent.amount;
 
-      // Calculate 5% cancellation fee
-      const cancellationFee = Math.round(originalAmount * CANCELLATION_FEE_PERCENT);
+      // Calculate 5% cancellation fee on product price only (not shipping or tax)
+      const productPriceCents = Math.round((productData.price || 0) * 100);
+      const cancellationFee = Math.round(productPriceCents * CANCELLATION_FEE_PERCENT);
       const refundAmount = originalAmount - cancellationFee;
 
       console.log('Processing buyer cancellation:');
@@ -315,6 +351,30 @@ exports.cancelOrder = onRequest(
         refundId: refund.id
       });
       console.log('Product status updated - marked as available');
+
+      // Update orders collection record so buyer can still see the cancelled order
+      try {
+        const ordersSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
+        if (!ordersSnap.empty) {
+          await ordersSnap.docs[0].ref.update({
+            cancelled: true,
+            cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+            cancelledBy: 'buyer',
+            refundId: refund.id,
+            refundAmount: refundAmount / 100,
+            status: 'cancelled',
+          });
+        }
+      } catch (orderErr) {
+        console.error('Order record update error (cancelOrder):', orderErr.message);
+      }
+
+      // In-app notification to seller
+      await createNotification(productData.userId, {
+        icon: '❌',
+        message: `A buyer cancelled their order for "${productData.title || 'your item'}". The listing is now active again.`,
+        link: 'listings-manager.html',
+      });
 
       // Email buyer (refund confirmation) and seller (order cancelled)
       try {
@@ -649,26 +709,6 @@ exports.shippoCreateLabel = onRequest(
       const transaction = await response.json();
       console.log('Shippo transaction response:', transaction.status);
 
-      // Email buyer with tracking info if we have a productId and a tracking number
-      if (labelProductId && transaction.tracking_number) {
-        try {
-          emails.init(sendgridSecret.value());
-          const prodDoc = await db.collection('products').doc(labelProductId).get();
-          if (prodDoc.exists) {
-            const prod = prodDoc.data();
-            const buyerEmail = await getUserEmail(prod.buyerId);
-            await emails.sendTrackingToBuyer(buyerEmail, {
-              productName: prod.title || 'your item',
-              trackingNumber: transaction.tracking_number,
-              trackingUrl: transaction.tracking_url_provider || null,
-              carrier: transaction.servicelevel?.name || null,
-            });
-          }
-        } catch (emailErr) {
-          console.error('Email error (shippoCreateLabel):', emailErr.message);
-        }
-      }
-
       return res.status(200).json(transaction);
 
     } catch (error) {
@@ -887,43 +927,60 @@ exports.completeOrder = onRequest(
         return res.status(403).json({ error: 'Payment does not match this product' });
       }
 
-      const updateData = {
-        sold: true,
-        soldAt: admin.firestore.FieldValue.serverTimestamp(),
-        soldTimestamp: Date.now(),
-        soldOrderId: paymentIntentId,
-        buyerId: decodedToken.uid,  // Store for ownership checks (e.g. cancelOrder)
-      };
+      // Read escrow payout info from Stripe metadata (set server-side by createPaymentIntent)
+      const sellerStripeAccountId = paymentIntent.metadata.sellerStripeAccountId || null;
+      const sellerReceivesCents = parseInt(paymentIntent.metadata.sellerReceivesCents || 0);
 
-      if (shippingInfo) {
-        updateData.shippingLabel = shippingInfo.label_url || null;
-        updateData.trackingNumber = shippingInfo.tracking_number || null;
-        updateData.trackingUrl = shippingInfo.tracking_url_provider || null;
+      const productRef = db.collection('products').doc(productId);
+      let prod = null;
+      let shippingCost = 0;
+
+      // Use a transaction to atomically check sold=false and mark sold=true
+      // This prevents two buyers from both completing the same order
+      try {
+        await db.runTransaction(async (t) => {
+          const snap = await t.get(productRef);
+          if (!snap.exists) throw new Error('Product not found');
+          if (snap.data().sold) throw Object.assign(new Error('already_sold'), { code: 'ALREADY_SOLD' });
+          prod = snap.data();
+
+          const prodPriceCents = Math.round((prod.price || 0) * 100);
+          const taxCents = Math.round(prodPriceCents * 0.08);
+          const shippingCents = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
+          shippingCost = shippingCents / 100;
+
+          const updateData = {
+            sold: true,
+            soldAt: admin.firestore.FieldValue.serverTimestamp(),
+            soldTimestamp: Date.now(),
+            soldOrderId: paymentIntentId,
+            buyerId: decodedToken.uid,
+            shippingCost,
+            // Escrow: store seller payout details for later transfer at delivery
+            sellerStripeAccountId: sellerStripeAccountId || null,
+            sellerReceivesCents: sellerReceivesCents || 0,
+          };
+          if (shippingInfo) {
+            updateData.shippingLabel = shippingInfo.label_url || null;
+            updateData.trackingNumber = shippingInfo.tracking_number || null;
+            updateData.trackingUrl = shippingInfo.tracking_url_provider || null;
+          }
+          if (packageDimensions) updateData.packageDimensions = packageDimensions;
+          if (buyerShippingAddress) updateData.buyerShippingAddress = buyerShippingAddress;
+
+          t.update(productRef, updateData);
+        });
+      } catch (txErr) {
+        if (txErr.code === 'ALREADY_SOLD') {
+          return res.status(409).json({ error: 'This item was just purchased by someone else.' });
+        }
+        throw txErr;
       }
 
-      if (packageDimensions) {
-        updateData.packageDimensions = packageDimensions;
-      }
-
-      if (buyerShippingAddress) {
-        updateData.buyerShippingAddress = buyerShippingAddress;
-      }
-
-      await db.collection('products').doc(productId).update(updateData);
       console.log('Order completed — product:', productId, 'buyer:', decodedToken.uid);
 
       // Save order record to orders collection
-      let prod = null;
       try {
-        const productSnap = await db.collection('products').doc(productId).get();
-        prod = productSnap.data();
-
-        // Derive shipping cost from verified Stripe payment intent amount
-        const prodPriceCents = Math.round((prod.price || 0) * 100);
-        const taxCents = Math.round(prodPriceCents * 0.08);
-        const shippingCents = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
-        const shippingCost = shippingCents / 100;
-
         await db.collection('orders').add({
           productId,
           buyerId: decodedToken.uid,
@@ -931,7 +988,11 @@ exports.completeOrder = onRequest(
           paymentIntentId,
           productTitle: prod.title || null,
           productPrice: prod.price || null,
+          productImages: prod.images || [],
+          productCondition: prod.condition || null,
           shippingCost,
+          sellerStripeAccountId: sellerStripeAccountId || null,
+          sellerReceivesCents: sellerReceivesCents || 0,
           shippingLabel: shippingInfo ? (shippingInfo.label_url || null) : null,
           trackingNumber: shippingInfo ? (shippingInfo.tracking_number || null) : null,
           trackingUrl: shippingInfo ? (shippingInfo.tracking_url_provider || null) : null,
@@ -943,6 +1004,20 @@ exports.completeOrder = onRequest(
       } catch (orderErr) {
         console.error('Order record error:', orderErr.message);
       }
+
+      // In-app notifications
+      await Promise.all([
+        createNotification(prod.userId, {
+          icon: '🛍️',
+          message: `New sale! Someone bought your "${prod.title || 'item'}". Ship it within 3 days.`,
+          link: 'seller-order-fulfillment.html',
+        }),
+        createNotification(decodedToken.uid, {
+          icon: '✅',
+          message: `Order placed for "${prod.title || 'item'}". The seller will ship soon.`,
+          link: 'my-orders.html',
+        }),
+      ]);
 
       // Email seller and buyer about the new order
       try {
@@ -1033,29 +1108,13 @@ exports.sellerCancelOrder = onRequest(
         return res.status(400).json({ error: 'No charge found for this payment' });
       }
 
-      // Full refund to buyer — seller is at fault, buyer pays nothing
-      const refundOptions = {
+      // Full refund to buyer — seller is at fault, buyer pays nothing.
+      // Escrow model: funds never left the platform so no reverse_transfer needed.
+      const refund = await stripe.refunds.create({
         charge: paymentIntent.latest_charge,
         reason: 'requested_by_customer',
-        metadata: { productId, cancelledBy: 'seller', sellerUid: decodedToken.uid }
-      };
-      // Attempt to reverse the transfer so the platform isn't out of pocket.
-      // If the seller already paid out, reverse_transfer fails — fall back to platform-funded refund.
-      if (paymentIntent.transfer_data && paymentIntent.transfer_data.destination) {
-        refundOptions.reverse_transfer = true;
-      }
-      let refund;
-      try {
-        refund = await stripe.refunds.create(refundOptions);
-      } catch (stripeErr) {
-        if (refundOptions.reverse_transfer && stripeErr.code === 'insufficient_funds') {
-          console.warn('reverse_transfer failed (seller paid out) — refunding from platform balance');
-          delete refundOptions.reverse_transfer;
-          refund = await stripe.refunds.create(refundOptions);
-        } else {
-          throw stripeErr;
-        }
-      }
+        metadata: { productId, cancelledBy: 'seller', sellerUid: decodedToken.uid },
+      });
       console.log('Seller cancel: full refund', refund.id, 'for product', productId);
 
       // Apply seller strike
@@ -1094,9 +1153,33 @@ exports.sellerCancelOrder = onRequest(
         refundId: refund.id
       });
 
+      // Update orders collection record
+      try {
+        const ordersSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
+        if (!ordersSnap.empty) {
+          await ordersSnap.docs[0].ref.update({
+            cancelled: true,
+            cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+            cancelledBy: 'seller',
+            refundId: refund.id,
+            refundAmount: paymentIntent.amount / 100,
+            status: 'cancelled',
+          });
+        }
+      } catch (orderErr) {
+        console.error('Order record update error (sellerCancelOrder):', orderErr.message);
+      }
+
       const message = suspended
         ? `Order cancelled. The buyer has been fully refunded. You have reached ${SELLER_STRIKES_LIMIT} cancellations and your selling privileges have been suspended.`
         : `Order cancelled. The buyer has been fully refunded. Strike ${newCount} of ${SELLER_STRIKES_LIMIT} — you have ${strikesRemaining} strike${strikesRemaining !== 1 ? 's' : ''} remaining before you can no longer sell.`;
+
+      // In-app notification to buyer
+      await createNotification(productData.buyerId, {
+        icon: '↩️',
+        message: `The seller cancelled your order for "${productData.title || 'an item'}". You've been fully refunded.`,
+        link: 'my-orders.html',
+      });
 
       // Email buyer (full refund) and seller (strike warning)
       try {
@@ -1176,26 +1259,12 @@ exports.checkOverdueOrders = onSchedule(
         if (productData.soldOrderId) {
           const paymentIntent = await stripe.paymentIntents.retrieve(productData.soldOrderId);
           if (paymentIntent.latest_charge) {
-            const refundOptions = {
+            // Escrow model: funds never left the platform, simple refund
+            const refund = await stripe.refunds.create({
               charge: paymentIntent.latest_charge,
               reason: 'requested_by_customer',
-              metadata: { productId, cancelledBy: 'system', reason: 'seller_failed_to_ship' }
-            };
-            if (paymentIntent.transfer_data && paymentIntent.transfer_data.destination) {
-              refundOptions.reverse_transfer = true;
-            }
-            let refund;
-            try {
-              refund = await stripe.refunds.create(refundOptions);
-            } catch (stripeErr) {
-              if (refundOptions.reverse_transfer && stripeErr.code === 'insufficient_funds') {
-                console.warn(`Product ${productId}: reverse_transfer failed, refunding from platform balance`);
-                delete refundOptions.reverse_transfer;
-                refund = await stripe.refunds.create(refundOptions);
-              } else {
-                throw stripeErr;
-              }
-            }
+              metadata: { productId, cancelledBy: 'system', reason: 'seller_failed_to_ship' },
+            });
             refundId = refund.id;
             console.log(`Overdue refund ${refund.id} for product ${productId}`);
           }
@@ -1237,6 +1306,22 @@ exports.checkOverdueOrders = onSchedule(
           cancellationReason: 'Seller failed to ship within 10 days',
           ...(refundId ? { refundId } : {})
         });
+
+        // Update orders collection record
+        try {
+          const ordersSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
+          if (!ordersSnap.empty) {
+            await ordersSnap.docs[0].ref.update({
+              cancelled: true,
+              cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+              cancelledBy: 'system',
+              ...(refundId ? { refundId } : {}),
+              status: 'cancelled',
+            });
+          }
+        } catch (orderErr) {
+          console.error(`Order record update error (checkOverdueOrders) for ${productId}:`, orderErr.message);
+        }
 
         // Email buyer and seller about the auto-cancellation
         try {
@@ -1403,29 +1488,13 @@ exports.adminIssueRefund = onRequest(
         return res.status(400).json({ error: `Refund amount must be between 1 and ${originalAmount} cents` });
       }
 
-      // Build refund options — attempt reverse_transfer, fall back if seller already paid out
-      const refundOptions = {
+      // Escrow model: funds never left the platform, simple refund
+      const refund = await stripe.refunds.create({
         charge: chargeId,
         amount: amountToRefund,
         reason: refundReason,
-        metadata: { productId, issuedBy: 'admin', adminUid: decodedToken.uid }
-      };
-      if (paymentIntent.transfer_data && paymentIntent.transfer_data.destination) {
-        refundOptions.reverse_transfer = true;
-      }
-
-      let refund;
-      try {
-        refund = await stripe.refunds.create(refundOptions);
-      } catch (stripeErr) {
-        if (refundOptions.reverse_transfer && stripeErr.code === 'insufficient_funds') {
-          console.warn('Admin refund: reverse_transfer failed (seller paid out) — refunding from platform balance');
-          delete refundOptions.reverse_transfer;
-          refund = await stripe.refunds.create(refundOptions);
-        } else {
-          throw stripeErr;
-        }
-      }
+        metadata: { productId, issuedBy: 'admin', adminUid: decodedToken.uid },
+      });
 
       // Build the Firestore update
       const updatePayload = {
@@ -1459,6 +1528,309 @@ exports.adminIssueRefund = onRequest(
     } catch (error) {
       console.error('adminIssueRefund error:', error);
       return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- MARK AS SHIPPED (seller confirms shipment, sends tracking email to buyer) ---
+exports.markAsShipped = onRequest(
+  { cors: ALLOWED_ORIGINS, secrets: [sendgridSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { productId, trackingNumber, trackingUrl, carrier } = req.body;
+    if (!productId || !trackingNumber) {
+      return res.status(400).json({ error: 'Missing productId or trackingNumber' });
+    }
+
+    try {
+      const productRef = db.collection('products').doc(productId);
+      const productSnap = await productRef.get();
+      if (!productSnap.exists) return res.status(404).json({ error: 'Product not found' });
+
+      const product = productSnap.data();
+      // products store seller as userId (not sellerId)
+      if (product.userId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'You are not the seller of this product' });
+      }
+      if (!product.sold) {
+        return res.status(400).json({ error: 'This product has not been sold' });
+      }
+
+      // Update product doc
+      await productRef.update({
+        trackingNumber,
+        trackingUrl: trackingUrl || null,
+        carrier: carrier || null,
+        shipped: true,
+        shippedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Update orders collection record if it exists
+      const ordersSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
+      if (!ordersSnap.empty) {
+        await ordersSnap.docs[0].ref.update({
+          trackingNumber,
+          trackingUrl: trackingUrl || null,
+          carrier: carrier || null,
+          shipped: true,
+          shippedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      // In-app notification to buyer
+      await createNotification(product.buyerId, {
+        icon: '📦',
+        message: `Your "${product.title || 'item'}" has shipped! Tracking: ${trackingNumber}`,
+        link: 'my-orders.html',
+      });
+
+      // Send tracking email to buyer
+      try {
+        emails.init(sendgridSecret.value());
+        const buyerEmail = await getUserEmail(product.buyerId);
+        await emails.sendTrackingToBuyer(buyerEmail, {
+          productName: product.title || 'your item',
+          trackingNumber,
+          trackingUrl: trackingUrl || null,
+          carrier: carrier || null,
+        });
+      } catch (emailErr) {
+        console.error('Email error (markAsShipped):', emailErr.message);
+      }
+
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('markAsShipped error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- CONFIRM DELIVERY (buyer confirms receipt, enables review, notifies seller) ---
+exports.confirmDelivery = onRequest(
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { productId } = req.body;
+    if (!productId) return res.status(400).json({ error: 'Missing productId' });
+
+    try {
+      const productRef = db.collection('products').doc(productId);
+      const productSnap = await productRef.get();
+      if (!productSnap.exists) return res.status(404).json({ error: 'Product not found' });
+
+      const product = productSnap.data();
+      if (product.buyerId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'You are not the buyer of this product' });
+      }
+      if (!product.sold) {
+        return res.status(400).json({ error: 'This product has not been sold' });
+      }
+
+      // Mark delivered
+      await productRef.update({
+        delivered: true,
+        deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Update orders collection record if it exists
+      const ordersSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
+      if (!ordersSnap.empty) {
+        await ordersSnap.docs[0].ref.update({
+          delivered: true,
+          deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      // Escrow payout: transfer seller's share now that delivery is confirmed
+      if (product.sellerStripeAccountId && product.sellerReceivesCents > 0) {
+        try {
+          const stripe = require('stripe')(stripeSecret.value());
+          const transfer = await stripe.transfers.create({
+            amount: product.sellerReceivesCents,
+            currency: 'usd',
+            destination: product.sellerStripeAccountId,
+            transfer_group: product.soldOrderId,
+            metadata: { productId, reason: 'delivery_confirmed' },
+          });
+          console.log(`Seller payout: ${product.sellerReceivesCents} cents to ${product.sellerStripeAccountId} — transfer ${transfer.id}`);
+          await productRef.update({ sellerPayoutTransferId: transfer.id, sellerPaidOut: true });
+        } catch (payoutErr) {
+          console.error('Seller payout error (confirmDelivery):', payoutErr.message);
+          // Logged for manual review — don't fail the delivery confirmation
+        }
+      }
+
+      // In-app notifications for delivery
+      await Promise.all([
+        createNotification(product.userId, {
+          icon: '💰',
+          message: `Delivery confirmed! Payment for "${product.title || 'your item'}" is on its way.`,
+          link: 'listings-manager.html',
+        }),
+        createNotification(product.buyerId, {
+          icon: '⭐',
+          message: `You received "${product.title || 'your item'}"! Don't forget to leave a review.`,
+          link: 'my-orders.html',
+        }),
+      ]);
+
+      // Send confirmation emails to buyer and seller
+      try {
+        emails.init(sendgridSecret.value());
+        const buyerEmail = await getUserEmail(product.buyerId);
+        const sellerEmail = await getUserEmail(product.userId);
+        const buyerRecord = product.buyerId ? await admin.auth().getUser(product.buyerId) : null;
+        const sellerRecord = product.userId ? await admin.auth().getUser(product.userId) : null;
+        const buyerName = buyerRecord?.displayName || 'the buyer';
+        const sellerName = sellerRecord?.displayName || 'the seller';
+
+        await Promise.all([
+          emails.sendDeliveryConfirmedToBuyer(buyerEmail, {
+            productName: product.title || 'your item',
+            sellerName,
+          }),
+          emails.sendDeliveryConfirmedToSeller(sellerEmail, {
+            productName: product.title || 'your item',
+            buyerName,
+          }),
+        ]);
+      } catch (emailErr) {
+        console.error('Email error (confirmDelivery):', emailErr.message);
+      }
+
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('confirmDelivery error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- SHIPPO WEBHOOK (auto-confirm delivery when carrier marks package delivered) ---
+exports.shippoWebhook = onRequest(
+  { cors: false, secrets: [shippoWebhookSecret, stripeSecret, sendgridSecret] },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+
+    // Validate secret token passed as query param (?token=...)
+    const incomingToken = req.query.token;
+    if (!incomingToken || incomingToken !== shippoWebhookSecret.value()) {
+      console.warn('Shippo webhook: invalid or missing token');
+      return res.status(401).send('Unauthorized');
+    }
+
+    const payload = req.body;
+    const trackingNumber = payload?.data?.tracking_number;
+    const status = payload?.data?.tracking_status?.status; // e.g. DELIVERED, TRANSIT, UNKNOWN
+
+    console.log(`Shippo webhook received: tracking=${trackingNumber} status=${status}`);
+
+    // Always acknowledge quickly so Shippo doesn't retry
+    res.status(200).send('OK');
+
+    if (!trackingNumber || status !== 'DELIVERED') return;
+
+    try {
+      // Find the product with this tracking number that isn't already marked delivered
+      const snapshot = await db.collection('products')
+        .where('trackingNumber', '==', trackingNumber)
+        .where('sold', '==', true)
+        .limit(1)
+        .get();
+
+      if (snapshot.empty) {
+        console.log(`Shippo webhook: no product found for tracking ${trackingNumber}`);
+        return;
+      }
+
+      const productDoc = snapshot.docs[0];
+      const product = productDoc.data();
+
+      if (product.delivered) {
+        console.log(`Shippo webhook: product ${productDoc.id} already marked delivered`);
+        return;
+      }
+
+      // Mark delivered
+      await productDoc.ref.update({
+        delivered: true,
+        deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+        deliverySource: 'shippo_webhook',
+      });
+
+      // Update orders collection too
+      const ordersSnap = await db.collection('orders').where('productId', '==', productDoc.id).limit(1).get();
+      if (!ordersSnap.empty) {
+        await ordersSnap.docs[0].ref.update({
+          delivered: true,
+          deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      // Escrow payout: transfer seller's share now that carrier confirmed delivery
+      if (product.sellerStripeAccountId && product.sellerReceivesCents > 0 && !product.sellerPaidOut) {
+        try {
+          const stripe = require('stripe')(stripeSecret.value());
+          const transfer = await stripe.transfers.create({
+            amount: product.sellerReceivesCents,
+            currency: 'usd',
+            destination: product.sellerStripeAccountId,
+            transfer_group: product.soldOrderId,
+            metadata: { productId: productDoc.id, reason: 'delivery_confirmed_shippo' },
+          });
+          console.log(`Seller payout (shippoWebhook): ${product.sellerReceivesCents} cents to ${product.sellerStripeAccountId} — transfer ${transfer.id}`);
+          await productDoc.ref.update({ sellerPayoutTransferId: transfer.id, sellerPaidOut: true });
+        } catch (payoutErr) {
+          console.error('Seller payout error (shippoWebhook):', payoutErr.message);
+        }
+      }
+
+      // Send confirmation emails
+      try {
+        emails.init(sendgridSecret.value());
+        const buyerEmail = await getUserEmail(product.buyerId);
+        const sellerEmail = await getUserEmail(product.userId);
+        const buyerRecord = product.buyerId ? await admin.auth().getUser(product.buyerId).catch(() => null) : null;
+        const sellerRecord = product.userId ? await admin.auth().getUser(product.userId).catch(() => null) : null;
+        const buyerName = buyerRecord?.displayName || 'the buyer';
+        const sellerName = sellerRecord?.displayName || 'the seller';
+
+        await Promise.all([
+          emails.sendDeliveryConfirmedToBuyer(buyerEmail, {
+            productName: product.title || 'your item',
+            sellerName,
+          }),
+          emails.sendDeliveryConfirmedToSeller(sellerEmail, {
+            productName: product.title || 'your item',
+            buyerName,
+          }),
+        ]);
+      } catch (emailErr) {
+        console.error('Email error (shippoWebhook):', emailErr.message);
+      }
+
+      console.log(`Shippo webhook: delivery confirmed for product ${productDoc.id}`);
+    } catch (err) {
+      console.error('Shippo webhook processing error:', err);
     }
   }
 );

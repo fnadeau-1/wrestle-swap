@@ -701,7 +701,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -722,6 +722,7 @@
         window.firebaseDb = db;
         window.getDoc = getDoc;
         window.doc = doc;
+        window.getIdToken = () => getIdToken(auth.currentUser, true);
 
         const urlProductId = new URLSearchParams(window.location.search).get('productId');
 
@@ -1005,7 +1006,8 @@
             `;
         }
 
-        // Write tracking number to Firestore directly (seller has write permission on their product)
+        const MARK_AS_SHIPPED_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/markAsShipped';
+
         async function markAsShipped() {
             const trackingNumber = document.getElementById('manual-tracking-number').value.trim();
             const carrier = document.getElementById('manual-carrier').value;
@@ -1032,13 +1034,19 @@
             errorEl.style.display = 'none';
 
             try {
-                const productRef = window.doc(window.firebaseDb, 'products', productId);
-                await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")
-                    .then(({ updateDoc }) => updateDoc(productRef, {
-                        trackingNumber,
-                        trackingUrl: trackingUrl || null,
-                        shipped: true,
-                    }));
+                const idToken = await window.getIdToken();
+                const response = await fetch(MARK_AS_SHIPPED_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`,
+                    },
+                    body: JSON.stringify({ productId, trackingNumber, trackingUrl, carrier }),
+                });
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || `Server error ${response.status}`);
+                }
 
                 // Update the UI to show the tracking number
                 document.getElementById('tracking-number').textContent = trackingNumber;
@@ -1055,7 +1063,7 @@
                 if (section) {
                     section.innerHTML = `<div style="background:#d4edda;border-left:4px solid #28a745;padding:16px;border-radius:6px;">
                         <strong style="color:#155724;">Shipment recorded!</strong>
-                        <p style="margin:6px 0 0;color:#155724;font-size:14px;">Tracking number saved. The buyer has been notified via email.</p>
+                        <p style="margin:6px 0 0;color:#155724;font-size:14px;">Tracking number saved and the buyer has been notified via email.</p>
                     </div>`;
                 }
             } catch (err) {
@@ -1078,5 +1086,6 @@
         });
     </script>
     <script type="module" src="js/site-notice.js"></script>
+    <script type="module" src="js/notifications.js"></script>
 </body>
 </html>

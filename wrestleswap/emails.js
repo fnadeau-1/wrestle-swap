@@ -284,6 +284,42 @@ async function sendTrackingToBuyer(buyerEmail, { productName, trackingNumber, tr
   await send(buyerEmail, `Your Order Has Shipped: ${productName}`, html);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DELIVERY CONFIRMED — notify buyer
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendDeliveryConfirmedToBuyer(buyerEmail, { productName, sellerName }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">Your order has been delivered!</h2>
+    <p style="color:#555;font-size:15px;line-height:1.6;">
+      We've marked your order for <strong>${escHtml(productName)}</strong> as delivered.
+      Thanks for shopping on GrappleTrade!
+    </p>
+    ${alertBox('#d4edda', '#28a745', `
+      <strong>How was your experience?</strong> You can now leave a review for
+      <strong>${escHtml(sellerName)}</strong> from your Orders page.
+    `)}
+    ${btn(`${SITE_URL}/my-orders.html`, 'Leave a Review', '#3665f3')}
+  `);
+  await send(buyerEmail, `Delivered: ${productName}`, html);
+}
+
+// DELIVERY CONFIRMED — notify seller
+async function sendDeliveryConfirmedToSeller(sellerEmail, { productName, buyerName }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">Your item has been delivered!</h2>
+    <p style="color:#555;font-size:15px;line-height:1.6;">
+      <strong>${escHtml(buyerName)}</strong> has confirmed delivery of
+      <strong>${escHtml(productName)}</strong>. The transaction is now complete.
+    </p>
+    ${alertBox('#d4edda', '#28a745', `
+      <strong>Payment has been processed.</strong> Funds from this sale have been transferred
+      to your connected account.
+    `)}
+    ${btn(`${SITE_URL}/listings-manager.html`, 'View Your Listings')}
+  `);
+  await send(sellerEmail, `Delivery Confirmed: ${productName}`, html);
+}
+
 // Minimal HTML escape to prevent injection in email templates
 function escHtml(str) {
   return String(str || '')
@@ -304,4 +340,6 @@ module.exports = {
   sendOverdueCancelledToBuyer,
   sendOverdueCancelledToSeller,
   sendTrackingToBuyer,
+  sendDeliveryConfirmedToBuyer,
+  sendDeliveryConfirmedToSeller,
 };
