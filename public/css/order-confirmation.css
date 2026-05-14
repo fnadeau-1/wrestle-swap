@@ -1,0 +1,241 @@
+/* Page-specific styles for order-confirmation.html */
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.confirmation-card {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.success-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid #e5e5e5;
+}
+
+.success-icon {
+    font-size: 64px;
+    margin-bottom: 15px;
+}
+
+.success-title {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.success-subtitle {
+    font-size: 16px;
+    color: #707070;
+}
+
+.section-title {
+    font-size: 20px;
+    color: #333;
+    margin: 30px 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e5e5e5;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-label {
+    font-weight: bold;
+    color: #333;
+}
+
+.info-value {
+    color: #707070;
+    text-align: right;
+}
+
+.order-item {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.item-image {
+    width: 100px;
+    height: 100px;
+    background: #e0e0e0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+    flex-shrink: 0;
+}
+
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.item-details {
+    flex: 1;
+}
+
+.item-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.item-condition {
+    font-size: 14px;
+    color: #707070;
+    margin-bottom: 8px;
+}
+
+.item-price {
+    font-size: 20px;
+    font-weight: bold;
+    color: #c41e3a;
+}
+
+.tracking-section {
+    background: #e3f2fd;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.tracking-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1976d2;
+    margin-bottom: 10px;
+}
+
+.tracking-number {
+    font-size: 20px;
+    font-family: monospace;
+    color: #333;
+    background: white;
+    padding: 12px;
+    border-radius: 4px;
+    margin: 10px 0;
+    word-break: break-all;
+}
+
+.track-button {
+    display: inline-block;
+    padding: 12px 24px;
+    background: #3665f3;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-top: 10px;
+    transition: background 0.3s;
+}
+
+.track-button:hover {
+    background: #2348c5;
+}
+
+.cost-summary {
+    margin: 20px 0;
+}
+
+.cost-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-size: 16px;
+}
+
+.cost-row.total {
+    font-size: 20px;
+    font-weight: bold;
+    padding-top: 15px;
+    border-top: 2px solid #e5e5e5;
+    margin-top: 10px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn {
+    flex: 1;
+    padding: 14px;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #3665f3;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2348c5;
+}
+
+.btn-secondary {
+    background: white;
+    color: #3665f3;
+    border: 2px solid #3665f3;
+}
+
+.btn-secondary:hover {
+    background: #f0f4ff;
+}
+
+.info-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+.info-box-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #856404;
+}
+
+.info-box-text {
+    font-size: 14px;
+    color: #856404;
+}
+
+@media (max-width: 768px) {
+    .order-item {
+        flex-direction: column;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .confirmation-card {
+        padding: 20px;
+    }
+}

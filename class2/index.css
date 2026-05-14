@@ -1,4 +1,3 @@
-    /* ── Index-specific overrides ── */
     :root {
       --sage-light: #d8f0db;
       --radius:     14px;
@@ -17,14 +16,12 @@
       padding: 5rem 5% 4rem;
       position: relative;
       overflow: hidden;
-      /* layered warm background */
       background:
         radial-gradient(ellipse at 80% 40%, rgba(232,160,32,0.13) 0%, transparent 55%),
         radial-gradient(ellipse at 10% 80%, rgba(122,158,126,0.10) 0%, transparent 50%),
         var(--cream);
     }
 
-    /* decorative dot pattern behind the hero */
     .hero::before {
       content: '';
       position: absolute;
@@ -34,7 +31,6 @@
       pointer-events: none;
     }
 
-    /* big decorative circle in the top-right */
     .hero::after {
       content: '';
       position: absolute;
@@ -83,7 +79,6 @@
       color: var(--earth);
       margin-bottom: 1.25rem;
     }
-    /* italic style on part of the heading */
     .hero h1 em {
       font-style: italic;
       color: var(--honey-dark);
@@ -133,7 +128,6 @@
       background: var(--warm-white);
     }
 
-    /* market info badges below the buttons */
     .hero-meta {
       display: flex;
       gap: 1.5rem;
@@ -149,7 +143,6 @@
     }
     .meta-item .icon { font-size: 1rem; }
 
-    /* right side: floating emoji produce display */
     .hero-visual {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -183,7 +176,6 @@
       color: var(--honey-dark);
       margin-top: 0.15rem;
     }
-    /* offset the second column downward for visual interest */
     .hero-visual .col-b { margin-top: 1.5rem; }
 
 
@@ -231,7 +223,6 @@
       gap: 1.5rem;
     }
 
-    /* one large card spanning 2 columns */
     .product-card {
       background: var(--warm-white);
       border: 1px solid var(--border);

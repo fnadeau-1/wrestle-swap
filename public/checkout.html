@@ -15,285 +15,7 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
     <script src="https://js.stripe.com/v3/"></script>
-    <style>
-        /* Page-specific styles for checkout.html */
-        body {
-            background-color: #f7f7f7;
-        }
-
-        .top-bar {
-            padding: 12px 0;
-        }
-
-        .header-content {
-            justify-content: space-between;
-        }
-
-        .secure-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #28a745;
-            font-size: 14px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 40px auto;
-            display: grid;
-            grid-template-columns: 1fr 450px;
-            gap: 30px;
-        }
-
-        .checkout-section {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .section-title {
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e5e5e5;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .required {
-            color: #e53238;
-        }
-
-        .info-message {
-            background-color: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 12px;
-            margin: 15px 0;
-            border-radius: 4px;
-            font-size: 14px;
-            color: #1976d2;
-        }
-
-        .success-message {
-            background-color: #e8f5e9;
-            border-left: 4px solid #4caf50;
-            padding: 12px;
-            margin: 15px 0;
-            border-radius: 4px;
-            font-size: 14px;
-            color: #2e7d32;
-        }
-
-        .error-message {
-            background-color: #ffebee;
-            border-left: 4px solid #f44336;
-            padding: 12px;
-            margin: 15px 0;
-            border-radius: 4px;
-            font-size: 14px;
-            color: #c62828;
-        }
-
-        /* Order Summary */
-        .order-summary {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            height: fit-content;
-            position: sticky;
-            top: 20px;
-        }
-
-        .summary-title {
-            font-size: 20px;
-            color: #333;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e5e5e5;
-        }
-
-        .order-item {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .item-image {
-            width: 80px;
-            height: 80px;
-            background: #f0f0f0;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            overflow: hidden;
-        }
-
-        .item-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .item-details {
-            flex: 1;
-        }
-
-        .item-name {
-            font-size: 14px;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .item-condition {
-            font-size: 12px;
-            color: #707070;
-            margin-bottom: 5px;
-        }
-
-        .item-price {
-            font-size: 16px;
-            font-weight: bold;
-            color: #c41e3a;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
-
-        .summary-row.total {
-            font-size: 18px;
-            font-weight: bold;
-            padding-top: 15px;
-            border-top: 2px solid #e5e5e5;
-            margin-top: 15px;
-        }
-
-        .shipping-info-display {
-            font-size: 12px;
-            color: #707070;
-            margin-top: 4px;
-        }
-
-        /* Stripe Card Element */
-        #card-element {
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background: white;
-        }
-
-        #card-errors {
-            color: #e53238;
-            font-size: 13px;
-            margin-top: 8px;
-        }
-
-        /* Buttons */
-        .pay-button {
-            width: 100%;
-            padding: 16px;
-            background: #3665f3;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background 0.3s;
-        }
-
-        .pay-button:hover:not(:disabled) {
-            background: #2348c5;
-        }
-
-        .pay-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .calculate-button {
-            background: #28a745;
-            margin-bottom: 20px;
-        }
-
-        .calculate-button:hover:not(:disabled) {
-            background: #218838;
-        }
-
-        .back-to-cart {
-            display: block;
-            text-align: center;
-            margin-top: 15px;
-            color: #3665f3;
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        .back-to-cart:hover {
-            text-decoration: underline;
-        }
-
-        .security-badges {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e5e5;
-        }
-
-        .checkout-badge {
-            font-size: 12px;
-            color: #707070;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .empty-cart {
-            text-align: center;
-            padding: 50px 20px;
-            color: #707070;
-        }
-
-        .empty-cart a {
-            color: #3665f3;
-            text-decoration: none;
-        }
-
-        .empty-cart a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 968px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-
-            .order-summary {
-                position: static;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/checkout.css">
 </head>
 <body>
     <!-- Auth required notice (shown when accessing checkout without signing in) -->
@@ -308,7 +30,7 @@
     <!-- Header -->
     <div class="top-bar">
         <div class="header-content">
-            <a href="index.html" class="logo">GrappleTrade</a>
+            <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
             <div class="secure-badge">
                 🔒 Secure Checkout
             </div>
@@ -399,6 +121,8 @@
         const SHIPPO_GET_RATES_URL = 'https://shippogetrates-kebvkf67ma-uc.a.run.app';
         const SHIPPO_CREATE_LABEL_URL = 'https://shippocreatelabel-kebvkf67ma-uc.a.run.app';
         const COMPLETE_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/completeOrder';
+        // Switch to live key when going to production: pk_live_...
+        const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SVkt7GuAs8IZaZv5J9AezLqjENqgpK1MWVMze9O7fUY5h8ZUAmvC2uHavTLzKloXToKxvFDtGeJ9jE3umH9Uvxp00168b1lMz';
 
         // Fallback "from" address (only used if seller has no address)
         const FALLBACK_FROM_ADDRESS = {
@@ -529,16 +253,18 @@
         function displayCheckout() {
             const container = document.getElementById('checkout-container');
             
-            // Determine if image is URL or emoji
-            const isImageUrl = checkoutProduct.image && (
-                checkoutProduct.image.startsWith('http://') || 
-                checkoutProduct.image.startsWith('https://') || 
-                checkoutProduct.image.startsWith('data:image')
+            // Products store images as an array; fall back to legacy single-image field
+            const productImage = (checkoutProduct.images && checkoutProduct.images[0]) || checkoutProduct.image || null;
+            const productTitle = checkoutProduct.title || checkoutProduct.name || 'Item';
+            const isImageUrl = productImage && (
+                productImage.startsWith('http://') ||
+                productImage.startsWith('https://') ||
+                productImage.startsWith('data:image')
             );
 
-            const imageHtml = isImageUrl 
-                ? `<img src="${checkoutProduct.image}" alt="${checkoutProduct.name}">`
-                : checkoutProduct.image || '📦';
+            const imageHtml = isImageUrl
+                ? `<img src="${productImage}" alt="${productTitle}">`
+                : productImage || '📦';
 
             container.innerHTML = `
                 <!-- Checkout Form -->
@@ -642,7 +368,7 @@
                     <div class="order-item">
                         <div class="item-image">${imageHtml}</div>
                         <div class="item-details">
-                            <div class="item-name">${checkoutProduct.name}</div>
+                            <div class="item-name">${productTitle}</div>
                             ${checkoutProduct.condition ? `<div class="item-condition">${checkoutProduct.condition}</div>` : ''}
                             <div class="item-price">$${subtotal.toFixed(2)}</div>
                         </div>
@@ -988,8 +714,7 @@
         }
 
         function initializeStripe() {
-            // Initialize Stripe
-            const stripe = Stripe('pk_test_51SVkt7GuAs8IZaZv5J9AezLqjENqgpK1MWVMze9O7fUY5h8ZUAmvC2uHavTLzKloXToKxvFDtGeJ9jE3umH9Uvxp00168b1lMz'); 
+            const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
             const elements = stripe.elements();
 
             // Create card element
@@ -1067,9 +792,8 @@
                         },
                         body: JSON.stringify({
                             productId: checkoutProduct.id,
-                            shippingCost: shippingCost,
+                            rateObjectId: selectedShippingRate ? selectedShippingRate.object_id : null,
                             currency: 'usd',
-                            sellerStripeAccountId: sellerStripeAccountId
                         })
                     });
 
@@ -1184,8 +908,8 @@
                         console.log('Seller fulfillment page:', 
                             'seller-order-fulfillment.html?productId=' + checkoutProduct.id + '&orderId=' + result.paymentIntent.id);
                         
-                        // Redirect to orders page
-                        window.location.href = 'my-orders.html';
+                        // Redirect to order confirmation page
+                        window.location.href = 'order-confirmation.html?id=' + result.paymentIntent.id;
                     } else {
                         console.log('Unexpected payment status:', result.paymentIntent?.status);
                         throw new Error('Unexpected payment status: ' + (result.paymentIntent?.status || 'unknown'));
@@ -1209,12 +933,6 @@
             loadCheckoutProduct();
         });
     </script>
-    <!-- Payment Processing Overlay -->
-    <style>
-        @keyframes pay-spin { to { transform: rotate(360deg); } }
-        #payment-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 9999; align-items: center; justify-content: center; }
-        #payment-overlay.active { display: flex; }
-    </style>
     <div id="payment-overlay">
         <div style="background:white;border-radius:14px;padding:44px 36px;max-width:420px;width:90%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.35);">
             <div style="width:52px;height:52px;border:5px solid #e5e5e5;border-top-color:#c41e3a;border-radius:50%;animation:pay-spin 0.9s linear infinite;margin:0 auto 22px;"></div>

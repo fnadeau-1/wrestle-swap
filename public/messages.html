@@ -14,328 +14,7 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
-    <style>
-        /* Page-specific styles for messages.html */
-        body {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* Chat Container */
-        .chat-container {
-            display: flex;
-            flex: 1;
-            min-height: 0;
-            max-width: 1280px;
-            width: calc(100% - 40px);
-            margin: 12px auto;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        /* Conversations List */
-        .conversations-sidebar {
-            width: 350px;
-            border-right: 1px solid #e5e5e5;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .sidebar-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .conversations-list {
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .conversation-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid #f0f0f0;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .conversation-item:hover {
-            background: #f7f7f7;
-        }
-
-        .conversation-item.active {
-            background: #e3f2fd;
-            border-left: 4px solid #3665f3;
-        }
-
-        .conversation-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #c41e3a;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 20px;
-            flex-shrink: 0;
-        }
-
-        .conversation-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .conversation-name {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 4px;
-        }
-
-        .conversation-preview {
-            font-size: 13px;
-            color: #707070;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .conversation-time {
-            font-size: 12px;
-            color: #999;
-        }
-
-        /* Chat Area */
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-header {
-            padding: 20px;
-            border-bottom: 1px solid #e5e5e5;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .chat-user-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #c41e3a;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 20px;
-        }
-
-        .chat-user-info {
-            flex: 1;
-        }
-
-        .chat-user-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .chat-user-status {
-            font-size: 13px;
-            color: #707070;
-        }
-
-        .view-profile-btn {
-            padding: 8px 16px;
-            background: white;
-            color: #3665f3;
-            border: 1px solid #3665f3;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .view-profile-btn:hover {
-            background: #f0f0f0;
-        }
-
-        /* Messages Area */
-        .messages-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .message {
-            display: flex;
-            gap: 10px;
-            max-width: 70%;
-        }
-
-        .message.sent {
-            align-self: flex-end;
-            flex-direction: row-reverse;
-        }
-
-        .message-avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: #c41e3a;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-
-        .message.sent .message-avatar {
-            background: #3665f3;
-        }
-
-        .message-content {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .message-bubble {
-            padding: 12px 16px;
-            border-radius: 18px;
-            background: #f0f0f0;
-            color: #333;
-            word-wrap: break-word;
-        }
-
-        .message.sent .message-bubble {
-            background: #3665f3;
-            color: white;
-        }
-
-        .message-time {
-            font-size: 11px;
-            color: #999;
-            padding: 0 8px;
-        }
-
-        /* Message Input */
-        .message-input-area {
-            padding: 20px;
-            border-top: 1px solid #e5e5e5;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .message-input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #ccc;
-            border-radius: 24px;
-            font-size: 14px;
-            outline: none;
-            resize: none;
-            font-family: Arial, sans-serif;
-        }
-
-        .message-input:focus {
-            border-color: #3665f3;
-        }
-
-        .send-btn {
-            width: 45px;
-            height: 45px;
-            background: #3665f3;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .send-btn:hover {
-            background: #2348c5;
-        }
-
-        .send-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        /* Empty State */
-        .empty-state {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-        }
-
-        .empty-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-            opacity: 0.3;
-        }
-
-        .empty-text {
-            font-size: 18px;
-        }
-
-        @keyframes conv-spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 768px) {
-            .chat-container {
-                margin: 0;
-                width: 100%;
-                border-radius: 0;
-            }
-
-            .conversations-sidebar {
-                width: 100%;
-                display: none;
-            }
-
-            .conversations-sidebar.mobile-show {
-                display: flex;
-            }
-
-            .chat-area.mobile-hide {
-                display: none;
-            }
-
-            .message {
-                max-width: 85%;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/messages.css">
 </head>
 <body>
     <!-- Top Bar -->
@@ -358,7 +37,7 @@
     <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
-            <a href="index.html" class="logo">GrappleTrade</a>
+            <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
             <div class="search-container">
                 <div class="search-box">
                     <input
@@ -416,7 +95,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, increment, query, orderBy, onSnapshot, serverTimestamp, where, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, increment, query, orderBy, onSnapshot, serverTimestamp, where, doc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
@@ -487,7 +166,13 @@
             );
 
             unsubscribeConversations = onSnapshot(q, (snapshot) => {
-                if (snapshot.empty) {
+                // Filter out conversations the current user has deleted
+                const visibleDocs = snapshot.docs.filter(snapDoc => {
+                    const d = snapDoc.data();
+                    return !d.deletedBy || !d.deletedBy.includes(currentUser.uid);
+                });
+
+                if (visibleDocs.length === 0) {
                     conversationsList.innerHTML = `
                         <div style="padding:40px 20px;text-align:center;color:#707070;">
                             <div style="font-size:48px;margin-bottom:12px;opacity:0.4;">💬</div>
@@ -499,7 +184,7 @@
                 }
 
                 conversationsList.innerHTML = '';
-                snapshot.forEach(snapDoc => {
+                visibleDocs.forEach(snapDoc => {
                     const conv = { id: snapDoc.id, ...snapDoc.data() };
                     const isBuyer = conv.buyerId === currentUser.uid;
                     const otherName = isBuyer ? (conv.sellerName || 'Seller') : (conv.buyerName || 'Buyer');
@@ -567,6 +252,9 @@
                     <button class="view-profile-btn" onclick="window.location.href='profile.html?user=${otherUserId}'">
                         View Profile
                     </button>
+                    <button class="view-profile-btn" onclick="deleteConversation()" style="color:#dc2626;border-color:#dc2626;" title="Delete this conversation from your inbox">
+                        Delete
+                    </button>
                 </div>
                 <div class="messages-area" id="messages-area"></div>
                 <div class="message-input-area">
@@ -617,6 +305,28 @@
             });
         }
 
+        // Delete conversation from current user's view (soft delete — other party still sees it)
+        window.deleteConversation = async function() {
+            if (!currentConversationId) return;
+            if (!confirm('Remove this conversation from your inbox?\n\nThe other person will still see their copy.')) return;
+            try {
+                await updateDoc(doc(db, 'conversations', currentConversationId), {
+                    deletedBy: arrayUnion(currentUser.uid)
+                });
+                currentConversationId = null;
+                currentConversationData = null;
+                if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+                document.getElementById('chat-area').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">💬</div>
+                        <div class="empty-text">Select a conversation to start chatting</div>
+                    </div>`;
+            } catch(e) {
+                console.error('Error deleting conversation:', e);
+                alert('Could not remove conversation. Please try again.');
+            }
+        };
+
         // Send a message
         window.sendMessage = async function() {
             const input = document.getElementById('message-input');
@@ -639,12 +349,13 @@
                     timestamp: serverTimestamp()
                 });
 
-                // Update conversation metadata: last message preview + unread count for the other party
+                // Update conversation metadata; also remove self from deletedBy if they had cleared it
                 await updateDoc(doc(db, 'conversations', currentConversationId), {
                     lastMessage: text.substring(0, 100),
                     lastMessageAt: serverTimestamp(),
                     lastSenderId: currentUser.uid,
-                    [isBuyer ? 'unreadSeller' : 'unreadBuyer']: increment(1)
+                    [isBuyer ? 'unreadSeller' : 'unreadBuyer']: increment(1),
+                    deletedBy: arrayRemove(currentUser.uid)
                 });
 
                 input.focus();
@@ -682,5 +393,6 @@
         }
     </script>
     <script type="module" src="js/site-notice.js"></script>
+    <script src="js/bottom-nav.js" data-active="profile"></script>
 </body>
 </html>

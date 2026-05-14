@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wildflower Honey - Fresh Roots Market</title>
+  <link rel="stylesheet" href="product_detail.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav>
+    <a href="../index.html" class="logo">Fresh<span>Roots</span></a>
+    <ul>
+      <li><a href="../index.html">Home</a></li>
+      <li><a href="../about.html">Our Story</a></li>
+      <li><a href="../products.html">Shop</a></li>
+      <li><a href="../order.html">Pre-Order</a></li>
+    </ul>
+    <a href="../order.html" class="nav-btn">🛒 Pre-Order</a>
+  </nav>
+
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb">
+    <a href="../index.html">Home</a>
+    <span class="sep">/</span>
+    <a href="../products.html">Shop</a>
+    <span class="sep">/</span>
+    <span>Wildflower Honey</span>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="section">
+    <div class="detail-grid">
+
+      <!-- LEFT: Product Image -->
+      <div class="detail-img" style="background-color: #fff8e1;">
+        🍯
+      </div>
+
+      <!-- RIGHT: Product Info -->
+      <div class="detail-info">
+
+        <span class="detail-vendor">Bee Haven Apiary</span>
+        <h1>Wildflower Honey</h1>
+
+        <span class="detail-badge badge-bestseller">Bestseller</span>
+
+        <div class="detail-price">
+          $12.00 <small>/ jar</small>
+        </div>
+
+        <p class="detail-desc">
+          Raw, unfiltered wildflower honey with beautiful clover and lavender notes.
+          Each 16 oz jar is unique to the season.
+        </p>
+
+        <div class="detail-buttons">
+          <a href="../order.html" class="btn-order">Pre-Order Now →</a>
+          <a href="../products.html" class="btn-back">← Back to Shop</a>
+        </div>
+
+        <!-- INFO TABS -->
+        <div class="info-tabs">
+          <div class="tab-buttons">
+            <button class="tab-btn active" onclick="showTab('description', this)">Description</button>
+            <button class="tab-btn" onclick="showTab('seasonal', this)">Seasonal Info</button>
+            <button class="tab-btn" onclick="showTab('storage', this)">Storage Tips</button>
+          </div>
+
+          <div class="tab-panel active" id="tab-description">
+            <p>Our bees forage across 10 acres of wildflowers, clover fields, and lavender patches. The honey is extracted cold and never heated, preserving all the natural enzymes and pollen.</p>
+          </div>
+
+          <div class="tab-panel" id="tab-seasonal">
+            <p>Honey is harvested in late summer and fall. Supply is limited to what our hives produce naturally each year.</p>
+            <ul>
+              <li>Harvested: August – October</li>
+              <li>Available year-round while supplies last</li>
+              <li>No two batches taste exactly alike</li>
+            </ul>
+          </div>
+
+          <div class="tab-panel" id="tab-storage">
+            <p>Store honey at room temperature. It never truly expires — if it crystallizes, just warm the jar gently in warm water.</p>
+            <ul>
+              <li>Store at room temperature</li>
+              <li>Keep lid tightly sealed</li>
+              <li>Shelf life: indefinite</li>
+              <li>If crystallized, warm gently in water</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RELATED PRODUCTS -->
+  <div class="related-section">
+    <h2>You Might Also Like</h2>
+    <div class="related-grid">
+      <a href="product-tomatoes.html" class="related-card">
+        <div class="related-card-img" style="background-color: #d8f3dc;">🍅</div>
+        <div class="related-card-body">
+          <div class="related-card-name">Heirloom Tomatoes</div>
+          <div class="related-card-price">$6.50 / lb</div>
+        </div>
+      </a>
+      <a href="product-sourdough.html" class="related-card">
+        <div class="related-card-img" style="background-color: #fdefd4;">🍞</div>
+        <div class="related-card-body">
+          <div class="related-card-name">Country Sourdough</div>
+          <div class="related-card-price">$9.00 / loaf</div>
+        </div>
+      </a>
+      <a href="product-jam.html" class="related-card">
+        <div class="related-card-img" style="background-color: #fdeaea;">🍓</div>
+        <div class="related-card-body">
+          <div class="related-card-name">Strawberry Jam</div>
+          <div class="related-card-price">$8.00 / jar</div>
+        </div>
+      </a>
+      <a href="product-eggs.html" class="related-card">
+        <div class="related-card-img" style="background-color: #fef9ec;">🥚</div>
+        <div class="related-card-body">
+          <div class="related-card-name">Free-Range Eggs</div>
+          <div class="related-card-price">$7.00 / dozen</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-logo">Fresh<span>Roots</span> Market</span>
+    <p>Saturdays 7am–2pm &bull; Downtown Pavilion &bull; <a href="../about.html">Get Directions</a></p>
+  </footer>
+
+  <script>
+    function showTab(tabName, clickedBtn) {
+      var panels = document.querySelectorAll('.tab-panel');
+      for (var i = 0; i < panels.length; i++) {
+        panels[i].classList.remove('active');
+      }
+      var btns = document.querySelectorAll('.tab-btn');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.remove('active');
+      }
+      document.getElementById('tab-' + tabName).classList.add('active');
+      clickedBtn.classList.add('active');
+    }
+  </script>
+
+</body>
+</html>

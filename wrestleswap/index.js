@@ -47,23 +47,26 @@ async function getUserEmail(uid) {
 // Define secrets
 const stripeSecret = defineSecret("STRIPE_SKEY");
 const shippoSecret = defineSecret("SHIPPO_API_KEY");
-const sendgridSecret = defineSecret("SENDGRID_API_KEY");
+const sendgridSecret = defineSecret("SENDGRID_API_KEY_TEST");
 const shippoWebhookSecret = defineSecret("SHIPPO_WEBHOOK_SECRET");
 // const recaptchaApiKey = defineSecret("RECAPTCHA_API_KEY"); // Uncomment after setting secret
 
 const emails = require('./emails');
 
 // Write an in-app notification to Firestore (fires-and-forgets — never throws)
-async function createNotification(userId, { icon, message, link }) {
+// idempotencyKey: optional deterministic doc ID — prevents duplicates on retries
+async function createNotification(userId, { icon, message, link }, idempotencyKey = null) {
   if (!userId) return;
   try {
-    await db.collection('notifications').doc(userId).collection('items').add({
+    const col = db.collection('notifications').doc(userId).collection('items');
+    const ref = idempotencyKey ? col.doc(idempotencyKey) : col.doc();
+    await ref.set({
       icon: icon || '🔔',
       message,
       link: link || null,
       read: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    }, { merge: false });
   } catch (e) {
     console.error('createNotification error:', e.message);
   }
@@ -208,10 +211,11 @@ exports.createPaymentIntent = onRequest(
           sellerStripeAccountId,
           sellerReceivesCents: String(sellerReceivesCents),
           platformFeeCents: String(platformFeeOnProduct),
+          rateObjectId: rateObjectId || '',
         };
       } else {
         console.log('No seller Stripe account — payment stays on platform');
-        paymentIntentOptions.metadata = { productId };
+        paymentIntentOptions.metadata = { productId, rateObjectId: rateObjectId || '' };
       }
 
       const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
@@ -374,7 +378,7 @@ exports.cancelOrder = onRequest(
         icon: '❌',
         message: `A buyer cancelled their order for "${productData.title || 'your item'}". The listing is now active again.`,
         link: 'listings-manager.html',
-      });
+      }, `${productId}_buyercancel_seller`);
 
       // Email buyer (refund confirmation) and seller (order cancelled)
       try {
@@ -709,6 +713,48 @@ exports.shippoCreateLabel = onRequest(
       const transaction = await response.json();
       console.log('Shippo transaction response:', transaction.status);
 
+      // If label created successfully, save tracking info to Firestore product doc
+      if (transaction.status === 'SUCCESS' && labelProductId) {
+        try {
+          // Fetch rate to get the carrier name
+          let carrier = null;
+          if (rateObjectId) {
+            const rateRes = await fetch(`https://api.goshippo.com/rates/${rateObjectId}`, {
+              headers: { 'Authorization': `ShippoToken ${shippoKey}` },
+            });
+            if (rateRes.ok) {
+              const rateData = await rateRes.json();
+              carrier = rateData.provider ? rateData.provider.toLowerCase() : null;
+            }
+          }
+
+          const trackingUpdate = {
+            shippingLabel: transaction.label_url || null,
+            trackingNumber: transaction.tracking_number || null,
+            trackingUrl: transaction.tracking_url_provider || null,
+            carrier: carrier || null,
+            labelCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          };
+
+          await db.collection('products').doc(labelProductId).update(trackingUpdate);
+
+          // Also update the corresponding order doc
+          const orderSnaps = await db.collection('orders')
+            .where('productId', '==', labelProductId)
+            .limit(1)
+            .get();
+          if (!orderSnaps.empty) {
+            await orderSnaps.docs[0].ref.update(trackingUpdate);
+          }
+
+          console.log('Saved tracking info to Firestore for product:', labelProductId);
+          return res.status(200).json({ ...transaction, carrier });
+        } catch (saveErr) {
+          console.error('Failed to save tracking to Firestore:', saveErr.message);
+          // Still return success — label was created
+        }
+      }
+
       return res.status(200).json(transaction);
 
     } catch (error) {
@@ -930,6 +976,7 @@ exports.completeOrder = onRequest(
       // Read escrow payout info from Stripe metadata (set server-side by createPaymentIntent)
       const sellerStripeAccountId = paymentIntent.metadata.sellerStripeAccountId || null;
       const sellerReceivesCents = parseInt(paymentIntent.metadata.sellerReceivesCents || 0);
+      const savedRateObjectId = paymentIntent.metadata.rateObjectId || null;
 
       const productRef = db.collection('products').doc(productId);
       let prod = null;
@@ -960,6 +1007,7 @@ exports.completeOrder = onRequest(
             sellerStripeAccountId: sellerStripeAccountId || null,
             sellerReceivesCents: sellerReceivesCents || 0,
           };
+          if (savedRateObjectId) updateData.rateObjectId = savedRateObjectId;
           if (shippingInfo) {
             updateData.shippingLabel = shippingInfo.label_url || null;
             updateData.trackingNumber = shippingInfo.tracking_number || null;
@@ -993,6 +1041,7 @@ exports.completeOrder = onRequest(
           shippingCost,
           sellerStripeAccountId: sellerStripeAccountId || null,
           sellerReceivesCents: sellerReceivesCents || 0,
+          rateObjectId: savedRateObjectId || null,
           shippingLabel: shippingInfo ? (shippingInfo.label_url || null) : null,
           trackingNumber: shippingInfo ? (shippingInfo.tracking_number || null) : null,
           trackingUrl: shippingInfo ? (shippingInfo.tracking_url_provider || null) : null,
@@ -1005,18 +1054,18 @@ exports.completeOrder = onRequest(
         console.error('Order record error:', orderErr.message);
       }
 
-      // In-app notifications
+      // In-app notifications (idempotency keys prevent duplicates on retries)
       await Promise.all([
         createNotification(prod.userId, {
           icon: '🛍️',
           message: `New sale! Someone bought your "${prod.title || 'item'}". Ship it within 3 days.`,
           link: 'seller-order-fulfillment.html',
-        }),
+        }, `${paymentIntentId}_seller`),
         createNotification(decodedToken.uid, {
           icon: '✅',
           message: `Order placed for "${prod.title || 'item'}". The seller will ship soon.`,
           link: 'my-orders.html',
-        }),
+        }, `${paymentIntentId}_buyer`),
       ]);
 
       // Email seller and buyer about the new order
@@ -1179,7 +1228,7 @@ exports.sellerCancelOrder = onRequest(
         icon: '↩️',
         message: `The seller cancelled your order for "${productData.title || 'an item'}". You've been fully refunded.`,
         link: 'my-orders.html',
-      });
+      }, `${productId}_sellercancel_buyer`);
 
       // Email buyer (full refund) and seller (strike warning)
       try {
@@ -1591,7 +1640,7 @@ exports.markAsShipped = onRequest(
         icon: '📦',
         message: `Your "${product.title || 'item'}" has shipped! Tracking: ${trackingNumber}`,
         link: 'my-orders.html',
-      });
+      }, `${productId}_shipped_buyer`);
 
       // Send tracking email to buyer
       try {
@@ -1685,12 +1734,12 @@ exports.confirmDelivery = onRequest(
           icon: '💰',
           message: `Delivery confirmed! Payment for "${product.title || 'your item'}" is on its way.`,
           link: 'listings-manager.html',
-        }),
+        }, `${productId}_delivered_seller`),
         createNotification(product.buyerId, {
           icon: '⭐',
           message: `You received "${product.title || 'your item'}"! Don't forget to leave a review.`,
           link: 'my-orders.html',
-        }),
+        }, `${productId}_delivered_buyer`),
       ]);
 
       // Send confirmation emails to buyer and seller
@@ -1720,6 +1769,56 @@ exports.confirmDelivery = onRequest(
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error('confirmDelivery error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- SHIPPO: Track Shipment ---
+exports.trackShipment = onRequest(
+  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret] },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      const { productId } = req.body;
+      if (!productId) return res.status(400).json({ error: 'productId is required' });
+
+      const productDoc = await db.collection('products').doc(productId).get();
+      if (!productDoc.exists) return res.status(404).json({ error: 'Product not found' });
+      const product = productDoc.data();
+
+      // Only buyer or seller can track
+      if (product.buyerId !== decodedToken.uid && product.userId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      const { trackingNumber, carrier } = product;
+      if (!trackingNumber || !carrier) {
+        return res.status(200).json({ tracking_status: null, tracking_history: [], message: 'No tracking info yet' });
+      }
+
+      const shippoKey = shippoSecret.value();
+      const trackRes = await fetch(`https://api.goshippo.com/tracks/${carrier}/${trackingNumber}`, {
+        headers: { 'Authorization': `ShippoToken ${shippoKey}` },
+      });
+
+      if (!trackRes.ok) {
+        const err = await trackRes.json().catch(() => ({}));
+        return res.status(trackRes.status).json({ error: err.detail || 'Tracking lookup failed' });
+      }
+
+      const trackData = await trackRes.json();
+      return res.status(200).json(trackData);
+    } catch (error) {
+      console.error('trackShipment error:', error);
       return res.status(500).json({ error: error.message });
     }
   }

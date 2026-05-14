@@ -14,149 +14,7 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
-    <style>
-        body { background-color: #f7f7f7; }
-
-        .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 60px 20px;
-            text-align: center;
-        }
-        .hero-title { font-size: 42px; margin-bottom: 15px; }
-        .hero-subtitle { font-size: 18px; opacity: 0.9; }
-
-        .container { margin: 40px auto; }
-
-        /* Topics */
-        .topics-section { margin-bottom: 40px; }
-        .topics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-        }
-        .topic-card {
-            background: #fff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .topic-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-2px); }
-        .topic-icon { font-size: 36px; margin-bottom: 12px; }
-        .topic-title { font-size: 17px; font-weight: bold; color: #333; margin-bottom: 6px; }
-        .topic-description { font-size: 13px; color: #707070; line-height: 1.5; }
-
-        /* FAQ + Contact grid */
-        .content-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-
-        .faq-section {
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .section-title { font-size: 26px; margin-bottom: 24px; color: #333; }
-
-        .faq-item {
-            margin-bottom: 20px;
-            border-bottom: 1px solid #e5e5e5;
-            padding-bottom: 20px;
-        }
-        .faq-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-
-        .faq-question {
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 0;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-        .faq-question:hover { color: #3665f3; }
-        .faq-toggle { font-size: 20px; color: #3665f3; flex-shrink: 0; }
-
-        .faq-answer {
-            font-size: 14px;
-            color: #555;
-            line-height: 1.7;
-            display: none;
-            padding-top: 12px;
-        }
-        .faq-answer.active { display: block; }
-
-        /* Contact card */
-        .contact-card {
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            height: fit-content;
-        }
-        .contact-title { font-size: 22px; margin-bottom: 20px; color: #333; }
-        .contact-method {
-            margin-bottom: 24px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid #e5e5e5;
-        }
-        .contact-method:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .contact-icon { font-size: 30px; margin-bottom: 8px; }
-        .contact-label { font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px; }
-        .contact-info { font-size: 14px; color: #3665f3; text-decoration: none; }
-        .contact-info:hover { text-decoration: underline; }
-        .contact-hours { font-size: 12px; color: #707070; margin-top: 4px; }
-
-        /* Contact form */
-        .contact-form-section {
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 40px;
-        }
-        .form-group { margin-bottom: 18px; }
-        .form-label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #333; }
-        .form-input, .form-select, .form-textarea {
-            width: 100%;
-            padding: 11px 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none;
-            border-color: #3665f3;
-        }
-        .form-textarea { min-height: 120px; resize: vertical; }
-        .submit-btn {
-            background-color: #3665f3;
-            color: white;
-            border: none;
-            padding: 13px 30px;
-            border-radius: 4px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .submit-btn:hover { background-color: #2348c5; }
-        .required { color: #e53238; }
-
-        @media (max-width: 968px) {
-            .content-grid { grid-template-columns: 1fr; }
-            .hero-title { font-size: 30px; }
-        }
-    </style>
+    <link rel="stylesheet" href="css/help.css">
 </head>
 <body>
     <!-- Top Bar -->
@@ -179,7 +37,7 @@
     <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
-            <a href="index.html" class="logo">GrappleTrade</a>
+            <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
         </div>
     </div>
 

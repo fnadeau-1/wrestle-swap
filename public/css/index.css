@@ -1,0 +1,18 @@
+
+/* Page-specific styles for index.html */
+body {
+    background-color: #ffffff;
+}
+
+.banner {
+    background: url("https://ichef.bbci.co.uk/ace/standard/1024/cpsprodpb/51b5/live/5e197ee0-542f-11ef-83c8-57b3c4afe583.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* background-attachment: fixed; /* ← this is the magic line */
+}
+
+.logo {
+    font-size: 32px;
+}
+    

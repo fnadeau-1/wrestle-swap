@@ -1,45 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings | GrappleTrade</title>
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
-    <style>
-        /* Page-specific styles for settings.html */
-        body { background-color: #f7f7f7; }
-
-        .top-bar, .main-header { background-color: #f7f7f7; }
-        .top-bar-btn:hover { background: #e5e5e5; }
-
-        .container { max-width: 860px; margin: 30px auto; padding: 0 20px; }
-
-        .page-title { font-size: 28px; color: #333; margin-bottom: 6px; }
-        .page-subtitle { font-size: 15px; color: #707070; margin-bottom: 28px; }
-
-        .helper-text {
-            font-size: 12px;
-            color: #707070;
-            margin: 4px 0 0;
-        }
-
-        /* Username availability */
-        #username-status.checking { color: #707070; }
-        #username-status.success  { color: #28a745; }
-        #username-status.error    { color: #dc3545; }
-
-        /* Google-only notice for password section */
-        .google-only-notice {
-            background: #e8f0fe;
-            border-left: 4px solid #4285f4;
-            padding: 14px 18px;
-            border-radius: 4px;
-            font-size: 14px;
-            color: #333;
-        }
-    </style>
+    <link rel="stylesheet" href="css/settings.css">
 </head>
 <body>
     <!-- Top Bar -->
@@ -63,7 +35,7 @@
     <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
-            <a href="index.html" class="logo">GrappleTrade</a>
+            <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
             <div class="search-container">
                 <div class="search-box">
                     <input type="text" class="search-input" id="search-input"

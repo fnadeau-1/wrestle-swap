@@ -900,4 +900,18 @@ input:checked + .slider:before {
         font-size: 11px;
         padding: 4px 8px;
     }
+
+    /* No-results on tiny screens */
+    .no-results {
+        padding: 30px 16px;
+    }
+
+    .no-results-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+    }
+
+    .no-results-title {
+        font-size: 20px;
+    }
 }

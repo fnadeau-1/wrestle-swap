@@ -1,3 +1,4 @@
 User-agent: *
 Disallow: /fin.html
 Disallow: /admin.html
+Disallow: /checkoout.html

@@ -133,10 +133,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // In-app notifications — recipient can read; only Cloud Functions write via Admin SDK
+    // In-app notifications — recipient can read; Cloud Functions write via Admin SDK
+    // Users can update only the 'read' field on their own notifications
     match /notifications/{userId}/items/{notifId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false;
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create, delete: if false;
     }
 
     // Default deny for everything else

@@ -14,287 +14,7 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
-    <style>
-        /* Page-specific styles for productdetail.html */
-
-        /* Product Layout */
-        .product-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-        }
-
-        /* Image Gallery */
-        .image-gallery {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .main-image-container {
-            width: 100%;
-            height: 500px;
-            background: #f0f0f0;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border: 1px solid #e5e5e5;
-        }
-
-        .main-image {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            transition: transform 0.15s ease;
-            cursor: zoom-in;
-        }
-
-        .main-image img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            display: block;
-        }
-
-        .main-image.emoji {
-            font-size: 200px;
-            cursor: zoom-in;
-        }
-
-        .thumbnail-container {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-        }
-
-        .thumbnail {
-            width: 80px;
-            height: 80px;
-            background: #f0f0f0;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: 2px solid transparent;
-            flex-shrink: 0;
-            overflow: hidden;
-            transition: border-color 0.2s;
-        }
-
-        .thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .thumbnail.emoji { font-size: 32px; }
-        .thumbnail.active,
-        .thumbnail:hover { border-color: #3665f3; }
-
-        /* Product Info */
-        .price-section { margin-bottom: 25px; }
-        .price {
-            font-size: 36px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .option-section { margin-bottom: 25px; }
-        .option-label {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .wishlist-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .wishlist-btn.in-watchlist {
-            background-color: #e3f2fd;
-            border-color: #3665f3;
-            color: #3665f3;
-        }
-
-        /* Details Section */
-        .details-section { margin-top: 25px; }
-        .details-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .details-grid {
-            display: grid;
-            grid-template-columns: 150px 1fr;
-            gap: 12px;
-            font-size: 14px;
-        }
-
-        .detail-label { color: #707070; }
-        .detail-value { color: #333; font-weight: 500; }
-
-        .description {
-            line-height: 1.6;
-            color: #333;
-            margin-top: 15px;
-            white-space: pre-wrap;
-        }
-
-        /* Seller Section */
-        .seller-section {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 25px;
-        }
-
-        .seller-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .seller-name { font-size: 16px; font-weight: bold; color: #333; }
-        .seller-rating { font-size: 14px; color: #28a745; }
-
-        /* Related Products - uses product-card styles from components.css */
-        .related-section { margin-top: 60px; }
-        .related-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-        }
-
-        .related-item {
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            border-radius: 8px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: box-shadow 0.2s;
-        }
-
-        .related-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-
-        .related-image {
-            width: 100%;
-            height: 200px;
-            background: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .related-image img { width: 100%; height: 100%; object-fit: cover; }
-        .related-image.emoji { font-size: 60px; }
-        .related-info { padding: 15px; }
-        .related-name { font-size: 14px; color: #333; margin-bottom: 8px; height: 40px; overflow: hidden; }
-        .related-price { font-size: 18px; font-weight: bold; color: #333; }
-
-        /* Shipping Rate Selector */
-        .shipping-rate {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            background: white;
-            border: 2px solid #e5e5e5;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-
-        .shipping-rate.selected {
-            border-color: #3665f3;
-            background: #e3f2fd;
-        }
-
-        .shipping-rate-info { flex: 1; }
-        .shipping-rate-name { font-weight: bold; font-size: 14px; color: #333; margin-bottom: 3px; }
-        .shipping-rate-details { font-size: 12px; color: #707070; }
-        .shipping-rate-price { font-size: 18px; font-weight: bold; color: #3665f3; }
-
-        .shipping-loading { text-align: center; padding: 20px; color: #707070; }
-        .shipping-error {
-            padding: 12px;
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            border-radius: 4px;
-            color: #dc2626;
-            font-size: 13px;
-        }
-
-        /* Responsive */
-        @media (max-width: 968px) {
-            .product-layout { grid-template-columns: 1fr; }
-            .main-image-container { height: 400px; }
-        }
-
-        /* Sign-in required modal */
-        .signin-modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        .signin-modal-overlay.show {
-            display: flex;
-        }
-        .signin-modal {
-            background: white;
-            border-radius: 12px;
-            padding: 35px 30px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        .signin-modal-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-        .signin-modal h2 {
-            font-size: 22px;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        .signin-modal p {
-            font-size: 14px;
-            color: #707070;
-            margin-bottom: 25px;
-            line-height: 1.5;
-        }
-        .signin-modal-buttons {
-            display: flex;
-            gap: 12px;
-        }
-        .signin-modal-buttons .btn {
-            flex: 1;
-        }
-    </style>
+    <link rel="stylesheet" href="css/productdetail.css">
 </head>
 <body>
     <div class="top-bar bg-gray">
@@ -315,7 +35,7 @@
 
     <div class="main-header">
         <div class="header-content">
-            <a href="index.html" class="logo">GrappleTrade</a>
+            <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
         </div>
     </div>
 
@@ -417,7 +137,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, collection, query, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, collection, query, limit, getDocs, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
@@ -474,6 +194,7 @@
         window.query = query;
         window.limit = limit;
         window.getDocs = getDocs;
+        window.where = where;
         window.serverTimestamp = serverTimestamp;
 
         window.firebaseReady = true;
@@ -542,6 +263,7 @@
                 document.getElementById('action-buttons').innerHTML = `
                     <button class="btn btn-primary" disabled style="background: #ccc; cursor: not-allowed;">Item Sold</button>
                     <p style="text-align: center; color: #707070; font-size: 14px;">This item has been purchased and is no longer available.</p>
+                    <a href="search.html?category=${encodeURIComponent(product.category || '')}" class="btn btn-secondary" style="display:block; text-align:center; margin-top:8px;">Browse Similar Items</a>
                 `;
                 document.getElementById('shipping-section').style.display = 'none';
             }
@@ -567,11 +289,33 @@
                 document.getElementById('product-location-state').textContent = 'Contact seller for details';
             }
 
-            const stars = product.rating || 5;
-            const reviewCount = product.reviewCount || 0;
-            const starsHtml = '★'.repeat(stars) + '☆'.repeat(5 - stars);
-            document.getElementById('product-stars').textContent = starsHtml;
-            document.getElementById('product-reviews').textContent = `(${reviewCount} reviews)`;
+            // Fetch real seller rating from sellerRatings collection
+            document.getElementById('product-stars').textContent = '☆☆☆☆☆';
+            document.getElementById('product-reviews').textContent = '(loading...)';
+            if (product.userId) {
+                window.getDocs(
+                    window.query(
+                        window.collection(window.firebaseDb, 'sellerRatings'),
+                        window.where('sellerId', '==', product.userId)
+                    )
+                ).then(snap => {
+                    const count = snap.size;
+                    if (count === 0) {
+                        document.getElementById('product-stars').textContent = '☆☆☆☆☆';
+                        document.getElementById('product-reviews').textContent = '(no reviews yet)';
+                        return;
+                    }
+                    const avg = snap.docs.reduce((sum, d) => sum + (d.data().rating || 0), 0) / count;
+                    const full = Math.floor(avg);
+                    const half = avg % 1 >= 0.5;
+                    const starsHtml = '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half ? 1 : 0));
+                    document.getElementById('product-stars').textContent = starsHtml;
+                    document.getElementById('product-reviews').textContent = `${avg.toFixed(1)} (${count} review${count !== 1 ? 's' : ''})`;
+                }).catch(() => {
+                    document.getElementById('product-stars').textContent = '☆☆☆☆☆';
+                    document.getElementById('product-reviews').textContent = '(no reviews yet)';
+                });
+            }
 
             const mainImageEl = document.getElementById('main-image');
             const thumbnailContainer = document.getElementById('thumbnail-container');

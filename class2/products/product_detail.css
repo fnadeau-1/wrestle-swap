@@ -35,7 +35,6 @@ a { text-decoration: none; color: inherit; }
 ul { list-style: none; }
 img { max-width: 100%; }
 
-/* ── Navbar ── */
 nav {
   display: flex;
   align-items: center;
@@ -89,7 +88,6 @@ nav ul li a:hover { color: var(--earth); }
   transform: translateY(-1px);
 }
 
-/* ── Breadcrumb ── */
 .breadcrumb {
   padding: 1rem 5%;
   font-size: 0.82rem;
@@ -103,7 +101,6 @@ nav ul li a:hover { color: var(--earth); }
 .breadcrumb .sep { opacity: 0.4; }
 .breadcrumb span:last-child { color: var(--earth); font-weight: 500; }
 
-/* ── Main Section ── */
 .section {
   max-width: 1100px;
   margin: 1.5rem auto 3rem;
@@ -111,7 +108,6 @@ nav ul li a:hover { color: var(--earth); }
   animation: fadeUp 0.5s ease both;
 }
 
-/* ── Product Detail Grid ── */
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -124,7 +120,6 @@ nav ul li a:hover { color: var(--earth); }
   padding: 0;
 }
 
-/* ── Product Image Panel ── */
 .detail-img {
   display: flex;
   align-items: center;
@@ -133,7 +128,6 @@ nav ul li a:hover { color: var(--earth); }
   min-height: 420px;
   border-right: 1px solid var(--border);
   position: relative;
-  /* layered warm gradient behind the emoji */
   background-image:
     radial-gradient(circle at 50% 55%, rgba(232,160,32,0.18) 0%, transparent 70%) !important;
   transition: transform 0.3s ease;
@@ -141,7 +135,6 @@ nav ul li a:hover { color: var(--earth); }
 }
 .detail-img:hover { transform: scale(1.1); }
 
-/* decorative dot pattern overlay */
 .detail-img::before {
   content: '';
   position: absolute;
@@ -151,7 +144,6 @@ nav ul li a:hover { color: var(--earth); }
   pointer-events: none;
 }
 
-/* ── Product Info Panel ── */
 .detail-info {
   padding: 2.5rem 2.5rem 2.5rem 1rem;
   display: flex;
@@ -176,7 +168,6 @@ nav ul li a:hover { color: var(--earth); }
   margin-top: 0.1rem;
 }
 
-/* ── Badges ── */
 .detail-badge {
   display: inline-block;
   font-size: 0.72rem;
@@ -195,7 +186,6 @@ nav ul li a:hover { color: var(--earth); }
 .badge-new    { background: #d8f3dc; color: #2d6a4f; border: 1px solid rgba(45,106,79,0.2); }
 .badge-limited{ background: #fdeaea; color: #9b2335; border: 1px solid rgba(155,35,53,0.2); }
 
-/* ── Price ── */
 .detail-price {
   font-family: var(--font-display);
   font-size: 1.9rem;
@@ -209,7 +199,6 @@ nav ul li a:hover { color: var(--earth); }
   color: var(--text-muted);
 }
 
-/* ── Description ── */
 .detail-desc {
   font-size: 0.97rem;
   color: var(--text-muted);
@@ -219,7 +208,6 @@ nav ul li a:hover { color: var(--earth); }
   margin: 0.25rem 0;
 }
 
-/* ── Buttons ── */
 .detail-buttons {
   display: flex;
   gap: 0.75rem;
@@ -263,7 +251,6 @@ nav ul li a:hover { color: var(--earth); }
   color: var(--earth);
 }
 
-/* ── Info Tabs ── */
 .info-tabs {
   margin-top: 1rem;
   border: 1px solid var(--border);
@@ -328,7 +315,6 @@ nav ul li a:hover { color: var(--earth); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Related Products ── */
 .related-section {
   max-width: 1100px;
   margin: 0 auto 5rem;
@@ -399,7 +385,6 @@ nav ul li a:hover { color: var(--earth); }
   font-weight: 500;
 }
 
-/* ── Footer ── */
 footer {
   background: var(--earth);
   color: rgba(255,255,255,0.75);
@@ -418,7 +403,6 @@ footer {
 footer a { color: var(--honey-light); text-decoration: underline; }
 footer a:hover { color: var(--honey); }
 
-/* ── Responsive ── */
 @media (max-width: 860px) {
   .detail-grid {
     grid-template-columns: 1fr;

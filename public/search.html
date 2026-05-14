@@ -14,103 +14,7 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
-    <style>
-        /* Page-specific styles for search.html */
-        .top-bar, .main-header {
-            background-color: #f7f7f7;
-        }
-
-        .top-bar-btn {
-            background: #f7f7f7;
-        }
-
-        .top-bar-btn:hover {
-            background: #e5e5e5;
-        }
-
-        .container {
-            display: flex;
-            gap: 20px;
-        }
-
-        .size-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px 16px;
-        }
-
-        .size-grid .filter-option {
-            margin: 4px 0;
-        }
-
-        /* Product item for search results */
-        .product-item {
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            border-radius: 4px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: box-shadow 0.2s;
-            position: relative;
-        }
-
-        .product-item:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .product-item.sold {
-            opacity: 0.7;
-        }
-
-        .product-img {
-            width: 100%;
-            height: 200px;
-            background: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            object-fit: cover;
-        }
-
-        .product-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .product-details {
-            padding: 12px;
-        }
-
-        .product-name {
-            font-size: 14px;
-            color: #333;
-            margin-bottom: 8px;
-            height: 40px;
-            overflow: hidden;
-            line-height: 1.4;
-        }
-
-        .no-results-suggestions {
-            text-align: left;
-            max-width: 400px;
-            margin: 0 auto;
-            color: #707070;
-            font-size: 14px;
-            line-height: 1.8;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/search.css">
 </head>
 <body>
     <!-- Top Bar -->
@@ -131,7 +35,7 @@
     <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
-            <a href="index.html" class="logo">GrappleTrade</a>
+            <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
             <div class="search-container">
                 <div class="search-box">
                     <input type="text" class="search-input" id="search-input" placeholder="Search for wrestling gear...">
@@ -148,10 +52,18 @@
         </div>
     </div>
 
+    <!-- Filter overlay (mobile backdrop) -->
+    <div class="filter-overlay" id="filter-overlay" onclick="closeFilters()"></div>
+
     <!-- Main Content -->
     <div class="container">
         <!-- Sidebar Filters -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="filter-sidebar">
+            <!-- Drawer header (mobile only) -->
+            <div class="filter-drawer-header">
+                <strong>Filters</strong>
+                <button class="filter-drawer-close" onclick="closeFilters()">✕</button>
+            </div>
             <div class="filter-section">
                 <div class="filter-title">Category</div>
                 <div class="filter-option">
@@ -227,11 +139,13 @@
 
             <div class="filter-section">
                 <div class="filter-title">Price</div>
-                <div class="price-inputs">
-                    <input type="number" placeholder="Min" id="price-min">
-                    <input type="number" placeholder="Max" id="price-max">
+                <div class="price-slider-labels">
+                    <span id="price-min-label">$0</span>
+                    <span id="price-max-label">$500+</span>
                 </div>
-                <button class="apply-btn" onclick="filterProducts()">Apply</button>
+                <input type="range" id="price-slider" min="0" max="500" value="500" step="5" oninput="onPriceSlider(this.value)">
+                <input type="hidden" id="price-min" value="0">
+                <input type="hidden" id="price-max" value="">
             </div>
 
             <div class="filter-section">
@@ -245,6 +159,13 @@
 
         <!-- Results Area -->
         <main class="results-area">
+            <!-- Mobile Filters Button (hidden on desktop via CSS) -->
+            <div class="mobile-filter-bar">
+                <button class="filter-toggle-btn" onclick="openFilters()">
+                    ⚙ Filters
+                </button>
+            </div>
+
             <!-- Loading State -->
             <div class="loading" id="loading-state">
                 <div class="loading-spinner"></div>
@@ -293,7 +214,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, where, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
@@ -309,18 +230,37 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // User greeting
-        onAuthStateChanged(auth, (user) => {
+        // User greeting + load watchlist
+        onAuthStateChanged(auth, async (user) => {
             const greeting = document.getElementById('user-greeting');
             if (user) {
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
                 greeting.textContent = `Hi, ${firstName}!`;
                 greeting.href = 'profile.html';
+                window._currentUser = user;
+                // Load watchlist ids
+                try {
+                    const wSnap = await getDocs(collection(db, 'users', user.uid, 'watchlist'));
+                    wSnap.forEach(d => window.userWatchlist.add(d.id));
+                } catch(e) {}
             } else {
                 greeting.textContent = 'Hi! Sign in';
                 greeting.href = 'sign-in.html';
+                window._currentUser = null;
             }
         });
+
+        // Watchlist toggle (called from card buttons)
+        window._toggleWatchlistFirestore = async (productId, add) => {
+            const user = window._currentUser;
+            if (!user) { window.location.href = 'sign-in.html'; return; }
+            const ref = doc(db, 'users', user.uid, 'watchlist', productId);
+            if (add) {
+                await setDoc(ref, { addedAt: new Date() });
+            } else {
+                await deleteDoc(ref);
+            }
+        };
 
         // Make available globally
         window.firestoreDB = db;
@@ -338,11 +278,38 @@
         let searchQuery = '';
         let displayedCount = 0;
         const SEARCH_PAGE_SIZE = 24;
+        window.userWatchlist = new Set();
+
+        function toggleWatchlistCard(productId, btn) {
+            const inWatchlist = window.userWatchlist.has(productId);
+            if (inWatchlist) {
+                window.userWatchlist.delete(productId);
+                btn.textContent = '🤍';
+                btn.title = 'Add to watchlist';
+            } else {
+                window.userWatchlist.add(productId);
+                btn.textContent = '❤️';
+                btn.title = 'Remove from watchlist';
+            }
+            window._toggleWatchlistFirestore && window._toggleWatchlistFirestore(productId, !inWatchlist);
+        }
 
         // Get search query from URL
         function getSearchQuery() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('q') || '';
+        }
+
+        // Pre-check category checkbox from URL ?category= param
+        function applyCategoryFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const cat = urlParams.get('category');
+            if (!cat) return;
+            const el = document.getElementById(cat);
+            if (el) {
+                el.checked = true;
+                if (cat === 'shoes') toggleSizeFilter();
+            }
         }
 
         // Load products from Firestore
@@ -377,6 +344,7 @@
                         condition: data.condition,
                         size: data.size,
                         sellerName: data.sellerName || '',
+                        sellerRating: data.sellerRating || 0,
                         zipCode: data.zipCode || '',
                         shipping: getShippingDisplay(data),
                         icon: getCategoryIcon(data.category),
@@ -430,8 +398,23 @@
             document.getElementById('search-query-breadcrumb').textContent = searchQuery ? `"${searchQuery}"` : 'All Items';
             document.getElementById('no-results-query').textContent = searchQuery;
 
+            applyCategoryFromURL();
+
             // Load products from Firestore
             loadProductsFromFirestore();
+        }
+
+        // Mobile filter drawer
+        function openFilters() {
+            document.getElementById('filter-sidebar').classList.add('drawer-open');
+            document.getElementById('filter-overlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFilters() {
+            document.getElementById('filter-sidebar').classList.remove('drawer-open');
+            document.getElementById('filter-overlay').classList.remove('active');
+            document.body.style.overflow = '';
         }
 
         // Perform new search
@@ -461,6 +444,21 @@
             });
             initializePage();
         });
+
+        // Price slider handler
+        function onPriceSlider(value) {
+            const intVal = parseInt(value);
+            const maxEl = document.getElementById('price-max-label');
+            const maxInput = document.getElementById('price-max');
+            if (intVal >= 500) {
+                maxEl.textContent = '$500+';
+                maxInput.value = '';
+            } else {
+                maxEl.textContent = '$' + intVal;
+                maxInput.value = intVal;
+            }
+            filterProducts();
+        }
 
         // Filter products
         function filterProducts() {
@@ -503,13 +501,13 @@
 
             // Filter by condition
             const selectedConditions = [];
-            ['new', 'likenew', 'good'].forEach(cond => {
-                if (document.getElementById(cond)?.checked) {
-                    selectedConditions.push(cond);
+            [['new', 'new'], ['likenew', 'likenew'], ['good', 'good'], ['Fair', 'fair']].forEach(([id, val]) => {
+                if (document.getElementById(id)?.checked) {
+                    selectedConditions.push(val);
                 }
             });
             if (selectedConditions.length > 0) {
-                filtered = filtered.filter(p => selectedConditions.includes(p.condition));
+                filtered = filtered.filter(p => selectedConditions.includes((p.condition || '').toLowerCase()));
             }
 
             // Filter by brand
@@ -557,16 +555,20 @@
                     : product.icon;
                 const soldClass = product.sold ? 'sold' : '';
                 const soldBadge = product.sold ? '<div class="sold-badge">SOLD</div>' : '';
+                const inWatchlist = userWatchlist.has(product.id);
+                const heartHtml = `<button class="heart-btn" onclick="event.stopPropagation(); toggleWatchlistCard('${product.id}', this)" title="${inWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}">${inWatchlist ? '❤️' : '🤍'}</button>`;
+                const trustBadge = product.sellerRating >= 4.5 ? '<span class="trust-badge">Top Seller</span>' : '';
+                const locationText = product.zipCode ? `· Ships from ${product.zipCode}` : '';
                 return `
                     <div class="product-item ${soldClass}" onclick="window.location.href='productdetail.html?id=${product.id}'">
                         ${soldBadge}
+                        ${heartHtml}
                         <div class="product-img">${imageDisplay}</div>
                         <div class="product-details">
                             <div class="product-name">${product.name}</div>
                             <div class="product-price">$${product.price.toFixed(2)}</div>
-                            <div class="seller-name">${product.sellerName}</div>
                             <div class="product-condition">${formatCondition(product.condition)}</div>
-                            ${product.zipCode ? `<div class="product-zip">Ships from ${product.zipCode}</div>` : ''}
+                            <div class="seller-trust">${trustBadge}<span>${product.sellerName}${locationText}</span></div>
                         </div>
                     </div>
                 `;
@@ -626,5 +628,6 @@
     </script>
     <script type="module" src="js/site-notice.js"></script>
     <script type="module" src="js/notifications.js"></script>
+    <script src="js/bottom-nav.js" data-active="search"></script>
 </body>
 </html>

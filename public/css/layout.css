@@ -417,16 +417,27 @@
     /* Header */
     .header-content {
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
+        padding: 0 14px;
     }
 
-    .logo {
-        font-size: 22px;
+    /* Logo — scale down pseudo-elements */
+    .logo::before {
+        font-size: 28px;
+    }
+
+    .logo::after {
+        font-size: 21px;
     }
 
     .search-container {
         width: 100%;
         order: 3;
+        gap: 8px;
+    }
+
+    .search-input {
+        font-size: 16px; /* prevents iOS zoom on focus */
     }
 
     /* Nav: scroll horizontally instead of wrapping or overflowing */
@@ -437,6 +448,7 @@
         gap: 16px;
         padding-bottom: 4px;
         scrollbar-width: none;
+        padding: 0 14px 4px;
     }
 
     .nav-content::-webkit-scrollbar {
@@ -472,7 +484,7 @@
     .products-grid,
     .products {
         grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        gap: 10px;
     }
 
     .categories {
@@ -480,9 +492,32 @@
         gap: 10px;
     }
 
+    /* Results header — stack on mobile */
+    .results-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+    }
+
+    .sort-by {
+        width: 100%;
+    }
+
+    .sort-by select {
+        flex: 1;
+        width: 100%;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+        font-size: 12px;
+    }
+
     /* Footer */
     .footer {
         margin-top: 30px;
+        padding-bottom: 72px; /* space for bottom nav */
     }
 
     .footer-links {
@@ -492,6 +527,18 @@
 }
 
 @media (max-width: 480px) {
+    .header-content {
+        padding: 0 10px;
+    }
+
+    .logo::before {
+        font-size: 24px;
+    }
+
+    .logo::after {
+        font-size: 18px;
+    }
+
     .products-grid,
     .products {
         grid-template-columns: repeat(2, 1fr);
