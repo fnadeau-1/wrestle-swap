@@ -12,7 +12,9 @@ service cloud.firestore {
     // Products collection
     match /products/{productId} {
       allow read: if true;
+      // Seller must be authenticated, not suspended, and must own the listing they're creating
       allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('sellerSuspended', false) == false;
       // Sellers can edit their own listings but cannot touch order/payment/fulfilment fields
       // (those are written exclusively by Cloud Functions via Admin SDK which bypasses rules)
@@ -29,6 +31,11 @@ service cloud.firestore {
     }
 
     // Users collection
+    // Full doc (incl. stripeAccountId, penalties, isAdmin) only visible to owner + admins.
+    // Other authenticated users get read access for public seller profiles — Firestore
+    // doesn't support field-level restrictions, so keep sensitive fields off this doc
+    // long-term (move to a private subcollection). For now the exposure is low-risk:
+    // stripeAccountId is not a secret, and isAdmin/penalty fields are informational only.
     match /users/{userId} {
       allow read: if isAdmin()
         || (request.auth != null && request.auth.uid == userId)
@@ -36,14 +43,14 @@ service cloud.firestore {
       // New users can create their own profile document
       allow create: if request.auth != null && request.auth.uid == userId;
       // Admins can update anything; regular users can update their own doc
-      // but cannot touch penalty/suspension fields
+      // but cannot touch penalty/suspension/privilege fields
       allow update: if isAdmin()
         || (request.auth != null
           && request.auth.uid == userId
-          && !('sellerSuspended' in request.resource.data.diff(resource.data).affectedKeys())
-          && !('sellerCancellationCount' in request.resource.data.diff(resource.data).affectedKeys())
-          && !('sellerPenalties' in request.resource.data.diff(resource.data).affectedKeys())
-          && !('isAdmin' in request.resource.data.diff(resource.data).affectedKeys()));
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'sellerSuspended', 'sellerCancellationCount', 'sellerPenalties', 'isAdmin',
+              'stripeAccountId', 'stripeCreatedAt'
+          ]));
       allow delete: if isAdmin();
     }
 
@@ -55,6 +62,10 @@ service cloud.firestore {
     }
 
     // Orders collection
+    // All order mutations (status, tracking, fulfilment, cancellation) are handled
+    // exclusively by Cloud Functions via Admin SDK, which bypasses these rules.
+    // Client-side update is intentionally denied — if direct client writes are ever
+    // needed, add explicit field allowlists here rather than opening it broadly.
     match /orders/{orderId} {
       // Admins can read/write any order; buyers and sellers can access their own
       allow read: if isAdmin() || (request.auth != null && (
@@ -63,11 +74,8 @@ service cloud.firestore {
       ));
       // Only the buyer can create an order for themselves
       allow create: if request.auth != null && request.resource.data.buyerId == request.auth.uid;
-      // Admins or buyer/seller can update their order
-      allow update: if isAdmin() || (request.auth != null && (
-        resource.data.buyerId == request.auth.uid ||
-        resource.data.sellerId == request.auth.uid
-      ));
+      // No client-side updates — all order mutations go through Cloud Functions
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
