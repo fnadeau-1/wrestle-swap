@@ -261,11 +261,17 @@ exports.createConnectedAccount = onRequest(
       }
 
       // Create an account link for onboarding
+      // collection_options.fields = 'eventually_due' means Stripe only collects
+      // the minimum needed to enable charges now; full KYC is deferred until
+      // the seller hits a payout threshold.
       const accountLink = await stripe.accountLinks.create({
         account: stripeAccountId,
         refresh_url: refreshUrl || 'https://wrestleswap.web.app/stripe-express-prompt.html',
         return_url: returnUrl || 'https://wrestleswap.web.app/profile.html?stripe=success',
         type: 'account_onboarding',
+        collection_options: {
+          fields: 'eventually_due',
+        },
       });
 
       console.log('Account link created:', accountLink.url);
