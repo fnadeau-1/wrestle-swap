@@ -23,7 +23,7 @@ service cloud.firestore {
             && resource.data.userId == request.auth.uid
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
                 'sold', 'buyerId', 'soldOrderId', 'soldAt', 'soldTimestamp',
-                'cancelled', 'cancelledAt', 'cancelledBy', 'refundId',
+                'cancelledAt', 'cancelledBy', 'refundId',
                 'trackingNumber', 'trackingUrl', 'carrier', 'shipped', 'shippedAt',
                 'delivered', 'deliveredAt', 'shippingCost'
             ]));

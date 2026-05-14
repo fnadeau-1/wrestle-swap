@@ -529,7 +529,7 @@
             }, 3000);
         }
 
-        function checkIfOwnProduct(product) {
+        async function checkIfOwnProduct(product) {
             const user = window.getCurrentUser();
             if (user && product.userId && user.uid === product.userId && !product.sold) {
                 // This is the user's own product - disable buying, no messaging yourself
@@ -540,7 +540,21 @@
                 `;
                 document.getElementById('shipping-section').style.display = 'none';
             } else if (user && product.userId && user.uid !== product.userId && !product.sold) {
-                // Buyer viewing someone else's active listing — show Message Seller button
+                // Check if the seller is suspended before showing buy/message buttons
+                try {
+                    const sellerSnap = await window.getDoc(window.doc(window.firebaseDb, 'users', product.userId));
+                    if (sellerSnap.exists() && sellerSnap.data().sellerSuspended) {
+                        document.getElementById('action-buttons').innerHTML = `
+                            <button class="btn btn-primary" disabled style="background: #ccc; cursor: not-allowed;">Seller Unavailable</button>
+                            <p style="text-align: center; color: #707070; font-size: 14px;">This seller's account has been suspended and cannot accept orders.</p>
+                        `;
+                        document.getElementById('shipping-section').style.display = 'none';
+                        return;
+                    }
+                } catch (e) {
+                    // If seller doc can't be read, don't block the purchase
+                }
+                // Seller is active — show Message Seller button
                 const msgBtn = document.getElementById('message-seller-btn');
                 if (msgBtn) msgBtn.style.display = '';
             }
