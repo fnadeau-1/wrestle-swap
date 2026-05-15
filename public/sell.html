@@ -420,6 +420,25 @@
                 return;
             }
 
+            // Enforce max 50 active listings per user
+            try {
+                const activeSnap = await window.getDocs(
+                    window.query(
+                        window.collection(window.firestoreDB, 'products'),
+                        window.where('userId', '==', currentUser.uid),
+                        window.where('active', '==', true)
+                    )
+                );
+                if (activeSnap.size >= 50) {
+                    alert('You have reached the maximum of 50 active listings. Please deactivate or delete an existing listing before adding a new one.');
+                    loading.style.display = 'none';
+                    submitBtn.disabled = false;
+                    return;
+                }
+            } catch (e) {
+                console.warn('Could not verify listing count:', e.message);
+            }
+
             // Check for banned keywords before doing any uploads
             const textToCheck = [
                 document.getElementById('title').value,

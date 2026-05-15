@@ -12,8 +12,9 @@ service cloud.firestore {
     // Products collection
     match /products/{productId} {
       allow read: if true;
-      // Seller must be authenticated, not suspended, and must own the listing they're creating
+      // Seller must be authenticated, email-verified, not suspended, and must own the listing
       allow create: if request.auth != null
+        && request.auth.token.email_verified == true
         && request.resource.data.userId == request.auth.uid
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('sellerSuspended', false) == false;
       // Sellers can edit their own listings but cannot touch order/payment/fulfilment fields
@@ -149,6 +150,11 @@ service cloud.firestore {
         && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
       allow create, delete: if false;
+    }
+
+    // Rate limit counters — written only by Cloud Functions via Admin SDK, never by clients
+    match /rateLimits/{userId} {
+      allow read, write: if false;
     }
 
     // Default deny for everything else
