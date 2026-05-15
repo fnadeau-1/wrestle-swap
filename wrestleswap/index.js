@@ -32,6 +32,32 @@ async function verifyAuth(req) {
   return admin.auth().verifyIdToken(idToken);
 }
 
+// Shippo rate limit — max 15 calls per user per hour
+// Stored in rateLimits/{userId} via Admin SDK (client cannot read/write this collection)
+const SHIPPO_RATE_LIMIT = 15;
+const SHIPPO_RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+async function checkShippoRateLimit(userId) {
+  const ref = db.collection('rateLimits').doc(userId);
+  const snap = await ref.get();
+  const now = Date.now();
+  const data = snap.exists ? snap.data() : {};
+  const windowStart = data.shippoWindowStart || 0;
+  const count = data.shippoCount || 0;
+
+  if (now - windowStart < SHIPPO_RATE_WINDOW_MS && count >= SHIPPO_RATE_LIMIT) {
+    throw Object.assign(new Error('Rate limit exceeded'), { status: 429 });
+  }
+
+  // Reset window if expired, otherwise increment
+  await ref.set(
+    now - windowStart >= SHIPPO_RATE_WINDOW_MS
+      ? { shippoCount: 1, shippoWindowStart: now }
+      : { shippoCount: admin.firestore.FieldValue.increment(1) },
+    { merge: true }
+  );
+}
+
 // Fetch a user's email address by UID (used for email notifications)
 async function getUserEmail(uid) {
   if (!uid) return null;
@@ -74,7 +100,7 @@ async function createNotification(userId, { icon, message, link }, idempotencyKe
 
 // --- DELETE OLD SOLD PRODUCTS (runs automatically every 30 days) ---
 // Converted from HTTP to scheduled — no public endpoint means no abuse vector
-exports.deleteSoldProducts = onSchedule('every 720 hours', async (event) => {
+exports.deleteSoldProducts = onSchedule({ schedule: 'every 720 hours', maxInstances: 1 }, async (event) => {
   const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
 
   const snapshot = await db.collection("products")
@@ -102,7 +128,7 @@ const SELLER_STRIKES_LIMIT = 3;
 // --- STRIPE PAYMENT INTENT WITH CONNECT ---
 // Shipping costs go to platform, product price (minus 10% fee) goes to seller
 exports.createPaymentIntent = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, shippoSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, shippoSecret], maxInstances: 20 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -113,6 +139,10 @@ exports.createPaymentIntent = onRequest(
       decodedToken = await verifyAuth(req);
     } catch (e) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!decodedToken.email_verified) {
+      return res.status(403).json({ error: 'Please verify your email address before making a purchase.' });
     }
 
     try {
@@ -237,7 +267,7 @@ const CANCELLATION_FEE_PERCENT = 0.05;
 
 // --- CANCEL ORDER / REFUND ---
 exports.cancelOrder = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, shippoSecret, sendgridSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, shippoSecret, sendgridSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -341,9 +371,11 @@ exports.cancelOrder = onRequest(
         }
       }
 
-      // Update product status in Firestore
+      // Update product status — set active: false so the listing does NOT
+      // auto re-appear in the marketplace. Seller must manually reactivate it.
       await db.collection('products').doc(productId).update({
         sold: false,
+        active: false,
         soldAt: null,
         soldTimestamp: null,
         soldOrderId: null,
@@ -354,7 +386,7 @@ exports.cancelOrder = onRequest(
         cancellationReason: 'Cancelled by buyer',
         refundId: refund.id
       });
-      console.log('Product status updated - marked as available');
+      console.log('Product deactivated — awaiting seller reactivation');
 
       // Update orders collection record so buyer can still see the cancelled order
       try {
@@ -376,7 +408,7 @@ exports.cancelOrder = onRequest(
       // In-app notification to seller
       await createNotification(productData.userId, {
         icon: '❌',
-        message: `A buyer cancelled their order for "${productData.title || 'your item'}". The listing is now active again.`,
+        message: `A buyer cancelled their order for "${productData.title || 'your item'}". Go to your listings to reactivate it.`,
         link: 'listings-manager.html',
       }, `${productId}_buyercancel_seller`);
 
@@ -420,7 +452,7 @@ exports.cancelOrder = onRequest(
 
 // --- SHIPPO SHIPPING RATES ---
 exports.shippingRates = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret], maxInstances: 15 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -431,10 +463,17 @@ exports.shippingRates = onRequest(
       return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
+    let authedToken;
     try {
-      await verifyAuth(req);
+      authedToken = await verifyAuth(req);
     } catch (e) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      await checkShippoRateLimit(authedToken.uid);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many shipping rate requests. Please wait before trying again.' });
     }
 
     try {
@@ -493,7 +532,7 @@ exports.shippingRates = onRequest(
 
 // --- STRIPE CONNECT: Create Connected Account for Sellers ---
 exports.createConnectedAccount = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret], maxInstances: 5 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -576,7 +615,7 @@ exports.createConnectedAccount = onRequest(
 
 // --- SHIPPO: Get Shipping Rates (for checkout) ---
 exports.shippoGetRates = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret], maxInstances: 15 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -587,10 +626,17 @@ exports.shippoGetRates = onRequest(
       return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
+    let authedToken;
     try {
-      await verifyAuth(req);
+      authedToken = await verifyAuth(req);
     } catch (e) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      await checkShippoRateLimit(authedToken.uid);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many shipping rate requests. Please wait before trying again.' });
     }
 
     try {
@@ -659,7 +705,7 @@ exports.shippoGetRates = onRequest(
 
 // --- SHIPPO: Create Shipping Label ---
 exports.shippoCreateLabel = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret, sendgridSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret, sendgridSecret], maxInstances: 5 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -769,7 +815,7 @@ exports.shippoCreateLabel = onRequest(
 
 // --- STRIPE CONNECT: Check Seller Status ---
 exports.checkSellerStatus = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -835,7 +881,7 @@ exports.checkSellerStatus = onRequest(
 // firebase functions:secrets:set RECAPTCHA_API_KEY
 /*
 exports.verifyRecaptcha = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [recaptchaApiKey] },
+  { cors: ALLOWED_ORIGINS, secrets: [recaptchaApiKey], maxInstances: 20 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -937,7 +983,7 @@ exports.verifyRecaptcha = onRequest(
 
 // --- COMPLETE ORDER (marks product sold after server-verified payment) ---
 exports.completeOrder = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret], maxInstances: 20 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -1109,7 +1155,7 @@ exports.completeOrder = onRequest(
 
 // --- SELLER CANCEL ORDER (full refund to buyer, strike against seller) ---
 exports.sellerCancelOrder = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -1188,9 +1234,10 @@ exports.sellerCancelOrder = onRequest(
 
       console.log(`Seller ${decodedToken.uid} strike ${newCount}/${SELLER_STRIKES_LIMIT} — suspended: ${suspended}`);
 
-      // Mark product as cancelled and re-listed (available again)
+      // Mark product as cancelled and deactivate — seller must manually reactivate
       await db.collection('products').doc(productId).update({
         sold: false,
+        active: false,
         soldAt: null,
         soldTimestamp: null,
         soldOrderId: null,
@@ -1274,7 +1321,7 @@ exports.sellerCancelOrder = onRequest(
 // --- CHECK OVERDUE ORDERS (runs daily — auto-cancels unshipped orders older than 10 days) ---
 // Note: requires a Firestore composite index on (sold ASC, soldTimestamp ASC)
 exports.checkOverdueOrders = onSchedule(
-  { schedule: 'every 24 hours', secrets: [stripeSecret, sendgridSecret] },
+  { schedule: 'every 24 hours', secrets: [stripeSecret, sendgridSecret], maxInstances: 1 },
   async (event) => {
     const stripe = require('stripe')(stripeSecret.value());
     const tenDaysAgo = Date.now() - (10 * 24 * 60 * 60 * 1000);
@@ -1342,9 +1389,10 @@ exports.checkOverdueOrders = onSchedule(
           console.log(`Seller ${productData.userId} overdue strike ${newCount} — suspended: ${suspended}`);
         }
 
-        // Mark product cancelled
+        // Mark product cancelled and deactivate — seller must manually reactivate
         await db.collection('products').doc(productId).update({
           sold: false,
+          active: false,
           soldAt: null,
           soldTimestamp: null,
           soldOrderId: null,
@@ -1420,7 +1468,7 @@ exports.checkOverdueOrders = onSchedule(
 // Deletes Firebase Auth record, Firestore user doc, and username reservation.
 // Caller must be authenticated and have isAdmin == true in their Firestore doc.
 exports.adminDeleteUser = onRequest(
-  { cors: ALLOWED_ORIGINS },
+  { cors: ALLOWED_ORIGINS, maxInstances: 3 },
   async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(204).send('');
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -1481,7 +1529,7 @@ exports.adminDeleteUser = onRequest(
 // Accepts: productId (required), refundAmount in cents (optional, defaults to full), relist (boolean, default true)
 // Caller must be authenticated and have isAdmin == true in their Firestore doc.
 exports.adminIssueRefund = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret], maxInstances: 3 },
   async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(204).send('');
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -1583,7 +1631,7 @@ exports.adminIssueRefund = onRequest(
 
 // --- MARK AS SHIPPED (seller confirms shipment, sends tracking email to buyer) ---
 exports.markAsShipped = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [sendgridSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [sendgridSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -1666,7 +1714,7 @@ exports.markAsShipped = onRequest(
 
 // --- CONFIRM DELIVERY (buyer confirms receipt, enables review, notifies seller) ---
 exports.confirmDelivery = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -1776,7 +1824,7 @@ exports.confirmDelivery = onRequest(
 
 // --- SHIPPO: Track Shipment ---
 exports.trackShipment = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret] },
+  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
@@ -1826,7 +1874,7 @@ exports.trackShipment = onRequest(
 
 // --- SHIPPO WEBHOOK (auto-confirm delivery when carrier marks package delivered) ---
 exports.shippoWebhook = onRequest(
-  { cors: false, secrets: [shippoWebhookSecret, stripeSecret, sendgridSecret] },
+  { cors: false, secrets: [shippoWebhookSecret, stripeSecret, sendgridSecret], maxInstances: 5 },
   async (req, res) => {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
