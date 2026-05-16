@@ -1,7 +1,9 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onMessagePublished } = require("firebase-functions/v2/pubsub");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
+const { CloudBillingClient } = require("@google-cloud/billing");
 
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
@@ -1978,6 +1980,73 @@ exports.shippoWebhook = onRequest(
       console.log(`Shippo webhook: delivery confirmed for product ${productDoc.id}`);
     } catch (err) {
       console.error('Shippo webhook processing error:', err);
+    }
+  }
+);
+
+// --- BILLING KILL SWITCH ---
+// Subscribes to the billing-alerts Pub/Sub topic.
+// When actual spend >= budget, disables billing on the project entirely.
+// Only fires at 100%+ threshold — lower alert thresholds (e.g. 50%, 75%) are logged but ignored.
+//
+// REQUIRED IAM (set in Google Cloud Console):
+//   Principal: <PROJECT_NUMBER>-compute@developer.gserviceaccount.com
+//   Role: roles/billing.projectManager  (granted at the BILLING ACCOUNT level, not project level)
+//   Where: Billing → Account Management → Add Principal
+const BILLING_PROJECT = 'wrestleswap';
+
+exports.killBillingOnBudgetAlert = onMessagePublished(
+  { topic: 'billing-alerts', maxInstances: 1 },
+  async (event) => {
+    // Pub/Sub message data is base64-encoded JSON
+    const data = event.data.message.json;
+
+    const costAmount      = data.costAmount      || 0;
+    const budgetAmount    = data.budgetAmount    || 0;
+    const alertThreshold  = data.alertThresholdExceeded || 0;
+    const budgetName      = data.budgetDisplayName || 'unknown';
+
+    console.log(`Budget alert [${budgetName}]: $${costAmount} spent of $${budgetAmount} budget (threshold: ${(alertThreshold * 100).toFixed(0)}%)`);
+
+    // Only kill billing when actual spend has hit or exceeded 100% of budget
+    if (alertThreshold < 1.0 && costAmount < budgetAmount) {
+      console.log('Under budget threshold — no action taken.');
+      return;
+    }
+
+    try {
+      const billingClient = new CloudBillingClient();
+      const projectName = `projects/${BILLING_PROJECT}`;
+
+      // Check current state before acting
+      const [billingInfo] = await billingClient.getProjectBillingInfo({ name: projectName });
+      if (!billingInfo.billingEnabled) {
+        console.log('Billing already disabled — nothing to do.');
+        return;
+      }
+
+      // Disable billing by clearing the billing account association
+      await billingClient.updateProjectBillingInfo({
+        name: projectName,
+        projectBillingInfo: { billingAccountName: '' },
+      });
+
+      console.log(`BILLING DISABLED on ${BILLING_PROJECT}. Spend: $${costAmount} / Budget: $${budgetAmount}`);
+
+      // Write audit record to Firestore (Admin SDK so this survives even if Firestore rules block clients)
+      await db.collection('adminEvents').add({
+        type: 'billing_disabled',
+        reason: 'budget_exceeded',
+        costAmount,
+        budgetAmount,
+        alertThreshold,
+        budgetDisplayName: budgetName,
+        disabledAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+    } catch (err) {
+      console.error('Failed to disable billing:', err.message);
+      throw err; // Re-throw so Cloud Functions retries the message
     }
   }
 );
