@@ -35,30 +35,32 @@ async function verifyAuth(req) {
 }
 
 // Shippo rate limit — max 15 calls per user per hour
-// Stored in rateLimits/{userId} via Admin SDK (client cannot read/write this collection)
-const SHIPPO_RATE_LIMIT = 15;
-const SHIPPO_RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-async function checkShippoRateLimit(userId) {
+// Generic rate limiter — stored in rateLimits/{userId} via Admin SDK only (clients blocked by rules)
+// key: unique string per limit (e.g. 'shippo', 'dailyPurchase')
+// limit: max calls allowed in the window
+// windowMs: rolling window length in milliseconds
+async function checkRateLimit(userId, key, limit, windowMs) {
   const ref = db.collection('rateLimits').doc(userId);
   const snap = await ref.get();
   const now = Date.now();
   const data = snap.exists ? snap.data() : {};
-  const windowStart = data.shippoWindowStart || 0;
-  const count = data.shippoCount || 0;
+  const windowStart = data[`${key}WindowStart`] || 0;
+  const count       = data[`${key}Count`]       || 0;
 
-  if (now - windowStart < SHIPPO_RATE_WINDOW_MS && count >= SHIPPO_RATE_LIMIT) {
+  if (now - windowStart < windowMs && count >= limit) {
     throw Object.assign(new Error('Rate limit exceeded'), { status: 429 });
   }
 
-  // Reset window if expired, otherwise increment
   await ref.set(
-    now - windowStart >= SHIPPO_RATE_WINDOW_MS
-      ? { shippoCount: 1, shippoWindowStart: now }
-      : { shippoCount: admin.firestore.FieldValue.increment(1) },
+    now - windowStart >= windowMs
+      ? { [`${key}Count`]: 1, [`${key}WindowStart`]: now }
+      : { [`${key}Count`]: admin.firestore.FieldValue.increment(1) },
     { merge: true }
   );
 }
+
+const ONE_HOUR  = 60 * 60 * 1000;
+const ONE_DAY   = 24 * 60 * 60 * 1000;
 
 // Fetch a user's email address by UID (used for email notifications)
 async function getUserEmail(uid) {
@@ -145,6 +147,12 @@ exports.createPaymentIntent = onRequest(
 
     if (!decodedToken.email_verified) {
       return res.status(403).json({ error: 'Please verify your email address before making a purchase.' });
+    }
+
+    try {
+      await checkRateLimit(decodedToken.uid, 'dailyIntent', 10, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'You have reached the checkout limit for today. Please try again tomorrow.' });
     }
 
     try {
@@ -283,6 +291,12 @@ exports.cancelOrder = onRequest(
       decodedToken = await admin.auth().verifyIdToken(idToken);
     } catch (e) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      await checkRateLimit(decodedToken.uid, 'dailyCancel', 5, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'You have reached the cancellation limit for today. Please try again tomorrow.' });
     }
 
     try {
@@ -473,7 +487,7 @@ exports.shippingRates = onRequest(
     }
 
     try {
-      await checkShippoRateLimit(authedToken.uid);
+      await checkRateLimit(authedToken.uid, 'shippo', 15, ONE_HOUR);
     } catch (e) {
       return res.status(429).json({ error: 'Too many shipping rate requests. Please wait before trying again.' });
     }
@@ -636,7 +650,7 @@ exports.shippoGetRates = onRequest(
     }
 
     try {
-      await checkShippoRateLimit(authedToken.uid);
+      await checkRateLimit(authedToken.uid, 'shippo', 15, ONE_HOUR);
     } catch (e) {
       return res.status(429).json({ error: 'Too many shipping rate requests. Please wait before trying again.' });
     }
@@ -1000,6 +1014,12 @@ exports.completeOrder = onRequest(
       decodedToken = await admin.auth().verifyIdToken(idToken);
     } catch (e) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      await checkRateLimit(decodedToken.uid, 'dailyPurchase', 3, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'You have reached the purchase limit of 3 items per day. Please try again tomorrow.' });
     }
 
     try {
@@ -1835,6 +1855,12 @@ exports.trackShipment = onRequest(
       decodedToken = await verifyAuth(req);
     } catch (e) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      await checkRateLimit(decodedToken.uid, 'dailyTrack', 20, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many tracking requests today. Please try again tomorrow.' });
     }
 
     try {
