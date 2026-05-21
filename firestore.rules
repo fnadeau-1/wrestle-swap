@@ -20,13 +20,35 @@ service cloud.firestore {
       // Sellers can edit their own listings but cannot touch order/payment/fulfilment fields
       // (those are written exclusively by Cloud Functions via Admin SDK which bypasses rules)
       allow update: if isAdmin()
+        // Seller can update their own listing — but never touch order/payout/escrow fields
         || (request.auth != null
             && resource.data.userId == request.auth.uid
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
                 'sold', 'buyerId', 'soldOrderId', 'soldAt', 'soldTimestamp',
                 'cancelledAt', 'cancelledBy', 'refundId',
                 'trackingNumber', 'trackingUrl', 'carrier', 'shipped', 'shippedAt',
-                'delivered', 'deliveredAt', 'shippingCost'
+                'delivered', 'deliveredAt', 'shippingCost',
+                'sellerPaidOut', 'sellerPaidOutAt', 'sellerPayoutTransferId',
+                'payoutInitiated', 'autoReleaseBlocked', 'autoReleaseWarned',
+                'autoReleaseWarningAt', 'autoReleaseWarningTimestamp',
+                'autoReleasedAt', 'autoReleaseCompleted'
+            ]))
+        // Buyer can leave a review or seller rating on a delivered order they purchased
+        || (request.auth != null
+            && resource.data.buyerId == request.auth.uid
+            && resource.data.delivered == true
+            && resource.data.cancelled != true
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'review', 'sellerRating', 'updatedAt'
+            ]))
+        // Buyer can flag a refund request or dispute on an active (not yet delivered, not cancelled) order
+        || (request.auth != null
+            && resource.data.buyerId == request.auth.uid
+            && resource.data.sold == true
+            && resource.data.cancelled != true
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'refundRequested', 'refundRequestedAt', 'refundReason',
+                'disputeOpened', 'updatedAt'
             ]));
       allow delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
     }

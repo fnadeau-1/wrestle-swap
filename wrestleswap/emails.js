@@ -330,6 +330,85 @@ function escHtml(str) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AUTO-RELEASE WARNING — buyer has 24h to dispute before funds release to seller
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendAutoReleaseWarning(buyerEmail, { productName, hoursRemaining, productUrl }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">Your order will auto-complete soon</h2>
+    <p style="color:#555;font-size:15px;line-height:1.6;">
+      Your order for <strong>${escHtml(productName)}</strong> will automatically complete and
+      payment will be released to the seller in <strong>${hoursRemaining} hours</strong>.
+    </p>
+    ${alertBox('#fff3cd', '#e6a817', `
+      <strong>Is something wrong?</strong> If you have not received this item or there is an issue,
+      please report a problem <strong>before the timer expires</strong>. Once released, refunds
+      require seller cooperation or admin review.
+    `)}
+    <p style="color:#555;font-size:14px;line-height:1.6;">
+      If everything is fine, no action is needed — the transaction will complete automatically.
+    </p>
+    ${btn(productUrl || `${SITE_URL}/my-orders.html`, 'View Order & Report a Problem', '#c41e3a')}
+  `);
+  await send(buyerEmail, `Action needed: "${productName}" auto-completes in ${hoursRemaining}h`, html);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTO-RELEASED: BUYER — transaction completed automatically
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendAutoReleasedBuyer(buyerEmail, { productName }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">Your order has been completed</h2>
+    <p style="color:#555;font-size:15px;line-height:1.6;">
+      Your order for <strong>${escHtml(productName)}</strong> has been automatically marked as
+      complete and payment has been released to the seller.
+    </p>
+    <p style="color:#555;font-size:14px;line-height:1.6;">
+      We hope you enjoy your purchase! If you have any concerns, please contact our support team.
+    </p>
+    ${btn(`${SITE_URL}/my-orders.html`, 'View Your Orders', '#3665f3')}
+  `);
+  await send(buyerEmail, `Order completed: ${productName}`, html);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTO-RELEASED: SELLER — payment on its way
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendAutoReleasedSeller(sellerEmail, { productName, amountDollars }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">Payment released!</h2>
+    <p style="color:#555;font-size:15px;line-height:1.6;">
+      The order for <strong>${escHtml(productName)}</strong> has been automatically completed.
+    </p>
+    ${alertBox('#d4edda', '#28a745', `
+      <strong>$${amountDollars}</strong> has been transferred to your payout account and will
+      arrive within your Stripe payout schedule (typically 2 business days).
+    `)}
+    ${btn(`${SITE_URL}/listings-manager.html`, 'View Your Listings')}
+  `);
+  await send(sellerEmail, `Payment released: ${productName}`, html);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTO-RELEASE FAILED — notify admin for manual intervention
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendAutoReleaseFailedAdmin(adminEmail, { productId, productName, errorMessage }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">Auto-release payout failed — manual review required</h2>
+    ${alertBox('#f8d7da', '#dc3545', `
+      <strong>Product ID:</strong> ${escHtml(productId)}<br>
+      <strong>Product:</strong> ${escHtml(productName)}<br>
+      <strong>Error:</strong> ${escHtml(errorMessage)}
+    `)}
+    <p style="color:#555;font-size:14px;line-height:1.6;">
+      The payout lock has been cleared and the scheduler will retry on the next run.
+      If the issue persists, manually issue the transfer from the Stripe dashboard or
+      use the admin refund tool.
+    </p>
+  `);
+  await send(adminEmail, `[ACTION REQUIRED] Auto-release failed: ${productName}`, html);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SHIP REMINDER — warn seller at day 7 (3 days before auto-cancel)
 // ─────────────────────────────────────────────────────────────────────────────
 async function sendShipReminder(sellerEmail, { productName, daysSinceSale }) {
@@ -428,4 +507,8 @@ module.exports = {
   sendMessageNotification,
   sendWatchlistItemSold,
   sendAbandonedCart,
+  sendAutoReleaseWarning,
+  sendAutoReleasedBuyer,
+  sendAutoReleasedSeller,
+  sendAutoReleaseFailedAdmin,
 };

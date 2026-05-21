@@ -1774,6 +1774,7 @@ exports.markAsShipped = onRequest(
         carrier: carrier || null,
         shipped: true,
         shippedAt: admin.firestore.FieldValue.serverTimestamp(),
+        shippedTimestamp: Date.now(), // epoch ms used by auto-release scheduler
       });
 
       // Update orders collection record if it exists
@@ -1836,50 +1837,83 @@ exports.confirmDelivery = onRequest(
 
     try {
       const productRef = db.collection('products').doc(productId);
-      const productSnap = await productRef.get();
-      if (!productSnap.exists) return res.status(404).json({ error: 'Product not found' });
 
-      const product = productSnap.data();
-      if (product.buyerId !== decodedToken.uid) {
-        return res.status(403).json({ error: 'You are not the buyer of this product' });
-      }
-      if (!product.sold) {
-        return res.status(400).json({ error: 'This product has not been sold' });
-      }
+      // ── Step 1: Transaction — validate + atomically acquire payout lock ────
+      // This prevents double-payout if the auto-release scheduler fires at the same time.
+      let product = null;
+      let skipPayout = false;
 
-      // Mark delivered
-      await productRef.update({
-        delivered: true,
-        deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      try {
+        await db.runTransaction(async (t) => {
+          const snap = await t.get(productRef);
+          if (!snap.exists) throw Object.assign(new Error('Product not found'), { httpStatus: 404 });
+          const d = snap.data();
+          if (d.buyerId !== decodedToken.uid) throw Object.assign(new Error('You are not the buyer of this product'), { httpStatus: 403 });
+          if (!d.sold) throw Object.assign(new Error('This product has not been sold'), { httpStatus: 400 });
 
-      // Update orders collection record if it exists
-      const ordersSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
-      if (!ordersSnap.empty) {
-        await ordersSnap.docs[0].ref.update({
-          delivered: true,
-          deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+          product = d;
+
+          if (d.sellerPaidOut || d.payoutInitiated) {
+            // Payout already done or in-flight — just mark delivered, skip Stripe call
+            skipPayout = true;
+            t.update(productRef, {
+              delivered: true,
+              deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+              deliveredTimestamp: Date.now(),
+            });
+            return;
+          }
+
+          // Acquire payout lock — prevents auto-release scheduler from firing concurrently
+          t.update(productRef, {
+            delivered: true,
+            deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+            deliveredTimestamp: Date.now(),
+            payoutInitiated: true,
+          });
         });
+      } catch (txErr) {
+        if (txErr.httpStatus) return res.status(txErr.httpStatus).json({ error: txErr.message });
+        throw txErr;
       }
 
-      // Escrow payout: transfer seller's share now that delivery is confirmed
-      // Guard against double-payout if Shippo webhook already ran
-      if (product.sellerStripeAccountId && product.sellerReceivesCents > 0 && !product.sellerPaidOut) {
+      // ── Step 2: Stripe transfer (must happen outside transaction) ──────────
+      if (!skipPayout && product.sellerStripeAccountId && product.sellerReceivesCents > 0) {
         try {
           const stripe = require('stripe')(stripeSecret.value());
+          // Idempotency key ensures Stripe deduplicates even if this runs twice
           const transfer = await stripe.transfers.create({
             amount: product.sellerReceivesCents,
             currency: 'usd',
             destination: product.sellerStripeAccountId,
             transfer_group: product.soldOrderId,
-            metadata: { productId, reason: 'delivery_confirmed' },
+            metadata: { productId, reason: 'delivery_confirmed', triggeredBy: 'buyer' },
+          }, {
+            idempotencyKey: `payout_${productId}`,
           });
-          console.log(`Seller payout: ${product.sellerReceivesCents} cents to ${product.sellerStripeAccountId} — transfer ${transfer.id}`);
-          await productRef.update({ sellerPayoutTransferId: transfer.id, sellerPaidOut: true });
+          console.log(`Seller payout: ${product.sellerReceivesCents} cents → ${product.sellerStripeAccountId} — transfer ${transfer.id}`);
+          await productRef.update({
+            sellerPayoutTransferId: transfer.id,
+            sellerPaidOut: true,
+            sellerPaidOutAt: admin.firestore.FieldValue.serverTimestamp(),
+            payoutInitiated: false,
+          });
         } catch (payoutErr) {
+          // Clear lock so auto-release scheduler can retry on next run
+          await productRef.update({ payoutInitiated: false }).catch(() => {});
           console.error('Seller payout error (confirmDelivery):', payoutErr.message);
-          // Logged for manual review — don't fail the delivery confirmation
+          // Don't fail delivery confirmation — payout failure is a background issue
         }
+      }
+
+      // ── Step 3: Update orders collection ──────────────────────────────────
+      const ordersSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
+      if (!ordersSnap.empty) {
+        await ordersSnap.docs[0].ref.update({
+          delivered: true,
+          deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+          status: 'completed',
+        });
       }
 
       // In-app notifications for delivery
@@ -2029,24 +2063,41 @@ exports.shippoWebhook = onRequest(
         return;
       }
 
-      // Mark delivered
-      await productDoc.ref.update({
-        delivered: true,
-        deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
-        deliverySource: 'shippo_webhook',
-      });
+      const productId = productDoc.id;
 
-      // Update orders collection too
-      const ordersSnap = await db.collection('orders').where('productId', '==', productDoc.id).limit(1).get();
+      // Atomically mark delivered + acquire payout lock (prevents race with confirmDelivery / autoRelease)
+      let skipPayout = false;
+      try {
+        await db.runTransaction(async (t) => {
+          const snap = await t.get(productDoc.ref);
+          const d = snap.data();
+          if (d.delivered) { skipPayout = true; return; } // already handled
+          if (d.sellerPaidOut || d.payoutInitiated) { skipPayout = true; }
+          t.update(productDoc.ref, {
+            delivered: true,
+            deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+            deliveredTimestamp: Date.now(),
+            deliverySource: 'shippo_webhook',
+            ...(skipPayout ? {} : { payoutInitiated: true }),
+          });
+        });
+      } catch (txErr) {
+        console.error(`Shippo webhook transaction error for ${productId}:`, txErr.message);
+        return;
+      }
+
+      // Update orders collection
+      const ordersSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
       if (!ordersSnap.empty) {
         await ordersSnap.docs[0].ref.update({
           delivered: true,
           deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+          status: 'completed',
         });
       }
 
       // Escrow payout: transfer seller's share now that carrier confirmed delivery
-      if (product.sellerStripeAccountId && product.sellerReceivesCents > 0 && !product.sellerPaidOut) {
+      if (!skipPayout && product.sellerStripeAccountId && product.sellerReceivesCents > 0) {
         try {
           const stripe = require('stripe')(stripeSecret.value());
           const transfer = await stripe.transfers.create({
@@ -2054,11 +2105,19 @@ exports.shippoWebhook = onRequest(
             currency: 'usd',
             destination: product.sellerStripeAccountId,
             transfer_group: product.soldOrderId,
-            metadata: { productId: productDoc.id, reason: 'delivery_confirmed_shippo' },
+            metadata: { productId, reason: 'delivery_confirmed_shippo', triggeredBy: 'shippo_webhook' },
+          }, {
+            idempotencyKey: `payout_${productId}`,
           });
           console.log(`Seller payout (shippoWebhook): ${product.sellerReceivesCents} cents to ${product.sellerStripeAccountId} — transfer ${transfer.id}`);
-          await productDoc.ref.update({ sellerPayoutTransferId: transfer.id, sellerPaidOut: true });
+          await productDoc.ref.update({
+            sellerPayoutTransferId: transfer.id,
+            sellerPaidOut: true,
+            sellerPaidOutAt: admin.firestore.FieldValue.serverTimestamp(),
+            payoutInitiated: false,
+          });
         } catch (payoutErr) {
+          await productDoc.ref.update({ payoutInitiated: false }).catch(() => {});
           console.error('Seller payout error (shippoWebhook):', payoutErr.message);
         }
       }
@@ -2617,6 +2676,284 @@ exports.checkAbandonedCarts = onSchedule(
       }
     }
     console.log(`checkAbandonedCarts: sent ${sent} follow-up emails`);
+  }
+);
+
+// --- ESCROW AUTO-RELEASE ---
+// Two-phase daily job:
+//   Phase 1 (WARN):    Order approaching release threshold → email + notify buyer with 24h window to dispute
+//   Phase 2 (RELEASE): Warning was sent 24h+ ago and no dispute filed → transfer funds to seller
+//
+// Release triggers (whichever comes first):
+//   A. delivered=true  AND  3+ days have elapsed since delivery  (Shippo confirmed)
+//   B. shipped=true    AND  21+ days have elapsed since shipping (time-based fallback)
+//
+// Hard blocks that permanently skip an order:
+//   disputeOpened, refundRequested, autoReleaseBlocked, cancelled, sellerPaidOut, payoutInitiated
+//
+// Idempotency: Firestore transaction sets payoutInitiated=true before Stripe call.
+//              Stripe idempotencyKey `payout_{productId}` deduplicates at the API level.
+exports.autoReleaseOrders = onSchedule(
+  { schedule: 'every 24 hours', secrets: [stripeSecret, sendgridSecret], maxInstances: 1 },
+  async () => {
+    const stripe = require('stripe')(stripeSecret.value());
+    emails.init(sendgridSecret.value());
+
+    const now = Date.now();
+    const THREE_DAYS_MS    = 3  * 24 * 60 * 60 * 1000;
+    const TWENTY_ONE_DAYS_MS = 21 * 24 * 60 * 60 * 1000;
+    const ONE_DAY_MS       = 24 * 60 * 60 * 1000;
+    const WARN_BEFORE_MS   = ONE_DAY_MS; // warn 24h before release fires
+
+    // Helper: coerce Firestore Timestamp or epoch number to milliseconds
+    function toMs(val) {
+      if (!val) return 0;
+      if (typeof val === 'number') return val;
+      if (typeof val.toMillis === 'function') return val.toMillis();
+      if (val._seconds != null) return val._seconds * 1000 + Math.floor((val._nanoseconds || 0) / 1e6);
+      return 0;
+    }
+
+    // Find all candidates: sold + shipped + not paid out + not cancelled
+    const snapshot = await db.collection('products')
+      .where('sold', '==', true)
+      .where('shipped', '==', true)
+      .where('sellerPaidOut', '==', false)
+      .where('cancelled', '==', false)
+      .get();
+
+    // Filter hard blocks in JS (Firestore can't compound-query boolean negations efficiently)
+    const candidates = snapshot.docs.filter(doc => {
+      const d = doc.data();
+      return (
+        !d.disputeOpened &&
+        !d.refundRequested &&
+        !d.autoReleaseBlocked &&
+        !d.payoutInitiated &&
+        d.sellerStripeAccountId &&
+        d.sellerReceivesCents > 0
+      );
+    });
+
+    console.log(`autoReleaseOrders: ${snapshot.size} sold+shipped, ${candidates.length} eligible candidates`);
+    let warned = 0, released = 0, skipped = 0, errors = 0;
+
+    for (const doc of candidates) {
+      const productId = doc.id;
+      const d = doc.data();
+
+      try {
+        const deliveredTs  = toMs(d.deliveredTimestamp) || toMs(d.deliveredAt);
+        const shippedTs    = toMs(d.shippedTimestamp)   || toMs(d.shippedAt);
+        const warningTs    = toMs(d.autoReleaseWarningTimestamp) || toMs(d.autoReleaseWarningAt);
+
+        const isDelivered        = !!d.delivered;
+        const msSinceDelivery    = isDelivered && deliveredTs ? now - deliveredTs : Infinity;
+        const msSinceShipped     = shippedTs ? now - shippedTs : Infinity;
+
+        // ── PHASE 2: RELEASE ────────────────────────────────────────────────
+        // Warning was already sent AND 24h cooldown has elapsed
+        if (d.autoReleaseWarned && warningTs && now - warningTs >= ONE_DAY_MS) {
+
+          // Re-fetch for final hard-block check (buyer may have disputed in the window)
+          const fresh = (await doc.ref.get()).data();
+          if (
+            fresh.disputeOpened   ||
+            fresh.refundRequested ||
+            fresh.autoReleaseBlocked ||
+            fresh.sellerPaidOut   ||
+            fresh.payoutInitiated ||
+            fresh.cancelled
+          ) {
+            console.log(`autoRelease Phase 2 SKIPPED (blocked) — ${productId}`);
+            skipped++;
+            continue;
+          }
+
+          // Acquire payout lock inside a transaction
+          let lockAcquired = false;
+          try {
+            await db.runTransaction(async (t) => {
+              const snap = await t.get(doc.ref);
+              const td = snap.data();
+              if (
+                td.sellerPaidOut   ||
+                td.payoutInitiated ||
+                td.disputeOpened   ||
+                td.refundRequested ||
+                td.autoReleaseBlocked ||
+                td.cancelled
+              ) {
+                return; // another process beat us — skip
+              }
+              lockAcquired = true;
+              t.update(doc.ref, { payoutInitiated: true });
+            });
+          } catch (txErr) {
+            console.error(`autoRelease Phase 2 transaction error — ${productId}:`, txErr.message);
+            errors++;
+            continue;
+          }
+
+          if (!lockAcquired) {
+            console.log(`autoRelease Phase 2 lock not acquired — ${productId}`);
+            skipped++;
+            continue;
+          }
+
+          // Verify seller account is still active before transferring
+          try {
+            const sellerAccount = await stripe.accounts.retrieve(d.sellerStripeAccountId);
+            if (!sellerAccount.payouts_enabled) {
+              await doc.ref.update({ payoutInitiated: false });
+              console.error(`autoRelease Phase 2: seller payouts disabled — ${productId}`);
+              const adminEmail = 'support@grappletrade.com';
+              await emails.sendAutoReleaseFailedAdmin(adminEmail, {
+                productId,
+                productName: d.title || 'unknown',
+                errorMessage: 'Seller payouts_enabled=false. Manual payout required.',
+              }).catch(() => {});
+              errors++;
+              continue;
+            }
+          } catch (acctErr) {
+            await doc.ref.update({ payoutInitiated: false }).catch(() => {});
+            console.error(`autoRelease Phase 2: could not verify seller account — ${productId}:`, acctErr.message);
+            errors++;
+            continue;
+          }
+
+          // Execute the Stripe transfer
+          try {
+            const transfer = await stripe.transfers.create({
+              amount: d.sellerReceivesCents,
+              currency: 'usd',
+              destination: d.sellerStripeAccountId,
+              transfer_group: d.soldOrderId,
+              metadata: { productId, reason: 'auto_release', triggeredBy: 'system' },
+            }, {
+              idempotencyKey: `payout_${productId}`,
+            });
+
+            const nowTs = admin.firestore.FieldValue.serverTimestamp();
+            await doc.ref.update({
+              sellerPayoutTransferId: transfer.id,
+              sellerPaidOut: true,
+              sellerPaidOutAt: nowTs,
+              payoutInitiated: false,
+              delivered: true,
+              deliveredAt: nowTs,
+              deliveredTimestamp: Date.now(),
+              autoReleasedAt: nowTs,
+              autoReleaseCompleted: true,
+            });
+
+            // Sync orders collection
+            try {
+              const ordSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
+              if (!ordSnap.empty) {
+                await ordSnap.docs[0].ref.update({
+                  delivered: true,
+                  deliveredAt: nowTs,
+                  autoReleasedAt: nowTs,
+                  status: 'completed',
+                });
+              }
+            } catch (ordErr) {
+              console.error(`autoRelease orders sync error — ${productId}:`, ordErr.message);
+            }
+
+            // In-app notifications (idempotency keys prevent duplicates on scheduler retries)
+            await Promise.all([
+              createNotification(d.userId, {
+                icon: '💰',
+                message: `Payment for "${d.title || 'your item'}" has been released. Check your Stripe dashboard.`,
+                link: 'listings-manager.html',
+              }, `${productId}_autorelease_seller`),
+              createNotification(d.buyerId, {
+                icon: '✅',
+                message: `Your order for "${d.title || 'your item'}" has been automatically completed.`,
+                link: 'my-orders.html',
+              }, `${productId}_autorelease_buyer`),
+            ]);
+
+            // Emails
+            const [sellerEmail, buyerEmail] = await Promise.all([
+              getUserEmail(d.userId),
+              getUserEmail(d.buyerId),
+            ]);
+            await Promise.all([
+              emails.sendAutoReleasedSeller(sellerEmail, {
+                productName: d.title || 'your item',
+                amountDollars: (d.sellerReceivesCents / 100).toFixed(2),
+              }),
+              emails.sendAutoReleasedBuyer(buyerEmail, {
+                productName: d.title || 'your item',
+              }),
+            ]);
+
+            console.log(`autoRelease Phase 2 SUCCESS — ${productId} transfer ${transfer.id}`);
+            released++;
+
+          } catch (payoutErr) {
+            // Clear lock so scheduler can retry on next run
+            await doc.ref.update({ payoutInitiated: false }).catch(() => {});
+            console.error(`autoRelease Phase 2 payout FAILED — ${productId}:`, payoutErr.message);
+            const adminEmail = 'support@grappletrade.com';
+            await emails.sendAutoReleaseFailedAdmin(adminEmail, {
+              productId,
+              productName: d.title || 'unknown',
+              errorMessage: payoutErr.message,
+            }).catch(() => {});
+            errors++;
+          }
+
+          continue; // done with this doc regardless of outcome
+        }
+
+        // ── PHASE 1: WARN ────────────────────────────────────────────────────
+        // Skip if warning already sent (even if 24h hasn't elapsed yet — let Phase 2 handle it)
+        if (d.autoReleaseWarned) { skipped++; continue; }
+
+        // Check if order is within 24h of either release threshold
+        const approachingDeliveryRelease = isDelivered  && msSinceDelivery  >= (THREE_DAYS_MS    - WARN_BEFORE_MS);
+        const approachingShippedRelease  = !isDelivered && msSinceShipped   >= (TWENTY_ONE_DAYS_MS - WARN_BEFORE_MS);
+
+        if (!approachingDeliveryRelease && !approachingShippedRelease) {
+          skipped++;
+          continue;
+        }
+
+        // Send 24h warning
+        await doc.ref.update({
+          autoReleaseWarned: true,
+          autoReleaseWarningAt: admin.firestore.FieldValue.serverTimestamp(),
+          autoReleaseWarningTimestamp: now,
+        });
+
+        const buyerEmail = await getUserEmail(d.buyerId);
+        await emails.sendAutoReleaseWarning(buyerEmail, {
+          productName: d.title || 'your item',
+          hoursRemaining: 24,
+          productUrl: 'https://grappletrade.web.app/my-orders.html',
+        });
+
+        await createNotification(d.buyerId, {
+          icon: '⏰',
+          message: `Your order for "${d.title || 'your item'}" will auto-complete in 24 hours. Report a problem now if needed.`,
+          link: 'my-orders.html',
+        }, `${productId}_autorelease_warning`);
+
+        console.log(`autoRelease Phase 1 WARNING sent — ${productId}`);
+        warned++;
+
+      } catch (err) {
+        console.error(`autoReleaseOrders unexpected error — ${productId}:`, err.message);
+        errors++;
+      }
+    }
+
+    console.log(`autoReleaseOrders complete — warned:${warned} released:${released} skipped:${skipped} errors:${errors}`);
   }
 );
 
