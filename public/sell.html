@@ -133,6 +133,7 @@
                         <input type="number" class="form-input price-input" id="price" placeholder="0.00" step="0.01" min="0" required>
                     </div>
                     <p class="helper-text">Check similar listings to price competitively</p>
+                    <div id="price-guidance" style="display:none;margin-top:8px;padding:10px 14px;background:#f0f9ff;border-left:4px solid #3b82f6;border-radius:4px;font-size:13px;color:#1e40af;"></div>
                 </div>
 
                 <div class="form-group">
@@ -161,6 +162,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
@@ -176,6 +178,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK'), isTokenAutoRefreshEnabled: true });
         const db = getFirestore(app);
         const storage = getStorage(app);
         const auth = getAuth(app);
@@ -278,6 +281,35 @@
     </script>
 
     <script>
+        // ── Price guidance ────────────────────────────────────────────────────
+        const PRICE_SUGGESTIONS_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/getPriceSuggestions';
+        let priceSuggestionTimeout = null;
+
+        async function loadPriceGuidance(category) {
+            const box = document.getElementById('price-guidance');
+            if (!box || !category) { if (box) box.style.display = 'none'; return; }
+            box.style.display = 'block';
+            box.textContent = 'Loading price data...';
+            try {
+                const res = await fetch(`${PRICE_SUGGESTIONS_URL}?category=${encodeURIComponent(category)}`);
+                if (!res.ok) throw new Error('fetch failed');
+                const data = await res.json();
+                if (data.count === 0) {
+                    box.textContent = 'No recent sales in this category yet — be the first to set a price!';
+                } else {
+                    box.innerHTML = `Recent sales in this category: <strong>$${data.min.toFixed(2)}</strong> – <strong>$${data.max.toFixed(2)}</strong> (avg <strong>$${data.avg.toFixed(2)}</strong> across ${data.count} sale${data.count !== 1 ? 's' : ''})`;
+                }
+            } catch (e) {
+                box.style.display = 'none';
+            }
+        }
+
+        document.getElementById('category').addEventListener('change', function() {
+            clearTimeout(priceSuggestionTimeout);
+            priceSuggestionTimeout = setTimeout(() => loadPriceGuidance(this.value), 300);
+        });
+        // ─────────────────────────────────────────────────────────────────────
+
         let selectedFiles = [];
 
         document.getElementById('file-upload').addEventListener('change', function(e) {

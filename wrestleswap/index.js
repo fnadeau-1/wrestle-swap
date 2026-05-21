@@ -79,6 +79,8 @@ const stripeSecret = defineSecret("STRIPE_SKEY");
 const shippoSecret = defineSecret("SHIPPO_API_KEY");
 const sendgridSecret = defineSecret("SENDGRID_API_KEY_TEST");
 const shippoWebhookSecret = defineSecret("SHIPPO_WEBHOOK_SECRET");
+const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
+const stripeAccountWebhookSecret = defineSecret("STRIPE_ACCOUNT_WEBHOOK_SECRET");
 // const recaptchaApiKey = defineSecret("RECAPTCHA_API_KEY"); // Uncomment after setting secret
 
 const emails = require('./emails');
@@ -248,14 +250,20 @@ exports.createPaymentIntent = onRequest(
         // Store seller payout info in Stripe metadata so completeOrder can save it to Firestore
         paymentIntentOptions.metadata = {
           productId,
+          buyerId: decodedToken.uid,
           sellerStripeAccountId,
           sellerReceivesCents: String(sellerReceivesCents),
           platformFeeCents: String(platformFeeOnProduct),
           rateObjectId: rateObjectId || '',
         };
       } else {
-        console.log('No seller Stripe account — payment stays on platform');
-        paymentIntentOptions.metadata = { productId, rateObjectId: rateObjectId || '' };
+        // Seller has no connected Stripe account — block purchase so they don't sell without getting paid
+        if (productPriceInCents > 0) {
+          return res.status(400).json({
+            error: 'The seller has not connected their payout account yet. Please contact the seller or check back later.',
+          });
+        }
+        paymentIntentOptions.metadata = { productId, buyerId: decodedToken.uid, rateObjectId: rateObjectId || '' };
       }
 
       const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
@@ -487,7 +495,7 @@ exports.shippingRates = onRequest(
     }
 
     try {
-      await checkRateLimit(authedToken.uid, 'shippo', 15, ONE_HOUR);
+      await checkRateLimit(authedToken.uid, 'shippo', 30, ONE_HOUR);
     } catch (e) {
       return res.status(429).json({ error: 'Too many shipping rate requests. Please wait before trying again.' });
     }
@@ -613,6 +621,9 @@ exports.createConnectedAccount = onRequest(
         refresh_url: refreshUrl || 'https://grappletrade.web.app/stripe-express-prompt.html',
         return_url: returnUrl || 'https://grappletrade.web.app/sell.html',
         type: 'account_onboarding',
+        // Only collect minimum required fields upfront — defer bank/ID verification
+        // until the seller is ready to cash out. Reduces signup friction.
+        collection_options: { fields: 'eventually_due' },
       });
 
       console.log('Account link created:', accountLink.url);
@@ -650,7 +661,7 @@ exports.shippoGetRates = onRequest(
     }
 
     try {
-      await checkRateLimit(authedToken.uid, 'shippo', 15, ONE_HOUR);
+      await checkRateLimit(authedToken.uid, 'shippo', 30, ONE_HOUR);
     } catch (e) {
       return res.status(429).json({ error: 'Too many shipping rate requests. Please wait before trying again.' });
     }
@@ -1166,6 +1177,41 @@ exports.completeOrder = onRequest(
         console.error('Email error (completeOrder):', emailErr.message);
       }
 
+      // Notify watchlist followers that this item sold
+      try {
+        emails.init(sendgridSecret.value());
+        const watchlistSnap = await db.collection('watchlists').get();
+        const notifyPromises = [];
+        watchlistSnap.forEach(watchDoc => {
+          const watcherId = watchDoc.id;
+          const data = watchDoc.data();
+          if (watcherId === decodedToken.uid) return; // don't notify the buyer
+          if (Array.isArray(data.products) && data.products.includes(productId)) {
+            notifyPromises.push(
+              createNotification(watcherId, {
+                icon: '🔔',
+                message: `"${prod.title || 'An item'}" on your watchlist just sold.`,
+                link: `search.html${prod.category ? '?category=' + encodeURIComponent(prod.category) : ''}`,
+              }, `${productId}_watchlist_${watcherId}_sold`).catch(() => {}),
+              getUserEmail(watcherId).then(email =>
+                emails.sendWatchlistItemSold(email, {
+                  productName: prod.title || 'An item',
+                  category: prod.category || '',
+                })
+              ).catch(() => {})
+            );
+          }
+        });
+        await Promise.all(notifyPromises);
+      } catch (watchlistErr) {
+        console.error('Watchlist notification error (completeOrder):', watchlistErr.message);
+      }
+
+      // Clear abandoned cart record if one exists
+      try {
+        await db.collection('abandonedCarts').doc(`${productId}_${decodedToken.uid}`).delete();
+      } catch (_) { /* best-effort */ }
+
       return res.status(200).json({ success: true });
 
     } catch (error) {
@@ -1346,8 +1392,45 @@ exports.checkOverdueOrders = onSchedule(
   { schedule: 'every 24 hours', secrets: [stripeSecret, sendgridSecret], maxInstances: 1 },
   async (event) => {
     const stripe = require('stripe')(stripeSecret.value());
-    const tenDaysAgo = Date.now() - (10 * 24 * 60 * 60 * 1000);
+    emails.init(sendgridSecret.value());
 
+    // ── PASS 1: 7-day ship reminders ─────────────────────────────────────────
+    const sevenDaysAgo  = Date.now() - (7  * 24 * 60 * 60 * 1000);
+    const eightDaysAgo  = Date.now() - (8  * 24 * 60 * 60 * 1000);
+
+    const reminderSnap = await db.collection('products')
+      .where('sold', '==', true)
+      .where('soldTimestamp', '<=', sevenDaysAgo)
+      .where('soldTimestamp', '>=', eightDaysAgo)
+      .get();
+
+    const reminderOrders = reminderSnap.docs.filter(doc => {
+      const d = doc.data();
+      return !d.cancelled && !d.cancelledAt && !d.trackingNumber && !d.shipReminderSent;
+    });
+
+    console.log(`7-day reminders: ${reminderOrders.length} orders`);
+    for (const rdoc of reminderOrders) {
+      const rdata = rdoc.data();
+      try {
+        const sellerEmail = await getUserEmail(rdata.userId);
+        const daysSinceSale = Math.round((Date.now() - (rdata.soldTimestamp || 0)) / (24 * 60 * 60 * 1000));
+        await emails.sendShipReminder(sellerEmail, {
+          productName: rdata.title || 'your item',
+          daysSinceSale,
+        });
+        await rdoc.ref.update({ shipReminderSent: true });
+        await createNotification(rdata.userId, {
+          icon: '⚠️',
+          message: `Reminder: Ship "${rdata.title || 'your item'}" now — auto-cancel in ${10 - daysSinceSale} days.`,
+          link: 'seller-order-fulfillment.html',
+        });
+      } catch (e) {
+        console.error('7-day reminder error:', rdoc.id, e.message);
+      }
+    }
+
+    const tenDaysAgo = Date.now() - (10 * 24 * 60 * 60 * 1000);
     console.log('Overdue order check — cutoff:', new Date(tenDaysAgo).toISOString());
 
     const snapshot = await db.collection('products')
@@ -1780,7 +1863,8 @@ exports.confirmDelivery = onRequest(
       }
 
       // Escrow payout: transfer seller's share now that delivery is confirmed
-      if (product.sellerStripeAccountId && product.sellerReceivesCents > 0) {
+      // Guard against double-payout if Shippo webhook already ran
+      if (product.sellerStripeAccountId && product.sellerReceivesCents > 0 && !product.sellerPaidOut) {
         try {
           const stripe = require('stripe')(stripeSecret.value());
           const transfer = await stripe.transfers.create({
@@ -2007,6 +2091,532 @@ exports.shippoWebhook = onRequest(
     } catch (err) {
       console.error('Shippo webhook processing error:', err);
     }
+  }
+);
+
+// --- STRIPE WEBHOOK (safety net: completes order if client crashed after payment succeeded) ---
+// Handles payment_intent.succeeded — marks the product sold and creates the order record
+// if completeOrder never ran (e.g. buyer closed the tab right after Stripe confirmed the charge).
+// Idempotent: silently skips if the product is already sold.
+exports.stripeWebhook = onRequest(
+  { cors: false, secrets: [stripeSecret, stripeWebhookSecret, sendgridSecret], maxInstances: 10 },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+
+    // Verify Stripe signature using raw body
+    const sig = req.headers['stripe-signature'];
+    let event;
+    try {
+      const stripe = require('stripe')(stripeSecret.value());
+      event = stripe.webhooks.constructEvent(req.rawBody, sig, stripeWebhookSecret.value());
+    } catch (err) {
+      console.error('Stripe webhook signature error:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Acknowledge immediately so Stripe doesn't retry
+    res.status(200).send('OK');
+
+    if (event.type !== 'payment_intent.succeeded') return;
+
+    const paymentIntent = event.data.object;
+    const productId = paymentIntent.metadata?.productId;
+    const buyerId   = paymentIntent.metadata?.buyerId;
+
+    if (!productId || !buyerId) {
+      console.warn('stripeWebhook: missing productId or buyerId in metadata', paymentIntent.id);
+      return;
+    }
+
+    try {
+      const productRef = db.collection('products').doc(productId);
+      let prod = null;
+
+      // Atomic check-and-mark — prevents double-processing if completeOrder already ran
+      try {
+        await db.runTransaction(async (t) => {
+          const snap = await t.get(productRef);
+          if (!snap.exists) throw Object.assign(new Error('Product not found'), { code: 'NOT_FOUND' });
+          if (snap.data().sold) throw Object.assign(new Error('already_sold'), { code: 'ALREADY_SOLD' });
+          prod = snap.data();
+
+          const sellerStripeAccountId = paymentIntent.metadata.sellerStripeAccountId || null;
+          const sellerReceivesCents   = parseInt(paymentIntent.metadata.sellerReceivesCents || 0);
+          const savedRateObjectId     = paymentIntent.metadata.rateObjectId || null;
+          const prodPriceCents        = Math.round((prod.price || 0) * 100);
+          const taxCents              = Math.round(prodPriceCents * 0.08);
+          const shippingCents         = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
+
+          const updateData = {
+            sold: true,
+            soldAt: admin.firestore.FieldValue.serverTimestamp(),
+            soldTimestamp: Date.now(),
+            soldOrderId: paymentIntent.id,
+            buyerId,
+            shippingCost: shippingCents / 100,
+            sellerStripeAccountId: sellerStripeAccountId || null,
+            sellerReceivesCents: sellerReceivesCents || 0,
+          };
+          if (savedRateObjectId) updateData.rateObjectId = savedRateObjectId;
+
+          t.update(productRef, updateData);
+        });
+      } catch (txErr) {
+        if (txErr.code === 'ALREADY_SOLD' || txErr.code === 'NOT_FOUND') {
+          console.log(`stripeWebhook: skipping ${productId} — ${txErr.message}`);
+          return;
+        }
+        throw txErr;
+      }
+
+      console.log(`stripeWebhook: order completed for product ${productId}, buyer ${buyerId}`);
+
+      const prodPriceCents = Math.round((prod.price || 0) * 100);
+      const taxCents       = Math.round(prodPriceCents * 0.08);
+      const shippingCents  = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
+
+      // Save order record (source flag helps identify webhook-recovered orders in admin)
+      try {
+        await db.collection('orders').add({
+          productId,
+          buyerId,
+          sellerId: prod.userId || null,
+          paymentIntentId: paymentIntent.id,
+          productTitle: prod.title || null,
+          productPrice: prod.price || null,
+          productImages: prod.images || [],
+          productCondition: prod.condition || null,
+          shippingCost: shippingCents / 100,
+          sellerStripeAccountId: paymentIntent.metadata.sellerStripeAccountId || null,
+          sellerReceivesCents: parseInt(paymentIntent.metadata.sellerReceivesCents || 0),
+          rateObjectId: paymentIntent.metadata.rateObjectId || null,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdTimestamp: Date.now(),
+          status: 'paid',
+          source: 'webhook_fallback',
+        });
+      } catch (orderErr) {
+        console.error('stripeWebhook order record error:', orderErr.message);
+      }
+
+      // In-app notifications (idempotency keys match completeOrder — safe if both run)
+      await Promise.all([
+        createNotification(prod.userId, {
+          icon: '🛍️',
+          message: `New sale! Someone bought your "${prod.title || 'item'}". Ship it within 3 days.`,
+          link: 'seller-order-fulfillment.html',
+        }, `${paymentIntent.id}_seller`),
+        createNotification(buyerId, {
+          icon: '✅',
+          message: `Order placed for "${prod.title || 'item'}". The seller will ship soon.`,
+          link: 'my-orders.html',
+        }, `${paymentIntent.id}_buyer`),
+      ]);
+
+      // Emails
+      try {
+        emails.init(sendgridSecret.value());
+        const sellerEmail  = await getUserEmail(prod.userId);
+        const buyerEmail   = await getUserEmail(buyerId);
+        const buyerRecord  = await admin.auth().getUser(buyerId);
+        const sellerRecord = prod.userId ? await admin.auth().getUser(prod.userId).catch(() => null) : null;
+        const buyerName    = buyerRecord.displayName || buyerRecord.email.split('@')[0];
+        const sellerName   = sellerRecord
+          ? (sellerRecord.displayName || sellerRecord.email.split('@')[0])
+          : 'the seller';
+        await Promise.all([
+          emails.sendOrderPlacedSeller(sellerEmail, { productName: prod.title || 'your item', buyerName }),
+          emails.sendOrderPlacedBuyer(buyerEmail, { productName: prod.title || 'your item', orderId: paymentIntent.id, sellerName }),
+        ]);
+      } catch (emailErr) {
+        console.error('stripeWebhook email error:', emailErr.message);
+      }
+
+    } catch (err) {
+      console.error('stripeWebhook processing error:', err);
+    }
+  }
+);
+
+// --- REACTIVATE LISTING (seller relists a cancelled item) ---
+// Clears all sale/cancellation fields using Admin SDK so Firestore rules don't block it.
+exports.reactivateListing = onRequest(
+  { cors: ALLOWED_ORIGINS, maxInstances: 10 },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { productId } = req.body;
+    if (!productId) return res.status(400).json({ error: 'Missing productId' });
+
+    try {
+      const productRef = db.collection('products').doc(productId);
+      const productSnap = await productRef.get();
+      if (!productSnap.exists) return res.status(404).json({ error: 'Product not found' });
+
+      const product = productSnap.data();
+      if (product.userId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'You are not the owner of this listing' });
+      }
+      if (!product.cancelled) {
+        return res.status(400).json({ error: 'This listing is not cancelled' });
+      }
+
+      const del = admin.firestore.FieldValue.delete();
+      await productRef.update({
+        sold: false,
+        active: true,
+        cancelled: false,
+        buyerId: del,
+        soldOrderId: del,
+        soldAt: del,
+        soldTimestamp: del,
+        shippingLabel: del,
+        trackingNumber: del,
+        trackingUrl: del,
+        carrier: del,
+        cancelledAt: del,
+        cancelledTimestamp: del,
+        cancelledBy: del,
+        cancellationReason: del,
+        refundId: del,
+        refundAmount: del,
+        rateObjectId: del,
+        sellerStripeAccountId: del,
+        sellerReceivesCents: del,
+        sellerPayoutTransferId: del,
+        sellerPaidOut: del,
+        packageDimensions: del,
+        buyerShippingAddress: del,
+        shipped: del,
+        shippedAt: del,
+        delivered: del,
+        deliveredAt: del,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('reactivateListing error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- STRIPE ACCOUNT UPDATED WEBHOOK ---
+// Listens for account.updated from Stripe Connect.
+// Auto-syncs stripePayoutsEnabled / stripeChargesEnabled to Firestore so
+// settings.html and sell.html always reflect the real state.
+exports.stripeAccountWebhook = onRequest(
+  { cors: false, secrets: [stripeSecret, stripeAccountWebhookSecret], maxInstances: 10 },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+
+    let event;
+    try {
+      const stripe = require('stripe')(stripeSecret.value());
+      event = stripe.webhooks.constructEvent(
+        req.rawBody,
+        req.headers['stripe-signature'],
+        stripeAccountWebhookSecret.value()
+      );
+    } catch (err) {
+      console.error('stripeAccountWebhook signature error:', err.message);
+      return res.status(400).send('Webhook signature verification failed');
+    }
+
+    if (event.type === 'account.updated') {
+      const account = event.data.object;
+      try {
+        // Find user with this Stripe account ID
+        const usersSnap = await db.collection('users')
+          .where('stripeAccountId', '==', account.id)
+          .limit(1)
+          .get();
+
+        if (!usersSnap.empty) {
+          const userRef = usersSnap.docs[0].ref;
+          const payoutsEnabled  = account.payouts_enabled  === true;
+          const chargesEnabled  = account.charges_enabled  === true;
+          const detailsSubmitted = account.details_submitted === true;
+
+          await userRef.update({
+            stripePayoutsEnabled:   payoutsEnabled,
+            stripeChargesEnabled:   chargesEnabled,
+            stripeDetailsSubmitted: detailsSubmitted,
+            stripeAccountUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+
+          // If they just completed setup, send a congratulatory in-app notification
+          if (payoutsEnabled) {
+            await createNotification(usersSnap.docs[0].id, {
+              icon: '💳',
+              message: 'Your payout account is now active! You can start receiving payments.',
+              link: 'sell.html',
+            }, `stripe_payouts_enabled_${account.id}`);
+          }
+
+          console.log(`stripeAccountWebhook: updated user ${usersSnap.docs[0].id} — payouts:${payoutsEnabled} charges:${chargesEnabled}`);
+        } else {
+          console.log('stripeAccountWebhook: no user found for account', account.id);
+        }
+      } catch (err) {
+        console.error('stripeAccountWebhook Firestore error:', err.message);
+        return res.status(500).send('Internal error');
+      }
+    }
+
+    return res.status(200).json({ received: true });
+  }
+);
+
+// --- NOTIFY NEW MESSAGE ---
+// Called from messages.html after a message is sent.
+// Sends an email + in-app notification to the recipient if they haven't been
+// notified in the last 10 minutes for this conversation (rate-limited to avoid spam).
+exports.notifyNewMessage = onRequest(
+  { cors: ALLOWED_ORIGINS, secrets: [sendgridSecret], maxInstances: 20 },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { conversationId, messagePreview } = req.body;
+    if (!conversationId) return res.status(400).json({ error: 'conversationId required' });
+
+    try {
+      // Rate limit: max 30 message notifications per hour per sender
+      await checkRateLimit(decodedToken.uid, 'msgNotify', 30, ONE_HOUR);
+    } catch (e) {
+      return res.status(200).json({ skipped: 'rate_limit' }); // silent — don't break the send flow
+    }
+
+    try {
+      const convSnap = await db.collection('conversations').doc(conversationId).get();
+      if (!convSnap.exists) return res.status(404).json({ error: 'Conversation not found' });
+
+      const conv = convSnap.data();
+      const isBuyer  = conv.buyerId  === decodedToken.uid;
+      const recipientId = isBuyer ? conv.sellerId : conv.buyerId;
+
+      if (!recipientId) return res.status(200).json({ skipped: 'no_recipient' });
+
+      // Check if we already notified this recipient for this conv in the last 10 min
+      const notifyKey = `msg_${conversationId}_${recipientId}`;
+      const rlSnap = await db.collection('rateLimits').doc(recipientId).get();
+      const rlData = rlSnap.exists ? rlSnap.data() : {};
+      const lastNotify = rlData[notifyKey] || 0;
+      if (Date.now() - lastNotify < 10 * 60 * 1000) {
+        return res.status(200).json({ skipped: 'recently_notified' });
+      }
+
+      // Update the cooldown timestamp for this conversation
+      await db.collection('rateLimits').doc(recipientId).set(
+        { [notifyKey]: Date.now() },
+        { merge: true }
+      );
+
+      const senderRecord = await admin.auth().getUser(decodedToken.uid).catch(() => null);
+      const senderName = senderRecord
+        ? (senderRecord.displayName || senderRecord.email.split('@')[0])
+        : 'Someone';
+
+      const preview = String(messagePreview || '').slice(0, 120);
+      const convUrl = `https://grappletrade.web.app/messages.html?conv=${conversationId}`;
+
+      await Promise.all([
+        createNotification(recipientId, {
+          icon: '💬',
+          message: `New message from ${senderName}: "${preview}"`,
+          link: `messages.html?conv=${conversationId}`,
+        }),
+        getUserEmail(recipientId).then(email => {
+          if (!email) return;
+          emails.init(sendgridSecret.value());
+          return emails.sendMessageNotification(email, { senderName, messagePreview: preview, conversationUrl: convUrl });
+        }),
+      ]);
+
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('notifyNewMessage error:', error.message);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- SELF DELETE ACCOUNT ---
+// Lets an authenticated user permanently delete their own account.
+// Uses Admin SDK to bypass the "requires-recent-login" client restriction.
+exports.selfDeleteAccount = onRequest(
+  { cors: ALLOWED_ORIGINS, maxInstances: 5 },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const uid = decodedToken.uid;
+    try {
+      // 1. Delete username reservation
+      const usernameSnap = await db.collection('usernames').where('userId', '==', uid).get();
+      if (!usernameSnap.empty) {
+        const batch = db.batch();
+        usernameSnap.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+      }
+      // 2. Delete Firestore user doc
+      await db.collection('users').doc(uid).delete().catch(() => {});
+      // 3. Delete Firebase Auth record (must be last — invalidates all tokens)
+      await admin.auth().deleteUser(uid);
+
+      console.log('selfDeleteAccount: deleted user', uid);
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('selfDeleteAccount error:', error.message);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- GET PRICE SUGGESTIONS ---
+// Returns recently sold prices for a given category so sellers can price competitively.
+exports.getPriceSuggestions = onRequest(
+  { cors: ALLOWED_ORIGINS, maxInstances: 20 },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    const category = String(req.query.category || '').trim().toLowerCase();
+    if (!category) return res.status(400).json({ error: 'category is required' });
+
+    try {
+      const snap = await db.collection('products')
+        .where('category', '==', category)
+        .where('sold', '==', true)
+        .orderBy('soldTimestamp', 'desc')
+        .limit(20)
+        .get();
+
+      if (snap.empty) return res.status(200).json({ count: 0, min: null, max: null, avg: null });
+
+      const prices = snap.docs.map(d => parseFloat(d.data().price || 0)).filter(p => p > 0);
+      if (prices.length === 0) return res.status(200).json({ count: 0, min: null, max: null, avg: null });
+
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
+
+      return res.status(200).json({ count: prices.length, min, max, avg: parseFloat(avg.toFixed(2)) });
+    } catch (error) {
+      console.error('getPriceSuggestions error:', error.message);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- RECORD ABANDONED CART ---
+// Called from checkout.html when a user starts the checkout flow.
+// A scheduled job later follows up if the purchase wasn't completed.
+exports.recordAbandonedCart = onRequest(
+  { cors: ALLOWED_ORIGINS, maxInstances: 20 },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { productId } = req.body;
+    if (!productId) return res.status(400).json({ error: 'productId required' });
+
+    try {
+      const productSnap = await db.collection('products').doc(productId).get();
+      if (!productSnap.exists || productSnap.data().sold) {
+        return res.status(200).json({ skipped: 'product_sold_or_missing' });
+      }
+      const prod = productSnap.data();
+      const docId = `${productId}_${decodedToken.uid}`;
+      await db.collection('abandonedCarts').doc(docId).set({
+        productId,
+        userId: decodedToken.uid,
+        productTitle: prod.title || null,
+        productPrice: prod.price || null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdTimestamp: Date.now(),
+        emailSent: false,
+      }, { merge: false });
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('recordAbandonedCart error:', error.message);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// --- CHECK ABANDONED CARTS ---
+// Runs every 6 hours. Sends a follow-up email for carts abandoned 24–48 hours ago.
+exports.checkAbandonedCarts = onSchedule(
+  { schedule: 'every 6 hours', secrets: [sendgridSecret], maxInstances: 1 },
+  async () => {
+    emails.init(sendgridSecret.value());
+    const now = Date.now();
+    const twentyFourHoursAgo = now - ONE_DAY;
+    const fortyEightHoursAgo = now - (2 * ONE_DAY);
+
+    const snap = await db.collection('abandonedCarts')
+      .where('emailSent', '==', false)
+      .where('createdTimestamp', '<=', twentyFourHoursAgo)
+      .where('createdTimestamp', '>=', fortyEightHoursAgo)
+      .get();
+
+    console.log(`checkAbandonedCarts: ${snap.size} carts to follow up`);
+    let sent = 0;
+    for (const cartDoc of snap.docs) {
+      const cart = cartDoc.data();
+      try {
+        // Check if item was already purchased
+        const prodSnap = await db.collection('products').doc(cart.productId).get();
+        if (!prodSnap.exists || prodSnap.data().sold) {
+          await cartDoc.ref.delete();
+          continue;
+        }
+        const buyerEmail = await getUserEmail(cart.userId);
+        const productUrl = `https://grappletrade.web.app/productdetail.html?id=${cart.productId}`;
+        await emails.sendAbandonedCart(buyerEmail, {
+          productName: cart.productTitle || 'an item',
+          productUrl,
+          price: cart.productPrice || 0,
+        });
+        await cartDoc.ref.update({ emailSent: true, emailSentAt: admin.firestore.FieldValue.serverTimestamp() });
+        sent++;
+      } catch (e) {
+        console.error('checkAbandonedCarts item error:', cartDoc.id, e.message);
+      }
+    }
+    console.log(`checkAbandonedCarts: sent ${sent} follow-up emails`);
   }
 );
 

@@ -45,6 +45,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -59,6 +60,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK'), isTokenAutoRefreshEnabled: true });
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -121,6 +123,7 @@
         const SHIPPO_GET_RATES_URL = 'https://shippogetrates-kebvkf67ma-uc.a.run.app';
         const SHIPPO_CREATE_LABEL_URL = 'https://shippocreatelabel-kebvkf67ma-uc.a.run.app';
         const COMPLETE_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/completeOrder';
+        const RECORD_ABANDONED_CART_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/recordAbandonedCart';
         // Switch to live key when going to production: pk_live_...
         const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SVkt7GuAs8IZaZv5J9AezLqjENqgpK1MWVMze9O7fUY5h8ZUAmvC2uHavTLzKloXToKxvFDtGeJ9jE3umH9Uvxp00168b1lMz';
 
@@ -166,6 +169,17 @@
                 checkoutProduct = JSON.parse(productData);
                 calculateTotals();
                 displayCheckout();
+
+                // Record abandoned cart (best-effort — fires async, never blocks checkout)
+                window.getIdToken().then(idToken => {
+                    if (idToken && checkoutProduct && checkoutProduct.id) {
+                        fetch(RECORD_ABANDONED_CART_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                            body: JSON.stringify({ productId: checkoutProduct.id }),
+                        }).catch(() => {});
+                    }
+                }).catch(() => {});
 
                 // Build seller FROM address from the listing's zipCode
                 sellerFromAddress = window.getSellerAddress(checkoutProduct);

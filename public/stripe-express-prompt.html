@@ -20,47 +20,74 @@
     <div class="container">
         <div class="icon">💳</div>
         
-        <div id="already-connected-section" class="already-connected">
-            <h3>✅ You're already connected!</h3>
-            <p>Your Stripe account is connected and ready to receive payments.</p>
+        <!-- Fully set up -->
+        <div id="already-connected-section" class="already-connected" style="display:none;">
+            <h3>✅ You're all set!</h3>
+            <p>Your payout account is connected and active. You'll receive your earnings automatically after each delivery is confirmed.</p>
             <a href="sell.html" class="btn btn-primary" style="margin-top: 15px; display: inline-block;">Go to Sell Page</a>
         </div>
 
-        <div id="onboarding-section">
-            <h1>Connect Your Payout Account</h1>
-            <p class="subtitle">Takes about 2 minutes. Just a few basic details to get started — you can provide additional info later when you're ready to cash out.</p>
+        <!-- Started but not finished -->
+        <div id="resume-section" style="display:none;">
+            <h1>Almost There!</h1>
+            <p class="subtitle">You've started your payout setup but haven't finished yet. Your earnings are being held safely — finish in a few minutes to unlock withdrawals.</p>
 
             <div class="info-box">
-                <h3>Quick &amp; easy setup</h3>
-                <p>We only ask for the minimum needed to activate your account. Full verification (bank account, ID, etc.) is only required when you want to withdraw your earnings.</p>
+                <h3>What's left?</h3>
+                <p>Stripe needs your bank account number and identity verification to enable payouts. This is a one-time step required by US financial regulations — Stripe handles it securely.</p>
             </div>
 
             <div class="benefits">
-                <h3>How it works:</h3>
-
                 <div class="benefit-item">
                     <div class="benefit-icon">✓</div>
-                    <div class="benefit-text">Enter basic info — takes under 2 minutes</div>
+                    <div class="benefit-text">Your listings are already live — buyers can purchase now</div>
                 </div>
-
                 <div class="benefit-item">
                     <div class="benefit-icon">✓</div>
-                    <div class="benefit-text">Start selling immediately after setup</div>
+                    <div class="benefit-text">Earnings are held safely until you complete setup</div>
                 </div>
-
                 <div class="benefit-item">
-                    <div class="benefit-icon">✓</div>
-                    <div class="benefit-text">Earnings hold securely in your account</div>
-                </div>
-
-                <div class="benefit-item">
-                    <div class="benefit-icon">✓</div>
-                    <div class="benefit-text">Add bank details when you're ready to cash out</div>
+                    <div class="benefit-icon">⏱</div>
+                    <div class="benefit-text">Finish in about 2 minutes — just bank info &amp; ID</div>
                 </div>
             </div>
 
             <div class="button-group">
-                <button class="btn btn-primary" id="createAccountBtn">Get Started</button>
+                <button class="btn btn-primary" id="resumeAccountBtn" style="background:#f59e0b;border-color:#f59e0b;">Continue Setup → Unlock Payouts</button>
+            </div>
+        </div>
+
+        <div id="onboarding-section">
+            <h1>Connect Your Payout Account</h1>
+            <p class="subtitle">Takes about 2 minutes. Just a few basic details to get started — you can add your bank account later when you're ready to cash out.</p>
+
+            <div class="info-box">
+                <h3>Quick &amp; easy setup</h3>
+                <p>We only ask for the minimum needed to activate your account. Full verification (bank account, ID) is only required when you want to withdraw your earnings.</p>
+            </div>
+
+            <div class="benefits">
+                <h3>How it works:</h3>
+                <div class="benefit-item">
+                    <div class="benefit-icon">✓</div>
+                    <div class="benefit-text">Enter basic info — takes under 2 minutes</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">✓</div>
+                    <div class="benefit-text">Start selling immediately after setup</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">✓</div>
+                    <div class="benefit-text">Earnings held securely until you're ready to cash out</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">✓</div>
+                    <div class="benefit-text">Add bank details any time — no rush</div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" id="createAccountBtn">Get Started — It's Free</button>
                 <a href="https://stripe.com/connect" target="_blank" class="btn btn-secondary">Learn More About Stripe</a>
             </div>
 
@@ -121,13 +148,22 @@
                     console.log('User doc exists:', userDoc.exists);
                     
                     if (userDoc.exists) {
-                        console.log('User data:', userDoc.data());
-                        
-                        if (userDoc.data().stripeAccountId) {
-                            console.log('✓ User already has Stripe account:', userDoc.data().stripeAccountId);
-                            // User already connected
+                        const userData = userDoc.data();
+
+                        if (userData.stripeAccountId && userData.stripePayoutsEnabled) {
+                            // Fully set up
                             document.getElementById('onboarding-section').style.display = 'none';
-                            document.getElementById('already-connected-section').classList.add('active');
+                            document.getElementById('already-connected-section').style.display = 'block';
+                        } else if (userData.stripeAccountId) {
+                            // Started but not finished — show resume section
+                            document.getElementById('onboarding-section').style.display = 'none';
+                            document.getElementById('resume-section').style.display = 'block';
+                            // Resume button reuses the same createConnectedAccount flow
+                            document.getElementById('resumeAccountBtn').addEventListener('click', function() {
+                                document.getElementById('createAccountBtn').click();
+                                document.getElementById('resume-section').style.display = 'none';
+                                document.getElementById('onboarding-section').style.display = 'block';
+                            });
                         }
                     } else {
                         console.log('No user document found - first time user');

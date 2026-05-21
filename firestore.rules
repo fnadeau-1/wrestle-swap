@@ -152,6 +152,23 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // Disputes — buyers can create for their own orders, buyer/seller can read their own
+    match /disputes/{disputeId} {
+      allow create: if request.auth != null
+        && request.resource.data.buyerId == request.auth.uid;
+      allow read: if isAdmin()
+        || (request.auth != null && (
+          resource.data.buyerId == request.auth.uid ||
+          resource.data.sellerId == request.auth.uid
+        ));
+      allow update, delete: if isAdmin();
+    }
+
+    // Abandoned carts — written exclusively by Cloud Functions via Admin SDK; clients denied
+    match /abandonedCarts/{docId} {
+      allow read, write: if false;
+    }
+
     // Rate limit counters — written only by Cloud Functions via Admin SDK, never by clients
     match /rateLimits/{userId} {
       allow read, write: if false;

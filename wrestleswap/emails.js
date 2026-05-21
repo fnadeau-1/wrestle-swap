@@ -329,6 +329,88 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SHIP REMINDER — warn seller at day 7 (3 days before auto-cancel)
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendShipReminder(sellerEmail, { productName, daysSinceSale }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">Reminder: Ship your item soon</h2>
+    <p style="color:#555;font-size:15px;line-height:1.6;">
+      Your order for <strong>${escHtml(productName)}</strong> was placed
+      <strong>${daysSinceSale} day${daysSinceSale !== 1 ? 's' : ''} ago</strong> and has not been shipped yet.
+    </p>
+    ${alertBox('#fff3cd', '#e6a817', `
+      <strong>Action required:</strong> Orders not shipped within <strong>10 days</strong> are automatically
+      cancelled and you receive a seller strike. You have <strong>${10 - daysSinceSale} day${10 - daysSinceSale !== 1 ? 's' : ''} remaining</strong>.
+    `)}
+    <p style="color:#555;font-size:14px;line-height:1.6;">
+      Go to your Listings Manager to purchase a shipping label or enter a tracking number if you've already shipped.
+    </p>
+    ${btn(`${SITE_URL}/seller-order-fulfillment.html`, 'Ship Your Item Now')}
+  `);
+  await send(sellerEmail, `Action Required: Ship "${productName}" within ${10 - daysSinceSale} days`, html);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MESSAGE NOTIFICATION — notify recipient of a new message
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendMessageNotification(toEmail, { senderName, messagePreview, conversationUrl }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">You have a new message</h2>
+    <p style="color:#555;font-size:15px;line-height:1.6;">
+      <strong>${escHtml(senderName)}</strong> sent you a message on GrappleTrade:
+    </p>
+    ${alertBox('#f0f4ff', '#3665f3', `
+      <em style="color:#333;">"${escHtml(messagePreview)}"</em>
+    `)}
+    ${btn(conversationUrl || `${SITE_URL}/messages.html`, 'Reply Now', '#3665f3')}
+    <p style="color:#999;font-size:12px;margin-top:20px;">
+      You're receiving this because someone messaged you on GrappleTrade. To stop these emails, update your notification settings.
+    </p>
+  `);
+  await send(toEmail, `New message from ${senderName}`, html);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WATCHLIST ITEM SOLD — notify watcher when a watched item sells
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendWatchlistItemSold(watcherEmail, { productName, category }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">An item on your watchlist just sold</h2>
+    <p style="color:#555;font-size:15px;line-height:1.6;">
+      <strong>${escHtml(productName)}</strong> — which you had saved to your watchlist — has been sold.
+    </p>
+    <p style="color:#555;font-size:14px;line-height:1.6;">
+      Similar items may be available. Browse the marketplace to find another one.
+    </p>
+    ${btn(`${SITE_URL}/search.html${category ? '?category=' + encodeURIComponent(category) : ''}`, 'Find Similar Items', '#3665f3')}
+  `);
+  await send(watcherEmail, `Watchlist item sold: ${productName}`, html);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ABANDONED CART — follow up 24h after checkout was started but not completed
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendAbandonedCart(buyerEmail, { productName, productUrl, price }) {
+  const html = wrap(`
+    <h2 style="color:#333;margin-top:0;">You left something behind</h2>
+    <p style="color:#555;font-size:15px;line-height:1.6;">
+      You were checking out <strong>${escHtml(productName)}</strong> but didn't complete your purchase.
+    </p>
+    ${alertBox('#fff8e1', '#ffc107', `
+      <strong>This item is still available</strong> — but marketplace items sell fast. Complete your checkout to secure it.
+    `)}
+    <p style="color:#555;font-size:14px;line-height:1.6;">
+      Listed at <strong>$${parseFloat(price || 0).toFixed(2)}</strong>
+    </p>
+    ${btn(productUrl || `${SITE_URL}/search.html`, 'Complete Your Purchase')}
+    <p style="color:#999;font-size:12px;margin-top:20px;">
+      You're receiving this because you started checkout on GrappleTrade. If you no longer need this item, simply ignore this email.
+    </p>
+  `);
+  await send(buyerEmail, `Still interested in ${productName}?`, html);
+}
+
 module.exports = {
   init,
   sendOrderPlacedBuyer,
@@ -342,4 +424,8 @@ module.exports = {
   sendTrackingToBuyer,
   sendDeliveryConfirmedToBuyer,
   sendDeliveryConfirmedToSeller,
+  sendShipReminder,
+  sendMessageNotification,
+  sendWatchlistItemSold,
+  sendAbandonedCart,
 };

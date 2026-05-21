@@ -126,20 +126,35 @@
             <div class="success-message" id="seller-success">Settings saved!</div>
             <div class="error-message" id="seller-error"></div>
 
+            <!-- Not connected -->
             <div id="stripe-warning" class="warning-box" style="display:none;">
-                <p><strong>Action Required:</strong> Connect a Stripe Express account to receive payments from sales.</p>
+                <p><strong>Action Required:</strong> Connect a payout account so you can receive money from your sales.</p>
+            </div>
+
+            <!-- Connected but setup incomplete -->
+            <div id="stripe-incomplete-warning" style="display:none; background:#fffbeb; border:1px solid #f59e0b; border-radius:8px; padding:16px; margin-bottom:16px;">
+                <p style="margin:0 0 6px;font-weight:600;color:#92400e;">⚠ Your payout setup isn't finished</p>
+                <p style="margin:0 0 12px;color:#78350f;font-size:14px;">
+                    You connected Stripe but haven't completed the full verification yet.
+                    <strong>Your earnings are safe</strong> — they'll be held until you finish.
+                    It only takes a few more minutes: just add your bank account and verify your identity.
+                </p>
+                <button class="btn btn-primary" onclick="window.location.href='stripe-express-prompt.html?resume=1'"
+                    style="background:#f59e0b;border-color:#f59e0b;">
+                    Finish Setup → Unlock Payouts
+                </button>
             </div>
 
             <div class="info-row">
                 <div>
-                    <span class="info-label">Stripe Express Account</span>
+                    <span class="info-label">Stripe Payout Account</span>
                     <p class="helper-text">Required to receive payments from sales</p>
                 </div>
                 <div style="text-align:right;">
                     <span class="info-value" id="stripe-status"><span style="color:#ffa500;">⚠ Not Connected</span></span><br>
                     <button class="btn btn-primary" id="stripe-connect-btn" style="margin-top:10px;display:none;"
                         onclick="window.location.href='stripe-express-prompt.html'">
-                        Connect Stripe Account
+                        Connect Payout Account
                     </button>
                     <button class="btn btn-secondary" id="stripe-manage-btn" style="margin-top:10px;display:none;"
                         onclick="window.open('https://dashboard.stripe.com/express','_blank')">
@@ -236,6 +251,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getAuth, onAuthStateChanged, updatePassword, EmailAuthProvider,
                  reauthenticateWithCredential, signOut, deleteUser }
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -254,6 +270,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK'), isTokenAutoRefreshEnabled: true });
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -351,16 +368,21 @@
                     document.getElementById('bio').value = d.bio || '';
                     currentUsername = d.username || '';
 
-                    // Stripe
-                    if (d.stripeAccountId) {
-                        document.getElementById('stripe-status').innerHTML = '<span style="color:#28a745;">✓ Connected</span>';
+                    // Stripe — three states: not connected / connected but incomplete / fully set up
+                    if (d.stripeAccountId && d.stripePayoutsEnabled) {
+                        // Fully set up
+                        document.getElementById('stripe-status').innerHTML = '<span style="color:#28a745;">✓ Connected &amp; Active</span>';
                         document.getElementById('stripe-manage-btn').style.display = 'inline-block';
-                        document.getElementById('stripe-warning').style.display = 'none';
-                        if (d.stripePayoutsEnabled)
-                            document.getElementById('payouts-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
+                        document.getElementById('payouts-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
                         if (d.stripeChargesEnabled)
                             document.getElementById('charges-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
+                    } else if (d.stripeAccountId) {
+                        // Account exists but setup not complete
+                        document.getElementById('stripe-status').innerHTML = '<span style="color:#f59e0b;">⚠ Setup Incomplete</span>';
+                        document.getElementById('stripe-incomplete-warning').style.display = 'block';
+                        document.getElementById('stripe-manage-btn').style.display = 'inline-block';
                     } else {
+                        // Not connected at all
                         document.getElementById('stripe-connect-btn').style.display = 'inline-block';
                         document.getElementById('stripe-warning').style.display = 'block';
                     }
@@ -563,18 +585,20 @@
             if (!confirm('Are you sure you want to delete your account? This cannot be undone.')) return;
             if (!confirm('All your data will be permanently deleted. Confirm?')) return;
             try {
-                // Clean up username reservation
-                if (currentUsername) {
-                    await deleteDoc(doc(db, 'usernames', currentUsername)).catch(() => {});
+                const idToken = await currentUser.getIdToken();
+                const response = await fetch('https://us-central1-wrestleswap.cloudfunctions.net/selfDeleteAccount', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                    body: JSON.stringify({}),
+                });
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || `Error ${response.status}`);
                 }
-                await deleteUser(currentUser);
+                await signOut(auth);
                 window.location.href = 'index.html';
             } catch (err) {
-                if (err.code === 'auth/requires-recent-login') {
-                    alert('For security, please sign out and sign back in before deleting your account.');
-                } else {
-                    alert('Error: ' + err.message);
-                }
+                alert('Error deleting account: ' + err.message);
             }
         };
     </script>

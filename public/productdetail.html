@@ -108,6 +108,14 @@
                         <span id="heart-icon">♡</span> <span id="watchlist-text">Add to Watchlist</span>
                     </button>
                 </div>
+                <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+                    <button onclick="shareProduct()" class="btn btn-secondary" style="flex:1;font-size:13px;">
+                        Share
+                    </button>
+                    <button onclick="reportListing()" id="report-listing-btn" class="btn btn-secondary" style="flex:1;font-size:13px;color:#c0392b;border-color:#c0392b;display:none;">
+                        Report Listing
+                    </button>
+                </div>
                 <div class="details-section">
                     <div class="details-title">Product Details</div>
                     <div class="details-grid" id="product-details">
@@ -136,6 +144,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, collection, query, limit, getDocs, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -150,6 +159,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK'), isTokenAutoRefreshEnabled: true });
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -428,9 +438,22 @@
 
             try {
                 const productsRef = window.collection(window.firebaseDb, 'products');
-                let q = window.query(productsRef, window.limit(10));
-
-                const querySnapshot = await window.getDocs(q);
+                // Try category-filtered query first, fall back to generic
+                let querySnapshot;
+                if (currentProduct.category) {
+                    querySnapshot = await window.getDocs(
+                        window.query(productsRef,
+                            window.where('category', '==', currentProduct.category),
+                            window.where('sold', '==', false),
+                            window.where('active', '==', true),
+                            window.limit(10)
+                        )
+                    );
+                } else {
+                    querySnapshot = await window.getDocs(
+                        window.query(productsRef, window.where('active', '==', true), window.limit(10))
+                    );
+                }
                 const products = [];
 
                 querySnapshot.forEach((doc) => {
@@ -554,9 +577,11 @@
                 } catch (e) {
                     // If seller doc can't be read, don't block the purchase
                 }
-                // Seller is active — show Message Seller button
+                // Seller is active — show Message Seller and Report buttons
                 const msgBtn = document.getElementById('message-seller-btn');
                 if (msgBtn) msgBtn.style.display = '';
+                const reportBtn = document.getElementById('report-listing-btn');
+                if (reportBtn) reportBtn.style.display = '';
             }
         }
         // Expose to window for auth state listener
@@ -686,6 +711,54 @@
                 showToast('Failed to update watchlist', 'error');
             }
         }
+
+        function shareProduct() {
+            const url = window.location.href;
+            const title = currentProduct ? (currentProduct.name || currentProduct.title || 'Check this out on GrappleTrade') : 'Check this out on GrappleTrade';
+            if (navigator.share) {
+                navigator.share({ title, url }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('Link copied to clipboard!');
+                }).catch(() => {
+                    prompt('Copy this link:', url);
+                });
+            }
+        }
+        window.shareProduct = shareProduct;
+
+        async function reportListing() {
+            const user = window.getCurrentUser();
+            if (!user) {
+                document.getElementById('signin-modal-overlay').classList.add('show');
+                return;
+            }
+            if (!currentProduct) return;
+
+            const reason = prompt('Why are you reporting this listing?\n\n- Prohibited item\n- Counterfeit\n- Misleading description\n- Spam\n- Other\n\nType your reason:');
+            if (!reason || !reason.trim()) return;
+
+            try {
+                await window.setDoc(
+                    window.doc(window.firebaseDb, 'reports', `${currentProduct.id}_${user.uid}`),
+                    {
+                        productId: currentProduct.id,
+                        reporterId: user.uid,
+                        reporterEmail: user.email || null,
+                        sellerId: currentProduct.userId || null,
+                        reason: reason.trim().slice(0, 500),
+                        createdAt: window.serverTimestamp(),
+                    },
+                    { merge: true }
+                );
+                const btn = document.getElementById('report-listing-btn');
+                if (btn) { btn.textContent = 'Reported'; btn.disabled = true; }
+                showToast('Report submitted. Thank you.');
+            } catch (err) {
+                showToast('Failed to submit report: ' + err.message, 'error');
+            }
+        }
+        window.reportListing = reportListing;
 
         // Cloud Function URL for shipping rates
         const SHIPPO_RATES_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/shippingRates';
