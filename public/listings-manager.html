@@ -25,7 +25,7 @@
                     <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
                 </span>
                 <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
-                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
+                <button class="top-bar-btn" onclick="window.location.href='messages.html'">Chats</button>
             </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
@@ -34,7 +34,6 @@
         </div>
     </div>
 
-<div class="container">
 <div class="container">
     <header style="display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
@@ -691,9 +690,9 @@
             if (user) {
                 db.collection('users').doc(user.uid).get().then(userDoc => {
                     const count = userDoc.exists ? (userDoc.data().sellerCancellationCount || 0) : 0;
-                    const remaining = Math.max(0, 3 - count);
+                    const remainingAfter = Math.max(0, 3 - count - 1);
                     document.getElementById('sellerCancelStrikeDetails').textContent =
-                        `Current strikes: ${count}/3 — ${remaining} remaining after this cancellation if you proceed.`;
+                        `Current strikes: ${count}/3 — You will have ${remainingAfter} strike${remainingAfter !== 1 ? 's' : ''} remaining after this cancellation.`;
                 }).catch(() => {});
             }
 

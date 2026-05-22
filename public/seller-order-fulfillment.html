@@ -25,7 +25,7 @@
                     <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
                 </span>
                 <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
-                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
+                <button class="top-bar-btn" onclick="window.location.href='messages.html'">Chats</button>
             </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
@@ -320,6 +320,11 @@
     </script>
 
     <script>
+        // HTML escape helper — prevents XSS when rendering buyer-supplied address fields
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         // Get order/product ID from URL parameter
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get('productId');
@@ -471,10 +476,10 @@
             if (addr && addr.street1) {
                 document.getElementById('shipping-address').innerHTML = `
                     <div class="address-title">Buyer's Shipping Address:</div>
-                    <div class="address-line">${addr.name || ''}</div>
-                    <div class="address-line">${addr.street1}${addr.street2 ? ', ' + addr.street2 : ''}</div>
-                    <div class="address-line">${addr.city}, ${addr.state} ${addr.zip}</div>
-                    <div class="address-line">${addr.country || 'US'}</div>
+                    <div class="address-line">${esc(addr.name)}</div>
+                    <div class="address-line">${esc(addr.street1)}${addr.street2 ? ', ' + esc(addr.street2) : ''}</div>
+                    <div class="address-line">${esc(addr.city)}, ${esc(addr.state)} ${esc(addr.zip)}</div>
+                    <div class="address-line">${esc(addr.country || 'US')}</div>
                 `;
             } else {
                 document.getElementById('shipping-address').innerHTML = `
@@ -522,8 +527,8 @@
                 <div class="order-item">
                     <div class="item-image">${imageHtml}</div>
                     <div class="item-details">
-                        <div class="item-name">${displayName}</div>
-                        ${product.condition ? `<div class="item-condition">Condition: ${product.condition}</div>` : ''}
+                        <div class="item-name">${esc(displayName)}</div>
+                        ${product.condition ? `<div class="item-condition">Condition: ${esc(product.condition)}</div>` : ''}
                         <div class="item-price">Sold for: $${(product.price || 0).toFixed(2)}</div>
                     </div>
                 </div>

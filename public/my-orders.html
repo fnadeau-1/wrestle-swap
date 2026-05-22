@@ -24,7 +24,7 @@
                     <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
                 </span>
                 <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
-                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
+                <button class="top-bar-btn" onclick="window.location.href='messages.html'">Chats</button>
             </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
@@ -220,6 +220,7 @@
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
@@ -227,7 +228,7 @@
         // ============================================
         // FIREBASE CONFIGURATION
         // ============================================
-        
+
         const firebaseConfig = {
             apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
             authDomain: "wrestleswap.firebaseapp.com",
@@ -240,8 +241,14 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+        firebase.appCheck().activate('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK', true);
         const db = firebase.firestore();
         const auth = firebase.auth();
+
+        // HTML escape helper — prevents XSS when inserting user-controlled strings into innerHTML
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
 
         // ============================================
         // FETCH USER ORDERS
@@ -341,16 +348,16 @@
                         <div class="order-id">Order #${orderId.substring(0, 12)}...</div>
                         <div class="order-date">${orderDate}</div>
                     </div>
-                    
+
                     <div class="order-image">
                         ${imageDisplay}
                         <span class="status-badge ${status.class}">${status.text}</span>
                     </div>
-                    
+
                     <div class="order-content">
-                        <h3 class="order-title">${order.title || 'Untitled'}</h3>
+                        <h3 class="order-title">${esc(order.title) || 'Untitled'}</h3>
                         <div class="order-price">$${parseFloat(order.price || 0).toFixed(2)}</div>
-                        
+
                         <div class="order-details">
                             <div class="detail-row">
                                 <span class="detail-label">Shipping:</span>
@@ -359,7 +366,7 @@
                             ${order.trackingNumber ? `
                                 <div class="tracking-info">
                                     <div style="font-weight: 600; margin-bottom: 4px;">Tracking Number</div>
-                                    <div class="tracking-number">${order.trackingNumber}</div>
+                                    <div class="tracking-number">${esc(order.trackingNumber)}</div>
                                 </div>
                             ` : ''}
                         </div>
@@ -449,6 +456,7 @@
         // ============================================
 
         let currentOrderId = null;
+        let currentOrder = null;
 
         async function openOrderModal(orderId) {
             currentOrderId = orderId;
@@ -465,6 +473,7 @@
                 }
 
                 const order = doc.data();
+                currentOrder = order;
 
                 // Overlay financial data from the orders collection (more reliable source for what was actually charged)
                 if (!orderSnap.empty) {
@@ -494,7 +503,7 @@
                     </div>
 
                     <div class="info-section">
-                        <h3 class="info-title">${order.title || 'Product'}</h3>
+                        <h3 class="info-title">${esc(order.title) || 'Product'}</h3>
                         <div style="font-size: 1.75rem; font-weight: 700; color: var(--color-accent); margin-bottom: 20px;">
                             $${parseFloat(order.price || 0).toFixed(2)}
                         </div>
@@ -528,7 +537,7 @@
                             <div class="alert-box info">
                                 <div style="margin-bottom: 8px;"><strong>Tracking Number:</strong></div>
                                 <div style="font-family: monospace; font-size: 1.1rem; font-weight: 600; margin-bottom: 12px;">
-                                    ${order.trackingNumber}
+                                    ${esc(order.trackingNumber)}
                                 </div>
                                 <div id="tracking-timeline" style="margin-top:4px;">
                                     <button onclick="loadTracking('${orderId}')"
@@ -547,7 +556,7 @@
                     ${order.description ? `
                         <div class="info-section">
                             <h3 class="info-title">Product Description</h3>
-                            <p style="color: var(--color-text-muted); line-height: 1.6;">${order.description}</p>
+                            <p style="color: var(--color-text-muted); line-height: 1.6;">${esc(order.description)}</p>
                         </div>
                     ` : ''}
 
@@ -563,7 +572,7 @@
                                     <div style="margin-bottom: 8px;">
                                         <strong>Your Review:</strong>
                                     </div>
-                                    <p style="margin-top: 8px;">${order.review.text}</p>
+                                    <p style="margin-top: 8px;">${esc(order.review.text)}</p>
                                     <div style="margin-top: 8px; font-size: 0.875rem; color: var(--color-text-muted);">
                                         Reviewed on ${new Date(order.review.createdAt).toLocaleDateString()}
                                     </div>
@@ -607,7 +616,7 @@
                                     <div style="margin-bottom: 8px;">
                                         <strong>Your Feedback:</strong>
                                     </div>
-                                    <p style="margin-top: 8px;">${order.sellerRating.text}</p>
+                                    <p style="margin-top: 8px;">${esc(order.sellerRating.text)}</p>
                                     <div style="margin-top: 8px; font-size: 0.875rem; color: var(--color-text-muted);">
                                         Rated on ${new Date(order.sellerRating.createdAt).toLocaleDateString()}
                                     </div>
@@ -686,19 +695,19 @@
                                 return `<button class="btn btn-danger" onclick="openCancelModal('${orderId}')">Cancel Order</button>`;
                             }
                         })()}
-                        <button class="btn btn-secondary" onclick="messageSeller('${orderId}', '${order.userId || ''}', '${(order.sellerName || 'Seller').replace(/'/g, "\\'")}', '${(order.title || 'Order Item').replace(/'/g, "\\'")}')">
+                        <button class="btn btn-secondary" id="modal-msg-seller-btn">
                             Message Seller
                         </button>
                         <button class="btn btn-secondary" onclick="closeOrderModal()">
                             Close
                         </button>
                         ${order.trackingUrl ? `
-                            <a href="${order.trackingUrl}" target="_blank" class="btn btn-primary">
+                            <a href="${esc(order.trackingUrl)}" target="_blank" class="btn btn-primary">
                                 Track Package
                             </a>
                         ` : ''}
                         ${!order.cancelled && !order.disputeOpened ? `
-                            <button class="btn btn-secondary" onclick="openDisputeModal('${orderId}')" style="color:#c0392b; border-color:#c0392b; flex-basis:100%; margin-top:4px;">
+                            <button class="btn btn-secondary" id="modal-dispute-btn" style="color:#c0392b; border-color:#c0392b; flex-basis:100%; margin-top:4px;">
                                 Report a Problem
                             </button>
                         ` : order.disputeOpened ? `<span style="color:#d97706;font-size:13px;font-weight:500;flex-basis:100%;margin-top:4px;">Dispute Opened</span>` : ''}
@@ -707,7 +716,22 @@
 
                 document.getElementById('modalContent').innerHTML = modalHTML;
                 document.getElementById('orderModal').classList.add('active');
-                
+
+                // Attach event listeners for buttons with user-controlled data (avoids onclick XSS)
+                const msgBtn = document.getElementById('modal-msg-seller-btn');
+                if (msgBtn) {
+                    msgBtn.addEventListener('click', () => messageSeller(
+                        orderId,
+                        order.userId || '',
+                        order.sellerName || 'Seller',
+                        order.title || 'Order Item'
+                    ));
+                }
+                const disputeBtn = document.getElementById('modal-dispute-btn');
+                if (disputeBtn) {
+                    disputeBtn.addEventListener('click', () => openDisputeModal(orderId, order.userId || ''));
+                }
+
                 // Initialize star rating after modal is shown
                 setTimeout(() => {
                     initializeStarRating();
@@ -958,9 +982,11 @@
         }
 
         let disputeOrderId = null;
+        let disputeSellerId = null;
 
-        function openDisputeModal(orderId) {
+        function openDisputeModal(orderId, sellerId) {
             disputeOrderId = orderId;
+            disputeSellerId = sellerId || null;
             document.getElementById('disputeType').value = '';
             document.getElementById('disputeDescription').value = '';
             document.getElementById('disputeModal').classList.add('active');
@@ -968,6 +994,7 @@
 
         function closeDisputeModal() {
             disputeOrderId = null;
+            disputeSellerId = null;
             document.getElementById('disputeModal').classList.remove('active');
         }
 
@@ -988,6 +1015,7 @@
 
                 await db.collection('disputes').add({
                     productId: disputeOrderId,
+                    sellerId: disputeSellerId,
                     buyerId: user.uid,
                     buyerEmail: user.email,
                     issueType,

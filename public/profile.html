@@ -25,7 +25,7 @@
                     <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='index.html'">Home</button>
                 </span>
                 <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
-                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
+                <button class="top-bar-btn" onclick="window.location.href='messages.html'">Chats</button>
             </div>
             <div>
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
@@ -271,8 +271,9 @@
                     `;
                 } else {
                     actionButtons.innerHTML = `
-                        <button class="btn btn-primary" id="contact-seller-btn" onclick="contactSeller('${userId}', '${displayName.replace(/'/g, "\\'")}')">💬 Message Seller</button>
+                        <button class="btn btn-primary" id="contact-seller-btn">💬 Message Seller</button>
                     `;
+                    document.getElementById('contact-seller-btn').addEventListener('click', () => contactSeller(userId, displayName));
                 }
 
                 displayProducts(activeProducts);
