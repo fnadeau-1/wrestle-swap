@@ -821,6 +821,32 @@ exports.shippoCreateLabel = onRequest(
           }
 
           console.log('Saved tracking info to Firestore for product:', labelProductId);
+
+          // Notify buyer — label is purchased which means shipping is imminent
+          try {
+            const productSnap2 = await db.collection('products').doc(labelProductId).get();
+            if (productSnap2.exists) {
+              const pdata = productSnap2.data();
+              if (pdata.buyerId) {
+                await createNotification(pdata.buyerId, {
+                  icon: '📦',
+                  message: `Your "${pdata.title || 'item'}" is being prepared for shipment. Tracking: ${transaction.tracking_number || 'pending'}`,
+                  link: 'my-orders.html',
+                }, `${labelProductId}_label_created_buyer`);
+                emails.init(sendgridSecret.value());
+                const buyerEmail = await getUserEmail(pdata.buyerId);
+                await emails.sendTrackingToBuyer(buyerEmail, {
+                  productName: pdata.title || 'your item',
+                  trackingNumber: transaction.tracking_number || '',
+                  trackingUrl: transaction.tracking_url_provider || null,
+                  carrier: carrier || null,
+                });
+              }
+            }
+          } catch (notifyErr) {
+            console.error('Failed to notify buyer after label creation:', notifyErr.message);
+          }
+
           return res.status(200).json({ ...transaction, carrier });
         } catch (saveErr) {
           console.error('Failed to save tracking to Firestore:', saveErr.message);
@@ -1406,7 +1432,7 @@ exports.checkOverdueOrders = onSchedule(
 
     const reminderOrders = reminderSnap.docs.filter(doc => {
       const d = doc.data();
-      return !d.cancelled && !d.cancelledAt && !d.trackingNumber && !d.shipReminderSent;
+      return !d.cancelled && !d.cancelledAt && !d.shipped && !d.shipReminderSent;
     });
 
     console.log(`7-day reminders: ${reminderOrders.length} orders`);
@@ -1438,10 +1464,12 @@ exports.checkOverdueOrders = onSchedule(
       .where('soldTimestamp', '<=', tenDaysAgo)
       .get();
 
-    // Filter in JS: exclude already-cancelled and orders that have a tracking number
+    // Filter in JS: exclude already-cancelled and orders that haven't been marked shipped.
+    // Use d.shipped (set by markAsShipped) — not trackingNumber, which is saved when a label
+    // is purchased but before the item is actually handed to the carrier.
     const overdueOrders = snapshot.docs.filter(doc => {
       const d = doc.data();
-      return !d.cancelled && !d.cancelledAt && !d.trackingNumber;
+      return !d.cancelled && !d.cancelledAt && !d.shipped;
     });
 
     console.log(`Found ${overdueOrders.length} overdue unshipped orders`);
@@ -1796,6 +1824,13 @@ exports.markAsShipped = onRequest(
         link: 'my-orders.html',
       }, `${productId}_shipped_buyer`);
 
+      // In-app notification back to seller confirming the record was saved
+      await createNotification(decodedToken.uid, {
+        icon: '✅',
+        message: `Shipment recorded for "${product.title || 'your item'}". Buyer has been notified.`,
+        link: 'listings-manager.html',
+      }, `${productId}_shipped_seller`);
+
       // Send tracking email to buyer
       try {
         emails.init(sendgridSecret.value());
@@ -2040,7 +2075,39 @@ exports.shippoWebhook = onRequest(
     // Always acknowledge quickly so Shippo doesn't retry
     res.status(200).send('OK');
 
-    if (!trackingNumber || status !== 'DELIVERED') return;
+    if (!trackingNumber) return;
+
+    // For intermediate statuses send a silent in-app ping (no email — avoid spam)
+    const TRANSIT_STATUSES = ['PRE_TRANSIT', 'TRANSIT', 'OUT_FOR_DELIVERY'];
+    if (status !== 'DELIVERED') {
+      if (!TRANSIT_STATUSES.includes(status)) return;
+      try {
+        const tSnap = await db.collection('products')
+          .where('trackingNumber', '==', trackingNumber)
+          .where('sold', '==', true)
+          .limit(1)
+          .get();
+        if (!tSnap.empty) {
+          const tProduct = tSnap.docs[0].data();
+          const statusMessages = {
+            PRE_TRANSIT:      'A shipping label has been created for your order.',
+            TRANSIT:          'Your order is in transit and on its way!',
+            OUT_FOR_DELIVERY: 'Your order is out for delivery today!',
+          };
+          const icon = status === 'OUT_FOR_DELIVERY' ? '🚚' : '📦';
+          if (tProduct.buyerId && statusMessages[status]) {
+            await createNotification(tProduct.buyerId, {
+              icon,
+              message: `"${tProduct.title || 'Your item'}": ${statusMessages[status]}`,
+              link: 'my-orders.html',
+            });
+          }
+        }
+      } catch (transitErr) {
+        console.error('Shippo webhook transit notification error:', transitErr.message);
+      }
+      return;
+    }
 
     try {
       // Find the product with this tracking number that isn't already marked delivered
@@ -2145,6 +2212,20 @@ exports.shippoWebhook = onRequest(
       } catch (emailErr) {
         console.error('Email error (shippoWebhook):', emailErr.message);
       }
+
+      // In-app notifications (matches confirmDelivery — idempotency keys prevent dupes)
+      await Promise.all([
+        createNotification(product.userId, {
+          icon: '💰',
+          message: `Delivery confirmed! Payment for "${product.title || 'your item'}" is on its way.`,
+          link: 'listings-manager.html',
+        }, `${productId}_delivered_seller`),
+        createNotification(product.buyerId, {
+          icon: '⭐',
+          message: `Your "${product.title || 'item'}" was delivered! Don't forget to leave a review.`,
+          link: 'my-orders.html',
+        }, `${productId}_delivered_buyer`),
+      ]);
 
       console.log(`Shippo webhook: delivery confirmed for product ${productDoc.id}`);
     } catch (err) {

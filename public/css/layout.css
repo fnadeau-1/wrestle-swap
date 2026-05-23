@@ -78,6 +78,14 @@
     gap: 20px;
 }
 
+@keyframes logo-slam {
+    0%   { transform: scale(1)    skewX(0deg); }
+    20%  { transform: scale(1.08) skewX(-2deg); filter: brightness(1.25); }
+    50%  { transform: scale(0.97) skewX(0.8deg); }
+    75%  { transform: scale(1.02) skewX(0deg); }
+    100% { transform: scale(1)    skewX(0deg); filter: brightness(1); }
+}
+
 .logo {
     font-family: 'Impact', 'Arial Narrow', Arial, sans-serif;
     font-size: 0;
@@ -87,7 +95,8 @@
     flex-direction: column;
     line-height: 1;
     letter-spacing: 0.07em;
-    transition: opacity 0.15s;
+    will-change: transform;
+    cursor: pointer;
 }
 
 .logo::before {
@@ -102,8 +111,9 @@
     display: block;
 }
 
-.logo:hover {
-    opacity: 0.75;
+.logo:hover,
+.logo.logo--pop {
+    animation: logo-slam 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
     text-decoration: none;
 }
 

@@ -140,3 +140,19 @@ if (document.readyState === 'loading') {
 } else {
     loadAnnouncement();
 }
+
+// Spacebar triggers the logo slam animation
+document.addEventListener('keydown', (e) => {
+    if (e.key !== ' ') return;
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement?.isContentEditable) return;
+
+    const logo = document.querySelector('.logo');
+    if (!logo) return;
+
+    e.preventDefault(); // stop page scroll
+    logo.classList.remove('logo--pop');
+    void logo.offsetWidth;  // force reflow so animation restarts
+    logo.classList.add('logo--pop');
+    setTimeout(() => logo.classList.remove('logo--pop'), 460);
+});
