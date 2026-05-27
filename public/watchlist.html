@@ -128,6 +128,15 @@
         let watchlistItems = [];
         let currentUser = null;
 
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function safeUrl(url) {
+            if (!url) return '';
+            const u = String(url);
+            return (u.startsWith('https://') || u.startsWith('http://')) ? u : '';
+        }
+
         // Update header with user info and dropdown
         onAuthStateChanged(auth, async (user) => {
             const menuWrapper = document.getElementById('user-menu-wrapper');
@@ -138,7 +147,7 @@
                 
                 menuWrapper.innerHTML = `
                     <div class="user-menu-container">
-                        <button class="top-bar-btn">Hi, ${firstName}!</button>
+                        <button class="top-bar-btn">Hi, ${esc(firstName)}!</button>
                         <div class="dropdown-menu">
                             <a href="watchlist.html">Watchlist</a>
                             <a href="my-orders.html">Your Orders</a>
@@ -242,8 +251,9 @@
             container.style.display = 'grid';
 
             container.innerHTML = watchlistItems.map(item => {
-                const imageDisplay = item.images && item.images.length > 0
-                    ? `<img src="${item.images[0]}" alt="${item.title}">`
+                const imgSrc = safeUrl(item.images && item.images[0]);
+                const imageDisplay = imgSrc
+                    ? `<img src="${imgSrc}" alt="${esc(item.title)}">`
                     : '📦';
 
                 const statusClass = item.sold ? 'status-sold' : 'status-available';
@@ -254,10 +264,10 @@
                         <button class="remove-btn" onclick="window.removeItem('${item.id}')">✕</button>
                         <div class="item-image">${imageDisplay}</div>
                         <div class="item-details">
-                            <div class="item-title" onclick="window.location.href='productdetail.html?id=${item.id}'">${item.title}</div>
-                            <div class="item-condition">${item.condition}</div>
+                            <div class="item-title" onclick="window.location.href='productdetail.html?id=${item.id}'">${esc(item.title)}</div>
+                            <div class="item-condition">${esc(item.condition)}</div>
                             <div class="item-price">$${item.price.toFixed(2)}</div>
-                            <div class="item-seller">Seller: ${item.sellerName}</div>
+                            <div class="item-seller">Seller: ${esc(item.sellerName)}</div>
                             <div class="item-status ${statusClass}">${statusText}</div>
                             <div class="item-actions">
                                 <button class="action-btn buy-btn" onclick="window.location.href='productdetail.html?id=${item.id}'" ${item.sold ? 'disabled' : ''}>

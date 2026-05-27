@@ -552,25 +552,26 @@
 
         function renderProductSlice(products) {
             return products.map(product => {
-                const imageDisplay = product.images && product.images.length > 0
-                    ? `<img src="${product.images[0]}" alt="${product.name}" loading="lazy">`
+                const imgSrc = safeUrl(product.images && product.images[0]);
+                const imageDisplay = imgSrc
+                    ? `<img src="${imgSrc}" alt="${esc(product.name)}" loading="lazy">`
                     : product.icon;
                 const soldClass = product.sold ? 'sold' : '';
                 const soldBadge = product.sold ? '<div class="sold-badge">SOLD</div>' : '';
                 const inWatchlist = userWatchlist.has(product.id);
                 const heartHtml = `<button class="heart-btn" onclick="event.stopPropagation(); toggleWatchlistCard('${product.id}', this)" title="${inWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}">${inWatchlist ? '❤️' : '🤍'}</button>`;
                 const trustBadge = product.sellerRating >= 4.5 ? '<span class="trust-badge">Top Seller</span>' : '';
-                const locationText = product.zipCode ? `· Ships from ${product.zipCode}` : '';
+                const locationText = product.zipCode ? `· Ships from ${esc(product.zipCode)}` : '';
                 return `
-                    <div class="product-item ${soldClass}" onclick="window.location.href='productdetail.html?id=${product.id}'">
+                    <div class="product-item ${soldClass}" onclick="window.location.href='productdetail.html?id=${esc(product.id)}'">
                         ${soldBadge}
                         ${heartHtml}
                         <div class="product-img">${imageDisplay}</div>
                         <div class="product-details">
-                            <div class="product-name">${product.name}</div>
+                            <div class="product-name">${esc(product.name)}</div>
                             <div class="product-price">$${product.price.toFixed(2)}</div>
                             <div class="product-condition">${formatCondition(product.condition)}</div>
-                            <div class="seller-trust">${trustBadge}<span>${product.sellerName}${locationText}</span></div>
+                            <div class="seller-trust">${trustBadge}<span>${esc(product.sellerName)}${locationText}</span></div>
                         </div>
                     </div>
                 `;
@@ -618,6 +619,14 @@
         }
 
         // Format condition text
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function safeUrl(url) {
+            if (!url) return '';
+            const u = String(url);
+            return (u.startsWith('https://') || u.startsWith('http://')) ? u : '';
+        }
         function formatCondition(condition) {
             const conditions = {
                 'new': 'New',
@@ -625,7 +634,7 @@
                 'likenew': 'Like New',
                 'fair': 'Fair'
             };
-            return conditions[condition] || condition;
+            return conditions[condition] || esc(condition);
         }
     </script>
     <script type="module" src="js/site-notice.js"></script>

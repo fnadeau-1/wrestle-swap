@@ -171,7 +171,7 @@
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
                 menuWrapper.innerHTML = `
                     <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${escapeHtml(firstName)}!</button>
                         <div class="dropdown-menu">
                             <a href="watchlist.html">Watchlist</a>
                             <a href="my-orders.html">Your Orders</a>
@@ -508,7 +508,7 @@
 
             if (isImageURL(img)) {
                 mainImageEl.className = 'main-image';
-                mainImageEl.innerHTML = `<img src="${img}" alt="${currentProduct.name}">`;
+                mainImageEl.innerHTML = `<img src="${escapeHtml(img)}" alt="${escapeHtml(currentProduct.name)}">`;
             } else {
                 mainImageEl.className = 'main-image emoji';
                 mainImageEl.textContent = img;

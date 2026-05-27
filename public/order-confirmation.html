@@ -104,6 +104,10 @@
     </div>
 
     <script>
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         // Get order ID from URL parameter
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('id');
@@ -216,15 +220,15 @@
             );
 
             const imageHtml = isImageUrl
-                ? `<img src="${product.image}" alt="${product.name}">`
-                : product.image || '📦';
+                ? `<img src="${esc(product.image)}" alt="${esc(product.name)}">`
+                : '📦';
 
             orderItemsDiv.innerHTML = `
                 <div class="order-item">
                     <div class="item-image">${imageHtml}</div>
                     <div class="item-details">
-                        <div class="item-name">${product.name}</div>
-                        ${product.condition ? `<div class="item-condition">Condition: ${product.condition}</div>` : ''}
+                        <div class="item-name">${esc(product.name)}</div>
+                        ${product.condition ? `<div class="item-condition">Condition: ${esc(product.condition)}</div>` : ''}
                         <div class="item-price">$${(product.price || 0).toFixed(2)}</div>
                     </div>
                 </div>

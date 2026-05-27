@@ -32,6 +32,7 @@
     <div class="main-header">
         <div class="header-content">
             <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
+            <div id="user-menu-wrapper"></div>
         </div>
     </div>
 
@@ -213,7 +214,7 @@
             const menuWrapper = document.getElementById('user-menu-wrapper');
 
             if (!user) {
-                menuWrapper.innerHTML = `
+                if (menuWrapper) menuWrapper.innerHTML = `
                     <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
                 `;
                 alert('Please sign in to list items');
@@ -223,10 +224,11 @@
                 console.log('User logged in:', user.email);
 
                 // Update greeting with dropdown
+                const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                menuWrapper.innerHTML = `
+                if (menuWrapper) menuWrapper.innerHTML = `
                     <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${esc(firstName)}!</button>
                         <div class="dropdown-menu">
                             <a href="watchlist.html">Watchlist</a>
                             <a href="my-orders.html">Your Orders</a>
@@ -291,7 +293,13 @@
             box.style.display = 'block';
             box.textContent = 'Loading price data...';
             try {
-                const res = await fetch(`${PRICE_SUGGESTIONS_URL}?category=${encodeURIComponent(category)}`);
+                const user = typeof auth !== 'undefined' && auth.currentUser;
+                const headers = {};
+                if (user) {
+                    const token = await user.getIdToken();
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                const res = await fetch(`${PRICE_SUGGESTIONS_URL}?category=${encodeURIComponent(category)}`, { headers });
                 if (!res.ok) throw new Error('fetch failed');
                 const data = await res.json();
                 if (data.count === 0) {

@@ -373,6 +373,15 @@
             }
         }
 
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function safeUrl(url) {
+            if (!url) return '';
+            const u = String(url);
+            return (u.startsWith('https://') || u.startsWith('http://')) ? u : '';
+        }
+
         function displayProducts(products) {
             const container = document.getElementById('selling-items');
             const emptyState = document.getElementById('empty-selling');
@@ -387,17 +396,18 @@
             emptyState.style.display = 'none';
 
             container.innerHTML = products.map(product => {
-                const imageHTML = product.images && product.images.length > 0
-                    ? `<img src="${product.images[0]}" alt="${product.title}">`
+                const imgSrc = safeUrl(product.images && product.images[0]);
+                const imageHTML = imgSrc
+                    ? `<img src="${imgSrc}" alt="${esc(product.title)}">`
                     : '<div class="item-image">📦</div>';
 
                 return `
-                    <div class="item-card" onclick="window.location.href='productdetail.html?id=${product.id}'">
+                    <div class="item-card" onclick="window.location.href='productdetail.html?id=${esc(product.id)}'">
                         <div class="item-image">${imageHTML}</div>
                         <div class="item-details">
-                            <div class="item-name">${product.title || 'Untitled'}</div>
+                            <div class="item-name">${esc(product.title) || 'Untitled'}</div>
                             <div class="item-price">$${parseFloat(product.price || 0).toFixed(2)}</div>
-                            <span class="item-condition">${product.condition || 'New'}</span>
+                            <span class="item-condition">${esc(product.condition) || 'New'}</span>
                         </div>
                     </div>
                 `;
@@ -436,14 +446,14 @@
                             <div class="reviewer-info">
                                 <div class="reviewer-avatar">${initial}</div>
                                 <div>
-                                    <div class="reviewer-name">${review.buyerName || 'Anonymous'}</div>
+                                    <div class="reviewer-name">${esc(review.buyerName) || 'Anonymous'}</div>
                                     <div class="review-date">${reviewDate}</div>
                                 </div>
                             </div>
                             <div class="review-stars">${stars}</div>
                         </div>
-                        ${review.text ? `<p class="review-text">${review.text}</p>` : ''}
-                        ${review.productName ? `<p class="review-product">Product: ${review.productName}</p>` : ''}
+                        ${review.text ? `<p class="review-text">${esc(review.text)}</p>` : ''}
+                        ${review.productName ? `<p class="review-product">Product: ${esc(review.productName)}</p>` : ''}
                     </div>
                 `;
             }).join('');

@@ -15,6 +15,13 @@
 
     <link rel="stylesheet" href="css/listings-manager.css">
     <link rel="icon" href="favicon.png" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        @media (max-width: 700px) {
+            .stats-charts-row { grid-template-columns: 1fr !important; }
+            .stats-bottom-row { grid-template-columns: 1fr !important; }
+        }
+    </style>
 </head>
 <body>
     <!-- Top Bar -->
@@ -43,6 +50,12 @@
         <button class="home-btn" onclick="window.location.href='index.html'">Home</button>
     </header>
 
+    <div style="display:flex;gap:0;border-bottom:2px solid #e5e5e5;margin:16px 0 20px;">
+        <button id="tab-listings" onclick="switchTab('listings')" style="padding:12px 24px;border:none;background:none;cursor:pointer;font-size:15px;font-weight:600;color:#c41e3a;border-bottom:3px solid #c41e3a;margin-bottom:-2px;font-family:inherit;transition:all 0.15s;">My Listings</button>
+        <button id="tab-stats" onclick="switchTab('stats')" style="padding:12px 24px;border:none;background:none;cursor:pointer;font-size:15px;font-weight:600;color:#666;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:inherit;transition:all 0.15s;">Statistics</button>
+    </div>
+
+    <div id="listings-view">
         <div class="stats-bar">
             <div class="stat-card">
                 <div class="stat-label">Total Listings</div>
@@ -98,7 +111,158 @@
         <div id="errorState" style="display:none;text-align:center;padding:60px 20px;">
             <p style="color:#dc2626;font-size:1rem;">Something went wrong. Please refresh.</p>
         </div>
-    </div>
+    </div><!-- end listings-view -->
+
+    <!-- Statistics View -->
+    <div id="stats-view" style="display:none;padding-bottom:40px;">
+
+        <div id="stats-loading" style="text-align:center;padding:60px 20px;color:#707070;">
+            <div class="spinner"></div>
+            <p>Crunching your numbers...</p>
+        </div>
+
+        <div id="stats-content" style="display:none;">
+
+            <!-- Banner -->
+            <div style="background:linear-gradient(135deg,#c41e3a,#8b0000);color:#fff;border-radius:12px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;position:relative;">
+                <div style="position:relative;z-index:1;">
+                    <div style="font-size:11px;font-weight:700;opacity:0.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Seller Dashboard</div>
+                    <div id="stats-banner-msg" style="font-size:19px;font-weight:700;line-height:1.4;max-width:420px;"></div>
+                </div>
+                <div style="font-size:72px;opacity:0.12;position:absolute;right:20px;top:50%;transform:translateY(-50%);pointer-events:none;">🏆</div>
+            </div>
+
+            <!-- Hero cards -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;">
+                <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:18px;border-top:4px solid #c41e3a;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">This Month</div>
+                    <div id="s-month-earnings" style="font-size:26px;font-weight:800;color:#1a1a1a;margin-bottom:4px;">$0.00</div>
+                    <div id="s-month-change" style="font-size:12px;color:#888;"></div>
+                </div>
+                <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:18px;border-top:4px solid #3b82f6;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Sold This Month</div>
+                    <div id="s-month-count" style="font-size:26px;font-weight:800;color:#1a1a1a;margin-bottom:4px;">0</div>
+                    <div style="font-size:12px;color:#888;">items</div>
+                </div>
+                <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:18px;border-top:4px solid #059669;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">All-Time Earnings</div>
+                    <div id="s-alltime-earnings" style="font-size:26px;font-weight:800;color:#059669;margin-bottom:4px;">$0.00</div>
+                    <div id="s-alltime-count" style="font-size:12px;color:#888;"></div>
+                </div>
+                <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:18px;border-top:4px solid #f59e0b;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Active Listings</div>
+                    <div id="s-active-count" style="font-size:26px;font-weight:800;color:#1a1a1a;margin-bottom:4px;">0</div>
+                    <div style="font-size:12px;color:#888;">for sale now</div>
+                </div>
+            </div>
+
+            <!-- Annual projection -->
+            <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:12px;padding:20px 24px;margin-bottom:22px;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+                    <div>
+                        <div style="font-size:11px;color:#059669;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Annual Projection</div>
+                        <div style="font-size:13px;color:#444;margin-bottom:4px;">At your current pace, you'll earn</div>
+                        <div id="s-projection-amt" style="font-size:34px;font-weight:800;color:#059669;line-height:1.1;margin-bottom:6px;">$0</div>
+                        <div style="font-size:13px;color:#444;">by the end of <strong id="s-projection-year">2026</strong></div>
+                    </div>
+                    <div style="min-width:180px;flex:1;max-width:260px;padding-top:4px;">
+                        <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:6px;">
+                            <span>Year progress</span>
+                            <span id="s-year-pct" style="font-weight:600;color:#059669;">0%</span>
+                        </div>
+                        <div style="background:#d1fae5;border-radius:999px;height:10px;overflow:hidden;">
+                            <div id="s-year-progress" style="height:100%;border-radius:999px;background:linear-gradient(90deg,#059669,#10b981);width:0%;transition:width 1.2s ease;"></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-top:6px;">
+                            <span>Jan</span><span>Jun</span><span>Dec</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Goal -->
+            <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:20px;margin-bottom:22px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Monthly Goal</div>
+                        <div id="goal-month-label" style="font-size:12px;color:#888;">Set a target and track your progress</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:13px;color:#555;font-weight:600;">$</span>
+                        <input id="goal-input" type="number" min="0" step="10" placeholder="500" style="width:85px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-weight:600;outline:none;">
+                        <button onclick="saveGoal()" style="padding:7px 14px;background:#c41e3a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Set</button>
+                    </div>
+                </div>
+                <div id="goal-progress-wrap" style="display:none;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:6px;">
+                        <span id="goal-progress-label">$0 of $0</span>
+                        <span id="goal-pct-label" style="font-weight:700;color:#c41e3a;">0%</span>
+                    </div>
+                    <div style="background:#f3f4f6;border-radius:999px;height:14px;overflow:hidden;">
+                        <div id="goal-bar" style="height:100%;border-radius:999px;background:linear-gradient(90deg,#c41e3a,#f59e0b);width:0%;transition:width 1.2s ease;"></div>
+                    </div>
+                    <div id="goal-msg" style="margin-top:10px;font-size:13px;color:#555;line-height:1.5;"></div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="stats-charts-row" style="display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:20px;">
+                <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Monthly Earnings</div>
+                    <div style="font-size:12px;color:#888;margin-bottom:16px;">Last 6 months</div>
+                    <canvas id="earningsChart" style="max-height:200px;"></canvas>
+                </div>
+                <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">By Category</div>
+                    <div style="font-size:12px;color:#888;margin-bottom:16px;">Sales breakdown</div>
+                    <canvas id="categoryChart" style="max-height:180px;"></canvas>
+                    <div id="category-legend" style="margin-top:12px;font-size:12px;"></div>
+                </div>
+            </div>
+
+            <!-- Month comparison -->
+            <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Month Comparison</div>
+                <div style="font-size:12px;color:#888;margin-bottom:18px;">This month vs last month</div>
+                <div id="s-month-comparison" style="display:flex;flex-direction:column;gap:18px;"></div>
+            </div>
+
+            <!-- Recent sales + Achievements -->
+            <div class="stats-bottom-row" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;">
+                <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:16px;">Recent Sales</div>
+                    <div id="s-recent-sales"></div>
+                </div>
+                <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Achievements</div>
+                    <div style="font-size:12px;color:#888;margin-bottom:14px;">Keep going to unlock more!</div>
+                    <div id="s-milestones" style="display:flex;flex-direction:column;gap:8px;"></div>
+                </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+                    <span style="font-size:18px;">🏆</span>
+                    <div style="font-size:15px;font-weight:700;color:#1a1a1a;">Top Sellers This Month</div>
+                </div>
+                <div style="font-size:12px;color:#888;margin-bottom:16px;">See how you rank against other sellers</div>
+                <div id="leaderboard-list">
+                    <div style="text-align:center;padding:16px;color:#aaa;font-size:13px;">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Tips to Sell More</div>
+                <div style="font-size:12px;color:#888;margin-bottom:14px;">Actionable advice for your store</div>
+                <div id="s-tips" style="display:flex;flex-direction:column;gap:10px;"></div>
+            </div>
+
+        </div><!-- end stats-content -->
+    </div><!-- end stats-view -->
+
+</div><!-- end container -->
 
     <!-- Edit Modal -->
     <div class="modal" id="editModal">
@@ -232,6 +396,15 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function safeUrl(url) {
+            if (!url) return '';
+            const u = String(url);
+            return (u.startsWith('https://') || u.startsWith('http://')) ? u : '';
+        }
+
         // ============================================
         // USER-SPECIFIC LISTINGS
         // ============================================
@@ -323,8 +496,9 @@
                 statusText = 'Draft';
             }
             
-            const imageDisplay = listing.images && listing.images.length > 0
-                ? `<img src="${listing.images[0]}" alt="${listing.title}">`
+            const _imgSrc = safeUrl(listing.images && listing.images[0]);
+            const imageDisplay = _imgSrc
+                ? `<img src="${_imgSrc}" alt="${esc(listing.title)}">`
                 : '<span>📦 No Image</span>';
 
             // For sold items, create fulfillment page link
@@ -399,7 +573,7 @@
                         <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
                     <div class="listing-content">
-                        <h3 class="listing-title">${listing.title || 'Untitled'}</h3>
+                        <h3 class="listing-title">${esc(listing.title) || 'Untitled'}</h3>
                         <div class="listing-price">$${parseFloat(listing.price || 0).toFixed(2)}</div>
                         
                         <div class="listing-details">
@@ -465,7 +639,7 @@
                     return `<div style="background:${bg};border-left:5px solid ${border};border-radius:6px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;">
                         <span style="font-size:22px;flex-shrink:0;">${icon}</span>
                         <div style="flex:1;">
-                            <strong style="font-size:14px;color:#1a1a1a;">${urgent ? 'ACTION REQUIRED — ' : ''}Ship "${l.title || 'your item'}"</strong>
+                            <strong style="font-size:14px;color:#1a1a1a;">${urgent ? 'ACTION REQUIRED — ' : ''}Ship "${esc(l.title) || 'your item'}"</strong>
                             <p style="margin:4px 0 0;font-size:13px;color:#555;line-height:1.5;">${msg} <a href="seller-order-fulfillment.html?productId=${l.id}" style="color:#c41e3a;font-weight:600;">View order →</a></p>
                         </div>
                     </div>`;
@@ -491,6 +665,10 @@
                     .reduce((sum, l) => sum + ((l.sellerReceivesCents || 0) / 100), 0),
             };
             updateStatsDisplay(stats);
+
+            // Cache for stats tab
+            _allListings = listings;
+            _statsLoaded = false;
         }
 
         function updateStatsDisplay(stats) {
@@ -823,7 +1001,7 @@
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
                 menuWrapper.innerHTML = `
                     <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${esc(firstName)}!</button>
                         <div class="dropdown-menu">
                             <a href="watchlist.html">Watchlist</a>
                             <a href="my-orders.html">Your Orders</a>
@@ -851,6 +1029,489 @@
                 `;
             }
         });
+
+        // ============================================
+        // TAB NAVIGATION & STATISTICS
+        // ============================================
+
+        let _statsLoaded = false;
+        let _allListings = [];
+        let _earningsChartInst = null;
+        let _categoryChartInst = null;
+
+        function switchTab(tab) {
+            const listingsView = document.getElementById('listings-view');
+            const statsView = document.getElementById('stats-view');
+            const tabListings = document.getElementById('tab-listings');
+            const tabStats = document.getElementById('tab-stats');
+
+            if (tab === 'listings') {
+                listingsView.style.display = 'block';
+                statsView.style.display = 'none';
+                tabListings.style.color = '#c41e3a';
+                tabListings.style.borderBottomColor = '#c41e3a';
+                tabStats.style.color = '#666';
+                tabStats.style.borderBottomColor = 'transparent';
+            } else {
+                listingsView.style.display = 'none';
+                statsView.style.display = 'block';
+                tabListings.style.color = '#666';
+                tabListings.style.borderBottomColor = 'transparent';
+                tabStats.style.color = '#c41e3a';
+                tabStats.style.borderBottomColor = '#c41e3a';
+
+                if (!_statsLoaded) {
+                    if (_allListings.length > 0) {
+                        loadStats(_allListings);
+                    } else {
+                        document.getElementById('stats-loading').style.display = 'none';
+                        document.getElementById('stats-content').style.display = 'block';
+                        renderStatsView({
+                            thisMonthEarnings: 0, thisMonthCount: 0,
+                            lastMonthEarnings: 0, lastMonthCount: 0,
+                            allTimeEarnings: 0, allTimeSoldCount: 0,
+                            activeCount: 0, monthlyData: [], categoryMap: {},
+                            yearProjection: 0, yearPct: 0,
+                            recentSales: [], listings: [],
+                        });
+                    }
+                }
+            }
+        }
+
+        function loadStats(listings) {
+            _statsLoaded = true;
+            document.getElementById('stats-loading').style.display = 'none';
+
+            const now = new Date();
+            const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+            const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+
+            const soldListings = listings.filter(l => l.sold && !l.cancelled);
+
+            const thisMonthSales = soldListings.filter(l => (l.soldTimestamp || 0) >= thisMonthStart);
+            const thisMonthEarnings = thisMonthSales.reduce((sum, l) => sum + ((l.sellerReceivesCents || 0) / 100), 0);
+
+            const lastMonthSales = soldListings.filter(l => (l.soldTimestamp || 0) >= lastMonthStart && (l.soldTimestamp || 0) < thisMonthStart);
+            const lastMonthEarnings = lastMonthSales.reduce((sum, l) => sum + ((l.sellerReceivesCents || 0) / 100), 0);
+
+            const allTimeEarnings = soldListings.reduce((sum, l) => sum + ((l.sellerReceivesCents || 0) / 100), 0);
+            const activeCount = listings.filter(l => l.active && !l.sold && !l.cancelled).length;
+
+            // Last 6 months bar chart data
+            const monthlyData = [];
+            for (let i = 5; i >= 0; i--) {
+                const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1).getTime();
+                const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1).getTime();
+                const label = new Date(now.getFullYear(), now.getMonth() - i, 1)
+                    .toLocaleDateString('en-US', { month: 'short' });
+                const earnings = soldListings
+                    .filter(l => (l.soldTimestamp || 0) >= mStart && (l.soldTimestamp || 0) < mEnd)
+                    .reduce((sum, l) => sum + ((l.sellerReceivesCents || 0) / 100), 0);
+                monthlyData.push({ label, earnings });
+            }
+
+            // Category breakdown
+            const categoryMap = {};
+            soldListings.forEach(l => {
+                const cat = l.category || 'Other';
+                categoryMap[cat] = (categoryMap[cat] || 0) + ((l.sellerReceivesCents || 0) / 100);
+            });
+
+            // Annual projection based on all-time daily pace
+            const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+            const dayOfYear = Math.max(1, Math.floor((now.getTime() - startOfYear) / (1000 * 60 * 60 * 24)));
+            const daysInYear = now.getFullYear() % 4 === 0 ? 366 : 365;
+            const yearPct = Math.round((dayOfYear / daysInYear) * 100);
+            const yearEarnedSoFar = soldListings
+                .filter(l => (l.soldTimestamp || 0) >= startOfYear)
+                .reduce((sum, l) => sum + ((l.sellerReceivesCents || 0) / 100), 0);
+            const yearProjection = yearEarnedSoFar > 0 ? (yearEarnedSoFar / dayOfYear) * daysInYear : 0;
+
+            const recentSales = [...soldListings]
+                .sort((a, b) => (b.soldTimestamp || 0) - (a.soldTimestamp || 0))
+                .slice(0, 5);
+
+            renderStatsView({
+                thisMonthEarnings, thisMonthCount: thisMonthSales.length,
+                lastMonthEarnings, lastMonthCount: lastMonthSales.length,
+                allTimeEarnings, allTimeSoldCount: soldListings.length,
+                activeCount, monthlyData, categoryMap,
+                yearProjection, yearPct,
+                recentSales, listings,
+            });
+
+            document.getElementById('stats-content').style.display = 'block';
+
+            // Leaderboard loads async after render
+            const user = auth.currentUser;
+            loadLeaderboard(user ? user.uid : null);
+        }
+
+        function renderStatsView(data) {
+            const {
+                thisMonthEarnings, thisMonthCount,
+                lastMonthEarnings, lastMonthCount,
+                allTimeEarnings, allTimeSoldCount,
+                activeCount, monthlyData, categoryMap,
+                yearProjection, yearPct,
+                recentSales, listings,
+            } = data;
+
+            // Banner
+            const bannerMsgs = [
+                allTimeSoldCount > 0 && thisMonthCount > 0
+                    ? `You've sold ${thisMonthCount} item${thisMonthCount !== 1 ? 's' : ''} this month — keep it up!`
+                    : null,
+                allTimeSoldCount > 0
+                    ? `${allTimeSoldCount} item${allTimeSoldCount !== 1 ? 's' : ''} sold all time. You're building something great!`
+                    : null,
+                activeCount > 0
+                    ? `${activeCount} listing${activeCount !== 1 ? 's' : ''} live and waiting for buyers.`
+                    : null,
+                'Great sellers ship fast — buyers love it!',
+            ].filter(Boolean);
+            document.getElementById('stats-banner-msg').textContent = bannerMsgs[0] || 'Welcome to your seller dashboard!';
+
+            // Hero cards
+            document.getElementById('s-month-earnings').textContent = '$' + thisMonthEarnings.toFixed(2);
+            document.getElementById('s-month-count').textContent = thisMonthCount;
+            document.getElementById('s-alltime-earnings').textContent = '$' + allTimeEarnings.toFixed(2);
+            document.getElementById('s-alltime-count').textContent = allTimeSoldCount + ' item' + (allTimeSoldCount !== 1 ? 's' : '') + ' sold';
+            document.getElementById('s-active-count').textContent = activeCount;
+
+            // Month change
+            const changeEl = document.getElementById('s-month-change');
+            if (lastMonthEarnings > 0) {
+                const pct = Math.abs(((thisMonthEarnings - lastMonthEarnings) / lastMonthEarnings) * 100).toFixed(0);
+                const isUp = thisMonthEarnings >= lastMonthEarnings;
+                changeEl.innerHTML = '<span style="color:' + (isUp ? '#059669' : '#dc2626') + ';font-weight:600;">' + (isUp ? '▲' : '▼') + ' ' + pct + '%</span> vs last month';
+            } else if (thisMonthEarnings > 0) {
+                changeEl.innerHTML = '<span style="color:#059669;font-weight:600;">First earnings this month!</span>';
+            } else {
+                changeEl.textContent = 'No sales yet this month';
+            }
+
+            // Projection
+            const fmtMoney = v => '$' + Math.round(v).toLocaleString();
+            document.getElementById('s-projection-amt').textContent = yearProjection > 0 ? fmtMoney(yearProjection) : '$—';
+            document.getElementById('s-projection-year').textContent = new Date().getFullYear();
+            document.getElementById('s-year-pct').textContent = yearPct + '% through the year';
+            setTimeout(() => { document.getElementById('s-year-progress').style.width = yearPct + '%'; }, 100);
+
+            // Month comparison bars
+            const compEl = document.getElementById('s-month-comparison');
+            const compItems = [
+                { label: 'Earnings', thisVal: thisMonthEarnings, lastVal: lastMonthEarnings, fmt: v => '$' + v.toFixed(2) },
+                { label: 'Items Sold', thisVal: thisMonthCount, lastVal: lastMonthCount, fmt: v => v + ' item' + (v !== 1 ? 's' : '') },
+            ];
+            compEl.innerHTML = compItems.map(item => {
+                const max = Math.max(item.thisVal, item.lastVal, 0.01);
+                const thisPct = Math.round((item.thisVal / max) * 100);
+                const lastPct = Math.round((item.lastVal / max) * 100);
+                return '<div>' +
+                    '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">' +
+                        '<span style="font-size:13px;font-weight:600;color:#333;">' + item.label + '</span>' +
+                        '<span style="font-size:13px;color:#888;">' + item.fmt(item.lastVal) + ' → <strong style="color:#1a1a1a;">' + item.fmt(item.thisVal) + '</strong></span>' +
+                    '</div>' +
+                    '<div style="display:flex;flex-direction:column;gap:6px;">' +
+                        '<div style="display:flex;align-items:center;gap:8px;">' +
+                            '<span style="font-size:11px;color:#888;min-width:70px;text-align:right;">Last month</span>' +
+                            '<div style="flex:1;background:#f3f4f6;border-radius:999px;height:8px;overflow:hidden;">' +
+                                '<div style="height:100%;border-radius:999px;background:#d1d5db;width:' + lastPct + '%;"></div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="display:flex;align-items:center;gap:8px;">' +
+                            '<span style="font-size:11px;color:#c41e3a;min-width:70px;text-align:right;">This month</span>' +
+                            '<div style="flex:1;background:#f3f4f6;border-radius:999px;height:8px;overflow:hidden;">' +
+                                '<div style="height:100%;border-radius:999px;background:#c41e3a;width:' + thisPct + '%;"></div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+
+            // Recent sales
+            const recentEl = document.getElementById('s-recent-sales');
+            if (recentSales.length === 0) {
+                recentEl.innerHTML = '<p style="color:#888;font-size:13px;margin:0;">No sales yet — your first sale will appear here.</p>';
+            } else {
+                recentEl.innerHTML = recentSales.map(l => {
+                    const earned = (l.sellerReceivesCents || 0) / 100;
+                    const date = l.soldTimestamp
+                        ? new Date(l.soldTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        : '—';
+                    const _rSrc = safeUrl(l.images && l.images[0]);
+                    const imgHtml = _rSrc
+                        ? '<img src="' + _rSrc + '" style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;">'
+                        : '<div style="width:40px;height:40px;border-radius:6px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📦</div>';
+                    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f5f5f5;">' +
+                        imgHtml +
+                        '<div style="flex:1;min-width:0;">' +
+                            '<div style="font-size:13px;font-weight:600;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (esc(l.title) || 'Item') + '</div>' +
+                            '<div style="font-size:12px;color:#888;">' + date + '</div>' +
+                        '</div>' +
+                        '<div style="font-size:14px;font-weight:700;color:#059669;white-space:nowrap;">+$' + earned.toFixed(2) + '</div>' +
+                    '</div>';
+                }).join('');
+            }
+
+            // Milestones
+            const milestones = [
+                { label: 'First Sale', icon: '🎉', earned: allTimeSoldCount >= 1 },
+                { label: '5 Sales', icon: '⭐', earned: allTimeSoldCount >= 5 },
+                { label: '10 Sales', icon: '🔥', earned: allTimeSoldCount >= 10 },
+                { label: '25 Sales', icon: '💪', earned: allTimeSoldCount >= 25 },
+                { label: '$100 Earned', icon: '💰', earned: allTimeEarnings >= 100 },
+                { label: '$500 Earned', icon: '💎', earned: allTimeEarnings >= 500 },
+                { label: '$1,000 Earned', icon: '🏆', earned: allTimeEarnings >= 1000 },
+                { label: '$5,000 Earned', icon: '👑', earned: allTimeEarnings >= 5000 },
+            ];
+            document.getElementById('s-milestones').innerHTML = milestones.map(m =>
+                '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:' + (m.earned ? '#f0fdf4' : '#fafafa') + ';border:1px solid ' + (m.earned ? '#bbf7d0' : '#e5e5e5') + ';opacity:' + (m.earned ? '1' : '0.55') + ';">' +
+                    '<span style="font-size:20px;">' + m.icon + '</span>' +
+                    '<div>' +
+                        '<div style="font-size:12px;font-weight:700;color:' + (m.earned ? '#059669' : '#666') + ';">' + m.label + '</div>' +
+                        '<div style="font-size:10px;color:#aaa;">' + (m.earned ? 'Unlocked!' : 'Locked') + '</div>' +
+                    '</div>' +
+                '</div>'
+            ).join('');
+
+            // Tips
+            const hasLowViews = listings.some(l => l.active && !l.sold && (l.views || 0) < 5);
+            const tips = [
+                { icon: '📸', tip: 'Clear photos sell 3x faster. Add multiple angles so buyers see exactly what they\'re getting.', show: true },
+                { icon: '📦', tip: 'Ship within 24 hours of a sale — fast shippers get better feedback and repeat buyers.', show: true },
+                { icon: '💬', tip: 'Respond to buyer messages within an hour to increase your conversion rate.', show: true },
+                { icon: '👁️', tip: 'Some of your listings have low views — try refreshing the title or adding better photos.', show: hasLowViews },
+                { icon: '🏷️', tip: 'Keep prices competitive. Check the price guide on the sell page before listing.', show: activeCount >= 3 },
+            ].filter(t => t.show).slice(0, 3);
+            document.getElementById('s-tips').innerHTML = tips.map(t =>
+                '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:8px;background:#fafafa;border:1px solid #f0f0f0;">' +
+                    '<span style="font-size:24px;flex-shrink:0;line-height:1;">' + t.icon + '</span>' +
+                    '<p style="margin:0;font-size:13px;color:#555;line-height:1.55;">' + t.tip + '</p>' +
+                '</div>'
+            ).join('');
+
+            // Charts
+            renderCharts(monthlyData, categoryMap);
+
+            // Goal tracker
+            initGoal(thisMonthEarnings);
+        }
+
+        function renderCharts(monthlyData, categoryMap) {
+            if (_earningsChartInst) { _earningsChartInst.destroy(); _earningsChartInst = null; }
+            if (_categoryChartInst) { _categoryChartInst.destroy(); _categoryChartInst = null; }
+
+            if (typeof Chart === 'undefined') return;
+
+            // Monthly earnings bar chart
+            const earningsCtx = document.getElementById('earningsChart');
+            if (earningsCtx) {
+                _earningsChartInst = new Chart(earningsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: monthlyData.map(m => m.label),
+                        datasets: [{
+                            label: 'Earnings',
+                            data: monthlyData.map(m => m.earnings),
+                            backgroundColor: monthlyData.map((m, i) =>
+                                i === monthlyData.length - 1 ? '#c41e3a' : 'rgba(196,30,58,0.25)'
+                            ),
+                            borderRadius: 6,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: ctx => '$' + ctx.parsed.y.toFixed(2) } }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { callback: v => '$' + v },
+                                grid: { color: '#f5f5f5' }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+                earningsCtx.style.height = '200px';
+            }
+
+            // Category donut chart
+            const catCtx = document.getElementById('categoryChart');
+            if (catCtx) {
+                const cats = Object.keys(categoryMap);
+                const colors = ['#c41e3a','#3b82f6','#059669','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+                if (cats.length > 0) {
+                    _categoryChartInst = new Chart(catCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: cats,
+                            datasets: [{
+                                data: cats.map(c => categoryMap[c]),
+                                backgroundColor: colors.slice(0, cats.length),
+                                borderWidth: 2,
+                                borderColor: '#fff',
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '62%',
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { callbacks: { label: ctx => ctx.label + ': $' + ctx.parsed.toFixed(2) } }
+                            }
+                        }
+                    });
+                    catCtx.style.height = '160px';
+
+                    const legendEl = document.getElementById('category-legend');
+                    if (legendEl) {
+                        legendEl.innerHTML = cats.map((cat, i) =>
+                            '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
+                                '<div style="width:10px;height:10px;border-radius:2px;background:' + colors[i] + ';flex-shrink:0;"></div>' +
+                                '<span style="color:#555;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + cat + '</span>' +
+                                '<span style="font-weight:600;color:#333;">$' + (categoryMap[cat] || 0).toFixed(0) + '</span>' +
+                            '</div>'
+                        ).join('');
+                    }
+                } else {
+                    catCtx.parentElement.innerHTML += '<p style="color:#aaa;font-size:13px;text-align:center;margin-top:20px;">No sales yet</p>';
+                }
+            }
+        }
+
+        // ============================================
+        // MONTHLY GOAL TRACKER
+        // ============================================
+
+        let _currentMonthEarnings = 0;
+
+        function initGoal(monthEarnings) {
+            _currentMonthEarnings = monthEarnings;
+            const now = new Date();
+            const key = 'seller_goal_' + now.getFullYear() + '_' + now.getMonth();
+            const saved = parseFloat(localStorage.getItem(key) || '0');
+            const monthName = now.toLocaleDateString('en-US', { month: 'long' });
+            document.getElementById('goal-month-label').textContent = 'Your earnings target for ' + monthName;
+            if (saved > 0) renderGoalProgress(saved, monthEarnings);
+        }
+
+        function saveGoal() {
+            const input = document.getElementById('goal-input');
+            const goal = parseFloat(input.value);
+            if (!goal || goal <= 0) return;
+            const now = new Date();
+            const key = 'seller_goal_' + now.getFullYear() + '_' + now.getMonth();
+            localStorage.setItem(key, goal.toString());
+            renderGoalProgress(goal, _currentMonthEarnings);
+        }
+
+        function renderGoalProgress(goal, earned) {
+            if (!goal || goal <= 0) return;
+            document.getElementById('goal-input').value = goal;
+            const pct = Math.min(100, Math.round((earned / goal) * 100));
+            const wrap = document.getElementById('goal-progress-wrap');
+            wrap.style.display = 'block';
+            document.getElementById('goal-progress-label').textContent = '$' + earned.toFixed(2) + ' of $' + goal.toFixed(2);
+            document.getElementById('goal-pct-label').textContent = pct + '%';
+            const bar = document.getElementById('goal-bar');
+            setTimeout(() => { bar.style.width = pct + '%'; }, 100);
+
+            const remaining = (goal - earned).toFixed(2);
+            const now = new Date();
+            const monthName = now.toLocaleDateString('en-US', { month: 'long' });
+            let msg, color;
+            if (pct >= 100) {
+                msg = '🎉 Goal crushed! You hit your ' + monthName + ' target. Time to set a bigger one!';
+                color = '#059669';
+                bar.style.background = 'linear-gradient(90deg,#059669,#10b981)';
+                document.getElementById('goal-pct-label').style.color = '#059669';
+            } else if (pct >= 75) {
+                msg = '🔥 Almost there — just $' + remaining + ' left to reach your goal!';
+                color = '#d97706';
+            } else if (pct >= 50) {
+                msg = '💪 Halfway there! Keep the momentum going — $' + remaining + ' to go.';
+                color = '#3b82f6';
+            } else if (pct > 0) {
+                msg = 'Good start! You need $' + remaining + ' more to hit your ' + monthName + ' goal.';
+                color = '#555';
+            } else {
+                msg = 'No sales yet this month. Your first sale will get this moving!';
+                color = '#888';
+            }
+            document.getElementById('goal-msg').innerHTML = '<span style="color:' + color + ';">' + msg + '</span>';
+        }
+
+        // ============================================
+        // LEADERBOARD
+        // ============================================
+
+        async function loadLeaderboard(currentUserId) {
+            const listEl = document.getElementById('leaderboard-list');
+            try {
+                const now = new Date();
+                const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+                const snap = await db.collection('products')
+                    .where('sold', '==', true)
+                    .where('soldTimestamp', '>=', thisMonthStart)
+                    .limit(100)
+                    .get();
+
+                if (snap.empty) {
+                    listEl.innerHTML = '<p style="color:#aaa;font-size:13px;text-align:center;padding:16px 0;margin:0;">No sales this month yet — be the first on the board!</p>';
+                    return;
+                }
+
+                // Count items sold per seller
+                const counts = {};
+                snap.forEach(doc => {
+                    const uid = doc.data().userId;
+                    if (uid) counts[uid] = (counts[uid] || 0) + 1;
+                });
+
+                const allRanked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+                const top5 = allRanked.slice(0, 5);
+                const userRank = currentUserId ? allRanked.findIndex(([uid]) => uid === currentUserId) + 1 : 0;
+
+                // Fetch user names for top 5
+                const userDocs = await Promise.all(top5.map(([uid]) => db.collection('users').doc(uid).get()));
+
+                const rankIcons = ['🥇', '🥈', '🥉', '4', '5'];
+                listEl.innerHTML = top5.map(([uid, count], i) => {
+                    const doc = userDocs[i];
+                    const name = esc(doc.exists ? (doc.data().username || doc.data().displayName || 'Seller') : 'Seller');
+                    const isMe = uid === currentUserId;
+                    const rankDisplay = i < 3
+                        ? '<span style="font-size:20px;width:28px;text-align:center;">' + rankIcons[i] + '</span>'
+                        : '<span style="font-size:13px;font-weight:700;color:#888;width:28px;text-align:center;">#' + (i + 1) + '</span>';
+                    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;background:' + (isMe ? '#fef2f2' : (i % 2 === 0 ? '#fafafa' : '#fff')) + ';border:1px solid ' + (isMe ? '#fca5a5' : 'transparent') + ';margin-bottom:6px;">' +
+                        rankDisplay +
+                        '<div style="flex:1;font-size:14px;font-weight:' + (isMe ? '700' : '500') + ';color:' + (isMe ? '#c41e3a' : '#1a1a1a') + ';">' + name + (isMe ? ' <span style="font-size:11px;background:#fca5a5;color:#7f1d1d;padding:1px 6px;border-radius:999px;">you</span>' : '') + '</div>' +
+                        '<div style="font-size:13px;font-weight:600;color:#555;">' + count + ' sold</div>' +
+                    '</div>';
+                }).join('');
+
+                // Show current user's rank if outside top 5
+                if (currentUserId && userRank > 5) {
+                    const userCount = counts[currentUserId] || 0;
+                    listEl.innerHTML += '<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:#fef2f2;border:1px dashed #fca5a5;font-size:13px;color:#7f1d1d;text-align:center;">You\'re ranked <strong>#' + userRank + '</strong> this month with <strong>' + userCount + ' sale' + (userCount !== 1 ? 's' : '') + '</strong> — keep going!</div>';
+                } else if (currentUserId && userRank === 0 && !counts[currentUserId]) {
+                    listEl.innerHTML += '<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:#f9fafb;border:1px dashed #e5e5e5;font-size:13px;color:#888;text-align:center;">You haven\'t sold anything this month yet — make your first sale to get on the board!</div>';
+                }
+            } catch (e) {
+                listEl.innerHTML = '<p style="color:#aaa;font-size:13px;text-align:center;padding:16px 0;margin:0;">Could not load leaderboard.</p>';
+                console.warn('Leaderboard error:', e);
+            }
+        }
 
         // Close modals when clicking outside
         document.getElementById('editModal').addEventListener('click', function(e) {

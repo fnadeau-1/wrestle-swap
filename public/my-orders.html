@@ -332,8 +332,10 @@
         function createOrderCard(order) {
             const status = getOrderStatus(order);
             
-            const imageDisplay = order.images && order.images.length > 0
-                ? `<img src="${order.images[0]}" alt="${order.title}">`
+            const _imgSrc0 = order.images && order.images.length > 0 ? String(order.images[0]) : '';
+            const _safeSrc0 = (_imgSrc0.startsWith('https://') || _imgSrc0.startsWith('http://')) ? _imgSrc0 : '';
+            const imageDisplay = _safeSrc0
+                ? `<img src="${_safeSrc0}" alt="${esc(order.title)}">`
                 : '<span>📦 No Image</span>';
 
             const orderDate = order.soldTimestamp 
@@ -361,7 +363,7 @@
                         <div class="order-details">
                             <div class="detail-row">
                                 <span class="detail-label">Shipping:</span>
-                                <span>${order.shippingMethod || 'Standard'}</span>
+                                <span>${esc(order.shippingMethod) || 'Standard'}</span>
                             </div>
                             ${order.trackingNumber ? `
                                 <div class="tracking-info">
@@ -485,8 +487,10 @@
 
                 const status = getOrderStatus(order);
                 
-                const imageDisplay = order.images && order.images.length > 0
-                    ? `<img src="${order.images[0]}" alt="${order.title}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin-bottom: 20px;">`
+                const _imgSrcModal = order.images && order.images.length > 0 ? String(order.images[0]) : '';
+                const _safeSrcModal = (_imgSrcModal.startsWith('https://') || _imgSrcModal.startsWith('http://')) ? _imgSrcModal : '';
+                const imageDisplay = _safeSrcModal
+                    ? `<img src="${_safeSrcModal}" alt="${esc(order.title)}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin-bottom: 20px;">`
                     : '<div style="text-align: center; font-size: 60px; padding: 40px;">📦</div>';
 
                 const orderDate = order.soldTimestamp 
@@ -834,7 +838,7 @@
                 html += '</div>';
                 container.innerHTML = html;
             } catch (err) {
-                container.innerHTML = `<p style="color:#c62828;font-size:14px;">Could not load tracking: ${err.message}</p>`;
+                container.innerHTML = `<p style="color:#c62828;font-size:14px;">Could not load tracking: ${esc(err.message)}</p>`;
             }
         }
         let orderToCancel = null;
@@ -1324,7 +1328,7 @@
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
                 menuWrapper.innerHTML = `
                     <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${esc(firstName)}!</button>
                         <div class="dropdown-menu">
                             <a href="watchlist.html">Watchlist</a>
                             <a href="my-orders.html">Your Orders</a>

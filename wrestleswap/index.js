@@ -160,7 +160,7 @@ exports.createPaymentIntent = onRequest(
     try {
       const stripe = require('stripe')(stripeSecret.value());
       // Never trust amounts or sellerStripeAccountId from the frontend
-      const { currency = 'usd', productId, rateObjectId } = req.body;
+      const { currency = 'usd', productId, rateObjectId, buyerState, buyerZip } = req.body;
 
       if (!productId) {
         return res.status(400).json({ error: 'productId is required' });
@@ -198,7 +198,42 @@ exports.createPaymentIntent = onRequest(
         shippingInCents = Math.round(parseFloat(rate.amount || 0) * 100);
       }
 
-      const taxInCents = Math.round(productPriceInCents * 0.08);
+      // --- STRIPE TAX: calculate exact tax for buyer's address ---
+      let taxInCents = 0;
+      let taxCalculationId = null;
+      let taxSource = 'fallback_8pct';
+      let taxError = null;
+      if (buyerState && buyerZip) {
+        try {
+          // tax_behavior: 'exclusive' = tax is added ON TOP of the price (standard US retail)
+          // Shipping must be passed as shipping_cost param, not as a line_item
+          const taxCalcParams = {
+            currency: 'usd',
+            customer_details: {
+              address: { country: 'US', state: buyerState.toUpperCase(), postal_code: buyerZip },
+              address_source: 'shipping',
+            },
+            line_items: [
+              { amount: productPriceInCents, reference: productId, tax_code: 'txcd_99999999', tax_behavior: 'exclusive' },
+            ],
+          };
+          if (shippingInCents > 0) {
+            taxCalcParams.shipping_cost = { amount: shippingInCents, tax_behavior: 'exclusive' };
+          }
+          const taxCalc = await stripe.tax.calculations.create(taxCalcParams);
+          taxInCents = taxCalc.tax_amount_exclusive;
+          taxCalculationId = taxCalc.id;
+          taxSource = 'stripe_tax';
+          console.log('Stripe Tax applied:', taxInCents, 'cents for', buyerState, buyerZip);
+        } catch (taxErr) {
+          taxError = taxErr.message;
+          console.error('Stripe Tax calculation failed — falling back to 8%. Reason:', taxErr.message);
+          taxInCents = Math.round(productPriceInCents * 0.08);
+        }
+      } else {
+        console.warn('No buyerState/buyerZip provided — falling back to 8% tax estimate');
+        taxInCents = Math.round(productPriceInCents * 0.08);
+      }
       const amount = productPriceInCents + shippingInCents + taxInCents;
 
       // Look up seller's Stripe account from Firestore — never trust the frontend
@@ -228,7 +263,7 @@ exports.createPaymentIntent = onRequest(
         amount,
         currency,
         automatic_payment_methods: { enabled: true },
-        metadata: { productId },
+        metadata: { productId, taxAmountCents: String(taxInCents), taxCalculationId: taxCalculationId || '' },
       };
 
       // Escrow model: funds go to platform, seller is paid out only after delivery confirmed.
@@ -255,6 +290,8 @@ exports.createPaymentIntent = onRequest(
           sellerReceivesCents: String(sellerReceivesCents),
           platformFeeCents: String(platformFeeOnProduct),
           rateObjectId: rateObjectId || '',
+          taxAmountCents: String(taxInCents),
+          taxCalculationId: taxCalculationId || '',
         };
       } else {
         // Seller has no connected Stripe account — block purchase so they don't sell without getting paid
@@ -263,7 +300,7 @@ exports.createPaymentIntent = onRequest(
             error: 'The seller has not connected their payout account yet. Please contact the seller or check back later.',
           });
         }
-        paymentIntentOptions.metadata = { productId, buyerId: decodedToken.uid, rateObjectId: rateObjectId || '' };
+        paymentIntentOptions.metadata = { productId, buyerId: decodedToken.uid, rateObjectId: rateObjectId || '', taxAmountCents: String(taxInCents), taxCalculationId: taxCalculationId || '' };
       }
 
       const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
@@ -272,6 +309,9 @@ exports.createPaymentIntent = onRequest(
       return res.status(200).json({
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
+        taxAmountCents: taxInCents,
+        taxSource,
+        ...(taxError ? { taxError } : {}),
       });
     } catch (error) {
       console.error('Stripe Error:', error);
@@ -319,20 +359,24 @@ exports.cancelOrder = onRequest(
         return res.status(400).json({ error: 'paymentIntentId and productId are required' });
       }
 
-      // Verify the caller is the actual buyer of this order
-      const productDoc = await db.collection('products').doc(productId).get();
-      if (!productDoc.exists) {
-        return res.status(404).json({ error: 'Product not found' });
-      }
-      const productData = productDoc.data();
-      if (productData.buyerId !== decodedToken.uid) {
-        return res.status(403).json({ error: 'You are not the buyer of this order' });
-      }
-      if (!productData.sold || productData.cancelled) {
-        return res.status(400).json({ error: 'Order is not in a cancellable state' });
-      }
-      if (productData.trackingNumber || productData.shipped) {
-        return res.status(400).json({ error: 'This order has already been shipped and cannot be cancelled. Please use Request Refund instead.' });
+      // Atomically validate order state and acquire cancel lock — prevents double-refund
+      // from concurrent cancel requests (same pattern as confirmDelivery payout lock)
+      let productData;
+      const productRef = db.collection('products').doc(productId);
+      try {
+        await db.runTransaction(async (t) => {
+          const snap = await t.get(productRef);
+          if (!snap.exists) throw Object.assign(new Error('Product not found'), { httpStatus: 404 });
+          const d = snap.data();
+          if (d.buyerId !== decodedToken.uid) throw Object.assign(new Error('You are not the buyer of this order'), { httpStatus: 403 });
+          if (!d.sold || d.cancelled || d.cancelInitiated) throw Object.assign(new Error('Order is not in a cancellable state'), { httpStatus: 400 });
+          if (d.trackingNumber || d.shipped) throw Object.assign(new Error('This order has already been shipped and cannot be cancelled. Please use Request Refund instead.'), { httpStatus: 400 });
+          productData = d;
+          t.update(snap.ref, { cancelInitiated: true });
+        });
+      } catch (txErr) {
+        if (txErr.httpStatus) return res.status(txErr.httpStatus).json({ error: txErr.message });
+        throw txErr;
       }
 
       // Retrieve payment intent and verify it belongs to this product
@@ -405,6 +449,7 @@ exports.cancelOrder = onRequest(
         soldOrderId: null,
         buyerId: null,
         cancelled: true,
+        cancelInitiated: admin.firestore.FieldValue.delete(),
         cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
         cancelledBy: 'buyer',
         cancellationReason: 'Cancelled by buyer',
@@ -678,6 +723,7 @@ exports.shippoGetRates = onRequest(
       }
 
       // Sanitize address fields before forwarding to Shippo
+      // phone and email are required by USPS for label creation
       const cleanAddress = (addr) => ({
         name:    sanitizeString(addr.name, 100),
         street1: sanitizeString(addr.street1, 100),
@@ -685,6 +731,8 @@ exports.shippoGetRates = onRequest(
         state:   sanitizeString(addr.state, 50),
         zip:     sanitizeString(addr.zip, 20),
         country: sanitizeString(addr.country, 10) || 'US',
+        phone:   sanitizeString(addr.phone || '', 30) || undefined,
+        email:   sanitizeString(addr.email || '', 100) || undefined,
       });
 
       // Create shipment data for Shippo API
@@ -1078,6 +1126,12 @@ exports.completeOrder = onRequest(
         return res.status(403).json({ error: 'Payment does not match this product' });
       }
 
+      // Verify the authenticated user is the buyer who created this payment intent
+      // Prevents order hijacking if an attacker obtains the payment intent ID
+      if (paymentIntent.metadata.buyerId && paymentIntent.metadata.buyerId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'This payment was not made by your account' });
+      }
+
       // Read escrow payout info from Stripe metadata (set server-side by createPaymentIntent)
       const sellerStripeAccountId = paymentIntent.metadata.sellerStripeAccountId || null;
       const sellerReceivesCents = parseInt(paymentIntent.metadata.sellerReceivesCents || 0);
@@ -1097,7 +1151,7 @@ exports.completeOrder = onRequest(
           prod = snap.data();
 
           const prodPriceCents = Math.round((prod.price || 0) * 100);
-          const taxCents = Math.round(prodPriceCents * 0.08);
+          const taxCents = parseInt(paymentIntent.metadata.taxAmountCents || 0);
           const shippingCents = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
           shippingCost = shippingCents / 100;
 
@@ -1273,17 +1327,22 @@ exports.sellerCancelOrder = onRequest(
         return res.status(400).json({ error: 'productId is required' });
       }
 
-      // Verify caller is the seller of this product
-      const productDoc = await db.collection('products').doc(productId).get();
-      if (!productDoc.exists) {
-        return res.status(404).json({ error: 'Product not found' });
-      }
-      const productData = productDoc.data();
-      if (productData.userId !== decodedToken.uid) {
-        return res.status(403).json({ error: 'You are not the seller of this item' });
-      }
-      if (!productData.sold || productData.cancelled || productData.cancelledAt) {
-        return res.status(400).json({ error: 'Order is not in a cancellable state' });
+      // Atomically validate order state and acquire cancel lock — prevents double-refund
+      let productData;
+      const productRef2 = db.collection('products').doc(productId);
+      try {
+        await db.runTransaction(async (t) => {
+          const snap = await t.get(productRef2);
+          if (!snap.exists) throw Object.assign(new Error('Product not found'), { httpStatus: 404 });
+          const d = snap.data();
+          if (d.userId !== decodedToken.uid) throw Object.assign(new Error('You are not the seller of this item'), { httpStatus: 403 });
+          if (!d.sold || d.cancelled || d.cancelledAt || d.cancelInitiated) throw Object.assign(new Error('Order is not in a cancellable state'), { httpStatus: 400 });
+          productData = d;
+          t.update(snap.ref, { cancelInitiated: true });
+        });
+      } catch (txErr) {
+        if (txErr.httpStatus) return res.status(txErr.httpStatus).json({ error: txErr.message });
+        throw txErr;
       }
 
       const paymentIntentId = productData.soldOrderId;
@@ -1337,6 +1396,7 @@ exports.sellerCancelOrder = onRequest(
         soldOrderId: null,
         buyerId: null,
         cancelled: true,
+        cancelInitiated: admin.firestore.FieldValue.delete(),
         cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
         cancelledBy: 'seller',
         cancellationReason: 'Cancelled by seller',
@@ -2284,7 +2344,7 @@ exports.stripeWebhook = onRequest(
           const sellerReceivesCents   = parseInt(paymentIntent.metadata.sellerReceivesCents || 0);
           const savedRateObjectId     = paymentIntent.metadata.rateObjectId || null;
           const prodPriceCents        = Math.round((prod.price || 0) * 100);
-          const taxCents              = Math.round(prodPriceCents * 0.08);
+          const taxCents              = parseInt(paymentIntent.metadata.taxAmountCents || 0);
           const shippingCents         = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
 
           const updateData = {
@@ -2312,7 +2372,7 @@ exports.stripeWebhook = onRequest(
       console.log(`stripeWebhook: order completed for product ${productId}, buyer ${buyerId}`);
 
       const prodPriceCents = Math.round((prod.price || 0) * 100);
-      const taxCents       = Math.round(prodPriceCents * 0.08);
+      const taxCents       = parseInt(paymentIntent.metadata.taxAmountCents || 0);
       const shippingCents  = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
 
       // Save order record (source flag helps identify webhook-recovered orders in admin)
@@ -2644,6 +2704,20 @@ exports.getPriceSuggestions = onRequest(
   async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(204).send('');
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    // Require auth — prevents unauthenticated scraping of sold price data
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      await checkRateLimit(decodedToken.uid, 'priceSuggest', 30, ONE_HOUR);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many requests. Please wait before trying again.' });
+    }
 
     const category = String(req.query.category || '').trim().toLowerCase();
     if (!category) return res.status(400).json({ error: 'category is required' });

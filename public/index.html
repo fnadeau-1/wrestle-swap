@@ -191,7 +191,7 @@
                 // Create the dropdown menu HTML
                 menuWrapper.innerHTML = `
                     <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${esc(firstName)}!</button>
                         <div class="dropdown-menu">
                             <a href="watchlist.html">Watchlist</a>
                             <a href="my-orders.html">Your Orders</a>
@@ -211,19 +211,29 @@
         let lastProductDoc = null;
         let allLoaded = false;
 
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function safeUrl(url) {
+            if (!url) return '';
+            const u = String(url);
+            return (u.startsWith('https://') || u.startsWith('http://')) ? u : '';
+        }
+
         function renderProducts(products, append) {
             const container = document.getElementById('products-container');
             const html = products.map(product => {
-                const imageDisplay = product.images && product.images.length > 0
-                    ? `<img src="${product.images[0]}" alt="${product.title}" loading="lazy">`
+                const imgSrc = safeUrl(product.images && product.images[0]);
+                const imageDisplay = imgSrc
+                    ? `<img src="${imgSrc}" alt="${esc(product.title)}" loading="lazy">`
                     : '📦';
                 return `
-                    <div class="product-card" onclick="window.location.href='productdetail.html?id=${product.id}'">
+                    <div class="product-card" onclick="window.location.href='productdetail.html?id=${esc(product.id)}'">
                         <div class="product-image">${imageDisplay}</div>
                         <div class="product-info">
-                            <div class="product-title">${product.title}</div>
+                            <div class="product-title">${esc(product.title)}</div>
                             <div class="product-price">$${product.price.toFixed(2)}</div>
-                            <div class="product-seller">${product.sellerName}</div>
+                            <div class="product-seller">${esc(product.sellerName)}</div>
                         </div>
                     </div>
                 `;

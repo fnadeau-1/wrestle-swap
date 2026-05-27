@@ -136,20 +136,6 @@
                 </button>
             </div>
 
-            <!-- Manual Tracking Entry (for sellers using their own label) -->
-            <div id="manual-tracking-section" style="display:none;background:white;border-radius:8px;padding:28px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-                <h2 style="font-size:20px;color:#333;margin:0 0 6px;">📬 Ship With Your Own Label?</h2>
-                <p style="color:#707070;font-size:14px;margin:0 0 20px;">If you're using a label from USPS, UPS, or FedEx directly, enter your tracking number here so the buyer is notified and the order is marked shipped.</p>
-                <div id="manual-tracking-error" style="display:none;color:#c62828;font-size:14px;margin-bottom:10px;"></div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <input type="text" id="manual-tracking-input" placeholder="Tracking number (e.g. 9400111899223397)" style="flex:1;min-width:200px;padding:10px 14px;border:1px solid #d1d5db;border-radius:6px;font-size:15px;" />
-                    <input type="text" id="manual-carrier-input" placeholder="Carrier (e.g. USPS, UPS, FedEx)" style="width:180px;padding:10px 14px;border:1px solid #d1d5db;border-radius:6px;font-size:15px;" />
-                    <button id="submit-tracking-btn" onclick="submitManualTracking()"
-                        style="background:#059669;color:white;border:none;padding:10px 24px;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap;">
-                        Mark as Shipped
-                    </button>
-                </div>
-            </div>
 
             <!-- Shipping Address -->
             <h2 class="section-title">📍 Ship To Address</h2>
@@ -286,7 +272,7 @@
             const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
             menuWrapper.innerHTML = `
                 <div class="user-menu-container">
-                    <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${firstName}!</button>
+                    <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${esc(firstName)}!</button>
                     <div class="dropdown-menu">
                         <a href="watchlist.html">Watchlist</a>
                         <a href="my-orders.html">Your Orders</a>
@@ -499,10 +485,6 @@
                 document.getElementById('create-label-section').style.display = 'block';
             }
 
-            // Show manual tracking entry whenever there's no tracking yet
-            if (!hasTracking && productId) {
-                document.getElementById('manual-tracking-section').style.display = 'block';
-            }
         }
 
         function displayProduct(product) {
@@ -625,60 +607,6 @@
 
         const MARK_AS_SHIPPED_URL = 'https://markasshipped-kebvkf67ma-uc.a.run.app';
 
-        async function submitManualTracking() {
-            const trackingNumber = document.getElementById('manual-tracking-input').value.trim();
-            const carrier = document.getElementById('manual-carrier-input').value.trim();
-            const btn = document.getElementById('submit-tracking-btn');
-            const errorEl = document.getElementById('manual-tracking-error');
-
-            if (!trackingNumber) {
-                errorEl.textContent = 'Please enter a tracking number.';
-                errorEl.style.display = 'block';
-                return;
-            }
-            if (!productId) {
-                errorEl.textContent = 'Product ID not found. Please reload the page.';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            errorEl.style.display = 'none';
-
-            try {
-                const idToken = await window.getIdToken();
-                const response = await fetch(MARK_AS_SHIPPED_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${idToken}`,
-                    },
-                    body: JSON.stringify({ productId, trackingNumber, carrier: carrier || null }),
-                });
-
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    throw new Error(err.error || `Error ${response.status}`);
-                }
-
-                // Update tracking display on page
-                document.getElementById('tracking-number').textContent = trackingNumber;
-                document.getElementById('tracking-number-display').textContent = trackingNumber;
-
-                document.getElementById('manual-tracking-section').innerHTML = `
-                    <div style="background:#d4edda;border-left:4px solid #28a745;padding:16px;border-radius:6px;">
-                        <strong style="color:#155724;">✅ Marked as shipped!</strong>
-                        <p style="margin:6px 0 0;color:#155724;font-size:14px;">Tracking number saved and the buyer has been notified.</p>
-                    </div>`;
-            } catch (err) {
-                console.error('submitManualTracking error:', err);
-                errorEl.textContent = 'Failed: ' + err.message;
-                errorEl.style.display = 'block';
-                btn.disabled = false;
-                btn.textContent = 'Mark as Shipped';
-            }
-        }
 
         // loadOrderDetails is called by onAuthStateChanged after ownership is verified.
         // If productId is not in the URL (e.g. seller arriving right after checkout),
