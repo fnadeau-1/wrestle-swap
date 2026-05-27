@@ -103,6 +103,7 @@
             <button class="tab-btn" role="tab" onclick="switchTab('reviews', this)">Reviews</button>
             <button class="tab-btn" role="tab" onclick="switchTab('announcements', this)">Announcements</button>
             <button class="tab-btn" role="tab" onclick="switchTab('messages', this)">Messages</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('disputes', this)">Disputes</button>
         </div>
 
         <!-- ==============================
@@ -237,6 +238,18 @@
                 <button class="refresh-btn" onclick="loadOrders()">Refresh</button>
             </div>
 
+            <div class="search-bar-wrap">
+                <input type="text" class="admin-search" id="orders-search" placeholder="Search by title, buyer, or seller…" oninput="filterOrders()">
+                <select class="admin-select" id="orders-filter" onchange="filterOrders()">
+                    <option value="all">All Orders</option>
+                    <option value="active">Active (not shipped)</option>
+                    <option value="overdue">Overdue (&gt;7 days)</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered / Paid Out</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+
             <div class="loading-state" id="orders-loading">
                 <div class="spinner"></div>
                 <p>Loading orders...</p>
@@ -255,6 +268,7 @@
                             <th>Buyer</th>
                             <th>Seller</th>
                             <th>Status</th>
+                            <th>Tracking</th>
                             <th>Date</th>
                             <th>Actions</th>
                         </tr>
@@ -456,6 +470,42 @@
             </div>
         </div>
 
+        <!-- ==============================
+             TAB 9: DISPUTES
+             ============================== -->
+        <div class="tab-section" id="tab-disputes">
+            <div class="section-header">
+                <span class="section-title">Disputes</span>
+                <button class="refresh-btn" onclick="loadDisputes()">Refresh</button>
+            </div>
+
+            <div class="loading-state" id="disputes-loading">
+                <div class="spinner"></div>
+                <p>Loading disputes...</p>
+            </div>
+
+            <div class="empty-state" id="disputes-empty" style="display:none;">
+                No disputes found.
+            </div>
+
+            <div class="table-wrap" id="disputes-table-wrap" style="display:none;">
+                <table id="disputes-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Buyer UID</th>
+                            <th>Seller UID</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="disputes-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
     </div><!-- /.admin-page -->
 
 
@@ -543,6 +593,7 @@
             if (name === 'reviews') { loadReviews(); }
             if (name === 'announcements') { loadAnnouncement(); }
             if (name === 'messages') { loadConversations(); }
+            if (name === 'disputes') { loadDisputes(); }
         }
 
         // ============================================
@@ -1335,11 +1386,26 @@
                     var status = getOrderStatus(order);
                     var row = document.createElement('tr');
                     row.id = 'order-row-' + order.id;
+                    row.dataset.status = status.key;
+                    row.dataset.search = [order.title || order.name || '', order.buyerId || '', order.userId || ''].join(' ').toLowerCase();
                     var buyerId  = order.buyerId  || order.buyerUid  || '—';
                     var sellerId = order.userId   || order.sellerUid || '—';
 
                     var issueRefundBtn = (!order.cancelled && order.sold)
                         ? '<button class="action-btn btn-refund" onclick="issueRefund(\'' + order.id + '\', this)">Issue Refund</button>'
+                        : '';
+
+                    var trackingHtml = '—';
+                    if (order.trackingNumber) {
+                        var tn = escapeHtml(order.trackingNumber);
+                        trackingHtml = order.trackingUrl
+                            ? '<a href="' + escapeHtml(order.trackingUrl) + '" target="_blank" style="font-family:monospace;font-size:11px;">' + tn + '</a>'
+                            : '<span style="font-family:monospace;font-size:11px;">' + tn + '</span>';
+                        if (order.carrier) trackingHtml += '<br><span style="font-size:10px;color:#888;">' + escapeHtml(order.carrier) + '</span>';
+                    }
+
+                    var shipBtn = (!order.cancelled && order.sold && !order.shipped && !order.delivered)
+                        ? '<button class="action-btn btn-verify" onclick="adminMarkShipped(\'' + order.id + '\', this)">Mark Shipped</button>'
                         : '';
 
                     row.innerHTML =
@@ -1348,10 +1414,12 @@
                         '<td><span class="uid-cell" title="' + escapeHtml(buyerId) + '">' + escapeHtml(buyerId) + '</span></td>' +
                         '<td><span class="uid-cell" title="' + escapeHtml(sellerId) + '">' + escapeHtml(sellerId) + '</span></td>' +
                         '<td id="order-status-' + order.id + '">' + status.badge + '</td>' +
+                        '<td>' + trackingHtml + '</td>' +
                         '<td>' + formatDate(order.soldTimestamp) + '</td>' +
                         '<td><div class="action-gap">' +
                             '<button class="action-btn btn-view" onclick="window.open(\'productdetail.html?id=' + escapeHtml(order.id) + '\', \'_blank\')">View</button>' +
                             (!order.cancelled && order.sold ? '<button class="action-btn btn-relist" onclick="relistProduct(\'' + order.id + '\', this)">Relist</button>' : '') +
+                            shipBtn +
                             issueRefundBtn +
                             '<button class="action-btn btn-delete" onclick="deleteProduct(\'' + order.id + '\', this)">Delete</button>' +
                         '</div></td>';
@@ -1369,12 +1437,22 @@
 
         function getOrderStatus(order) {
             if (order.cancelled === true) {
-                return { badge: '<span class="badge badge-red">Cancelled</span>' };
+                return { badge: '<span class="badge badge-red">Cancelled</span>', key: 'cancelled' };
             }
-            if (order.trackingNumber) {
-                return { badge: '<span class="badge badge-yellow">Shipped</span>' };
+            if (order.sellerPaidOut === true) {
+                return { badge: '<span class="badge badge-blue">Paid Out</span>', key: 'delivered' };
             }
-            return { badge: '<span class="badge badge-green">Active Order</span>' };
+            if (order.delivered === true) {
+                return { badge: '<span class="badge badge-blue">Delivered</span>', key: 'delivered' };
+            }
+            if (order.shipped === true || order.trackingNumber) {
+                return { badge: '<span class="badge badge-yellow">Shipped</span>', key: 'shipped' };
+            }
+            var soldMs = order.soldTimestamp && order.soldTimestamp.toMillis ? order.soldTimestamp.toMillis() : 0;
+            if (soldMs && (Date.now() - soldMs) > 7 * 24 * 60 * 60 * 1000) {
+                return { badge: '<span class="badge badge-red">Overdue</span>', key: 'overdue' };
+            }
+            return { badge: '<span class="badge badge-green">Active</span>', key: 'active' };
         }
 
         async function relistProduct(productId, btn) {
@@ -1390,7 +1468,20 @@
                     buyerId: null,
                     cancelled: false,
                     cancelledAt: null,
-                    cancelledBy: null
+                    cancelledBy: null,
+                    cancelInitiated: null,
+                    shipped: null,
+                    shippedAt: null,
+                    trackingNumber: null,
+                    trackingUrl: null,
+                    carrier: null,
+                    delivered: null,
+                    deliveredAt: null,
+                    sellerPaidOut: null,
+                    sellerPaidOutAt: null,
+                    refundRequested: null,
+                    disputeOpened: null,
+                    autoReleaseBlocked: null
                 });
                 var row = document.getElementById('order-row-' + productId);
                 if (row) row.cells[4].innerHTML = '<span class="badge badge-gray">Relisted</span>';
@@ -1424,8 +1515,9 @@
             if (amountStr === null) return; // cancelled
 
             var amountCents = null;
+            var amountDollars = null;
             if (amountStr.trim() !== '') {
-                var amountDollars = parseFloat(amountStr);
+                amountDollars = parseFloat(amountStr);
                 if (isNaN(amountDollars) || amountDollars <= 0) {
                     alert('Please enter a valid dollar amount greater than 0, or leave blank for a full refund.');
                     return;
@@ -1457,7 +1549,7 @@
                 // Show success badge in status column
                 var statusCell = document.getElementById('order-status-' + productId);
                 if (statusCell) {
-                    statusCell.innerHTML += ' <span class="badge badge-blue">Refunded $' + amountDollars.toFixed(2) + '</span>';
+                    statusCell.innerHTML += ' <span class="badge badge-blue">Refunded ' + (amountDollars !== null ? '$' + amountDollars.toFixed(2) : '(full)') + '</span>';
                 }
                 btn.textContent = 'Refunded';
                 btn.disabled = true;
@@ -1502,15 +1594,23 @@
                         ? '<button class="action-btn btn-resolved-done" disabled>Resolved</button>'
                         : '<button class="action-btn btn-resolve" onclick="resolveRefund(\'' + docId + '\', this)">Mark Resolved</button>';
 
+                    var productLink = r.productId
+                        ? '<a href="productdetail.html?id=' + escapeHtml(r.productId) + '" target="_blank" style="font-family:monospace;font-size:11px;color:#3665f3;">' + escapeHtml(truncate(r.productId, 20)) + '</a>'
+                        : '—';
+
+                    var issueRefundFromHereBtn = !isResolved
+                        ? '<button class="action-btn btn-refund" onclick="issueRefund(\'' + escapeHtml(r.productId || '') + '\', this)">Issue Refund</button>'
+                        : '';
+
                     var row = document.createElement('tr');
                     row.id = 'refund-row-' + docId;
                     row.innerHTML =
-                        '<td><span class="uid-cell" title="' + escapeHtml(r.productId || '') + '">' + escapeHtml(r.productId || '—') + '</span></td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(r.buyerUid || r.userId || '') + '">' + escapeHtml(r.buyerUid || r.userId || '—') + '</span></td>' +
+                        '<td>' + productLink + '</td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(r.buyerUid || r.buyerId || r.userId || '') + '">' + escapeHtml(r.buyerUid || r.buyerId || r.userId || '—') + '</span></td>' +
                         '<td>' + escapeHtml(truncate(r.reason, 60)) + '</td>' +
                         '<td id="refund-status-' + docId + '">' + statusBadge + '</td>' +
                         '<td>' + formatDate(r.createdAt) + '</td>' +
-                        '<td id="refund-action-' + docId + '">' + resolveBtn + '</td>';
+                        '<td id="refund-action-' + docId + '"><div class="action-gap">' + resolveBtn + issueRefundFromHereBtn + '</div></td>';
                     tbody.appendChild(row);
                 });
 
@@ -1524,13 +1624,18 @@
         }
 
         async function resolveRefund(docId, btn) {
+            var notes = prompt('Resolution notes (optional — e.g. "refund issued", "dismissed — no evidence"):');
+            if (notes === null) return; // cancelled
             btn.disabled = true;
             btn.textContent = 'Saving...';
             try {
-                await db.collection('refundRequests').doc(docId).update({
+                var update = {
                     status: 'resolved',
-                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    resolvedBy: currentUser ? currentUser.uid : 'admin'
+                };
+                if (notes.trim()) update.resolutionNotes = notes.trim();
+                await db.collection('refundRequests').doc(docId).update(update);
                 var statusCell = document.getElementById('refund-status-' + docId);
                 var actionCell = document.getElementById('refund-action-' + docId);
                 if (statusCell) statusCell.innerHTML = '<span class="badge badge-gray">Resolved</span>';
@@ -1690,7 +1795,19 @@
             if (!report) { alert('Report data not found.'); return; }
 
             var r = report.data;
-            var reportedUid = r.reportedUserId || r.targetId;
+            // For listing reports, targetId is a product doc ID — look up the seller's userId
+            var reportedUid = r.reportedUserId;
+            if (!reportedUid && r.targetType === 'listing' && r.targetId) {
+                btn.disabled = true;
+                btn.textContent = 'Looking up...';
+                try {
+                    var productDoc = await db.collection('products').doc(r.targetId).get();
+                    if (productDoc.exists) reportedUid = productDoc.data().userId;
+                } catch (e) { /* ignore */ }
+                btn.disabled = false;
+                btn.textContent = 'Warn User';
+            }
+            if (!reportedUid) reportedUid = r.reportedBy || r.reporterUid;
 
             if (!reportedUid) {
                 alert('No user UID associated with this report to warn.');
@@ -2072,6 +2189,146 @@
 
         function escHtml(str) {
             return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // ============================================
+        // ORDERS FILTER
+        // ============================================
+        function filterOrders() {
+            var query = (document.getElementById('orders-search').value || '').toLowerCase().trim();
+            var filter = document.getElementById('orders-filter').value;
+            document.querySelectorAll('#orders-tbody tr').forEach(function(row) {
+                var matchText = !query || (row.dataset.search || '').includes(query);
+                var statusKey = row.dataset.status || '';
+                var matchStatus = filter === 'all' || statusKey === filter ||
+                    (filter === 'delivered' && (statusKey === 'delivered'));
+                row.style.display = (matchText && matchStatus) ? '' : 'none';
+            });
+        }
+
+        // ============================================
+        // ADMIN MARK AS SHIPPED OVERRIDE
+        // ============================================
+        async function adminMarkShipped(productId, btn) {
+            var trackingNum = prompt('Enter tracking number:');
+            if (trackingNum === null) return;
+            trackingNum = trackingNum.trim();
+            if (!trackingNum) { alert('Tracking number is required.'); return; }
+
+            var carrier = prompt('Enter carrier (e.g. USPS, UPS, FedEx) — leave blank to skip:') || '';
+
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                var update = {
+                    shipped: true,
+                    shippedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    trackingNumber: trackingNum
+                };
+                if (carrier.trim()) update.carrier = carrier.trim();
+
+                await db.collection('products').doc(productId).update(update);
+
+                var statusCell = document.getElementById('order-status-' + productId);
+                if (statusCell) statusCell.innerHTML = '<span class="badge badge-yellow">Shipped</span>';
+                var row = document.getElementById('order-row-' + productId);
+                if (row) row.dataset.status = 'shipped';
+                btn.textContent = 'Shipped ✓';
+                btn.className = 'action-btn btn-resolved-done';
+            } catch (err) {
+                console.error('Error marking as shipped:', err);
+                btn.disabled = false;
+                btn.textContent = 'Mark Shipped';
+                alert('Failed: ' + err.message);
+            }
+        }
+
+        // ============================================
+        // TAB 9: DISPUTES
+        // ============================================
+        async function loadDisputes() {
+            showSection('disputes', 'loading');
+            try {
+                var snap = await db.collection('disputes')
+                    .orderBy('createdAt', 'desc')
+                    .limit(100)
+                    .get();
+
+                if (snap.empty) {
+                    showSection('disputes', 'empty');
+                    return;
+                }
+
+                var tbody = document.getElementById('disputes-tbody');
+                tbody.innerHTML = '';
+
+                snap.forEach(function(doc) {
+                    var d = doc.data();
+                    var docId = doc.id;
+                    var isResolved = d.status === 'resolved' || d.status === 'dismissed';
+
+                    var statusBadge = isResolved
+                        ? '<span class="badge badge-gray">' + escapeHtml(d.status || 'Resolved') + '</span>'
+                        : '<span class="badge badge-red">Open</span>';
+
+                    var productLink = d.productId
+                        ? '<a href="productdetail.html?id=' + escapeHtml(d.productId) + '" target="_blank" style="font-family:monospace;font-size:11px;color:#3665f3;">' + escapeHtml(truncate(d.productId, 20)) + '</a>'
+                        : '—';
+
+                    var actionsHtml = !isResolved
+                        ? '<div class="action-gap">' +
+                              '<button class="action-btn btn-resolve" onclick="resolveDispute(\'' + docId + '\', \'resolved\', this)">Resolve (Buyer)</button>' +
+                              '<button class="action-btn btn-dismiss" onclick="resolveDispute(\'' + docId + '\', \'dismissed\', this)">Dismiss</button>' +
+                          '</div>'
+                        : '<button class="action-btn btn-resolved-done" disabled>Closed</button>';
+
+                    var row = document.createElement('tr');
+                    row.id = 'dispute-row-' + docId;
+                    row.innerHTML =
+                        '<td>' + productLink + '</td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(d.buyerId || '') + '">' + escapeHtml(truncate(d.buyerId, 16) || '—') + '</span></td>' +
+                        '<td><span class="uid-cell" title="' + escapeHtml(d.sellerId || '') + '">' + escapeHtml(truncate(d.sellerId, 16) || '—') + '</span></td>' +
+                        '<td>' + escapeHtml(truncate(d.reason, 50)) + '</td>' +
+                        '<td id="dispute-status-' + docId + '">' + statusBadge + '</td>' +
+                        '<td>' + formatDate(d.createdAt) + '</td>' +
+                        '<td id="dispute-actions-' + docId + '">' + actionsHtml + '</td>';
+                    tbody.appendChild(row);
+                });
+
+                showSection('disputes', 'table');
+            } catch (err) {
+                console.error('Error loading disputes:', err);
+                showSection('disputes', 'empty');
+                document.getElementById('disputes-empty').textContent = 'Error loading disputes: ' + err.message;
+            }
+        }
+
+        async function resolveDispute(docId, resolution, btn) {
+            var label = resolution === 'resolved' ? "Resolve in buyer's favor" : 'Dismiss dispute';
+            var notes = prompt(label + ' — resolution notes (optional):');
+            if (notes === null) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                var update = {
+                    status: resolution,
+                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    resolvedBy: currentUser ? currentUser.uid : 'admin'
+                };
+                if (notes.trim()) update.resolutionNotes = notes.trim();
+                await db.collection('disputes').doc(docId).update(update);
+
+                var statusCell = document.getElementById('dispute-status-' + docId);
+                var actionsCell = document.getElementById('dispute-actions-' + docId);
+                if (statusCell) statusCell.innerHTML = '<span class="badge badge-gray">' + escapeHtml(resolution) + '</span>';
+                if (actionsCell) actionsCell.innerHTML = '<button class="action-btn btn-resolved-done" disabled>Closed</button>';
+            } catch (err) {
+                console.error('Error resolving dispute:', err);
+                btn.disabled = false;
+                btn.textContent = 'Resolve';
+                alert('Failed to resolve dispute: ' + err.message);
+            }
         }
     </script>
 </body>
