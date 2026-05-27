@@ -74,7 +74,10 @@ service cloud.firestore {
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
               'sellerSuspended', 'sellerCancellationCount', 'sellerPenalties', 'isAdmin',
               'stripeAccountId', 'stripeCreatedAt'
-          ]));
+          ])
+          // displayName must always match username — no real name leakage
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName', 'username'])
+              || request.resource.data.get('displayName', '') == request.resource.data.get('username', '')));
       allow delete: if isAdmin();
     }
 

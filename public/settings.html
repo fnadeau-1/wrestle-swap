@@ -60,14 +60,6 @@
                 <span class="info-value" id="user-email">Loading...</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Sign-in Method</span>
-                <span class="info-value" id="signin-method">Loading...</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Member Since</span>
-                <span class="info-value" id="member-since">Loading...</span>
-            </div>
-            <div class="info-row">
                 <span class="info-label">Account Status</span>
                 <span class="info-value" id="account-status"><span style="color:#28a745;">✓ Active</span></span>
             </div>
@@ -81,28 +73,11 @@
 
             <form id="profile-form">
                 <div class="form-group">
-                    <label class="form-label">Username</label>
+                    <label class="form-label">Username / Display Name</label>
                     <input type="text" class="form-input" id="username"
                         placeholder="Enter a unique username" style="text-transform:lowercase;" autocomplete="off">
                     <div id="username-status" style="font-size:12px;margin-top:5px;"></div>
-                    <p class="helper-text">Lowercase letters, numbers, and underscores only — must be at least 3 characters</p>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Display Name</label>
-                    <input type="text" class="form-input" id="display-name" placeholder="Your name as shown to other users">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Location (City, State)</label>
-                    <input type="text" class="form-input" id="location" placeholder="e.g., Vestal, NY">
-                    <p class="helper-text">Helps buyers know where items ship from</p>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Bio</label>
-                    <textarea class="form-textarea" id="bio" placeholder="Tell others about yourself..."></textarea>
-                    <p class="helper-text">Optional — share your wrestling background or interests</p>
+                    <p class="helper-text">Your username is your only public name — lowercase letters, numbers, and underscores (3+ characters)</p>
                 </div>
 
                 <div class="button-group">
@@ -252,7 +227,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
-        import { getAuth, onAuthStateChanged, updatePassword, EmailAuthProvider,
+        import { getAuth, onAuthStateChanged, updatePassword, updateProfile, EmailAuthProvider,
                  reauthenticateWithCredential, signOut, deleteUser }
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp,
@@ -340,12 +315,8 @@
 
             // Account info
             document.getElementById('user-email').textContent = user.email;
-            document.getElementById('member-since').textContent =
-                new Date(user.metadata.creationTime).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
-
-            // Sign-in method
+            // Sign-in method (for password section only — not displayed)
             const isGoogle = user.providerData.some(p => p.providerId === 'google.com');
-            document.getElementById('signin-method').textContent = isGoogle ? 'Google' : 'Email & Password';
 
             // Password section — hide for Google users
             buildPasswordSection(isGoogle);
@@ -364,9 +335,6 @@
 
                     // Profile fields
                     document.getElementById('username').value = d.username || '';
-                    document.getElementById('display-name').value = d.displayName || '';
-                    document.getElementById('location').value = d.location || '';
-                    document.getElementById('bio').value = d.bio || '';
                     currentUsername = d.username || '';
 
                     // Stripe — three states: not connected / connected but incomplete / fully set up
@@ -510,11 +478,8 @@
         // ── Profile form save ──────────────────────────────────────────────
         document.getElementById('profile-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username    = document.getElementById('username').value.toLowerCase().trim();
-            const displayName = document.getElementById('display-name').value.trim();
-            const location    = document.getElementById('location').value.trim();
-            const bio         = document.getElementById('bio').value.trim();
-            const errorMsg    = document.getElementById('profile-error');
+            const username = document.getElementById('username').value.toLowerCase().trim();
+            const errorMsg = document.getElementById('profile-error');
             errorMsg.style.display = 'none';
 
             if (!username || username.length < 3 || !/^[a-z0-9_]+$/.test(username)) {
@@ -538,11 +503,16 @@
                     await setDoc(doc(db, 'usernames', username), { userId: currentUser.uid, createdAt: serverTimestamp() });
                 }
 
+                // Username is the display name — one identity, no real name stored
                 await setDoc(doc(db, 'users', currentUser.uid), {
-                    username, displayName, location, bio,
+                    username,
+                    displayName: username,
                     email: currentUser.email,
                     updatedAt: serverTimestamp()
                 }, { merge: true });
+
+                // Keep Firebase Auth displayName in sync
+                await updateProfile(currentUser, { displayName: username });
 
                 currentUsername = username;
                 const successMsg = document.getElementById('profile-success');
