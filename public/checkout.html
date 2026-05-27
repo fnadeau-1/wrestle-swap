@@ -124,8 +124,7 @@
         const SHIPPO_CREATE_LABEL_URL = 'https://shippocreatelabel-kebvkf67ma-uc.a.run.app';
         const COMPLETE_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/completeOrder';
         const RECORD_ABANDONED_CART_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/recordAbandonedCart';
-        // Switch to live key when going to production: pk_live_...
-        const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SVkt7GuAs8IZaZv5J9AezLqjENqgpK1MWVMze9O7fUY5h8ZUAmvC2uHavTLzKloXToKxvFDtGeJ9jE3umH9Uvxp00168b1lMz';
+        const STRIPE_PUBLISHABLE_KEY = 'pk_live_51SVksvGjf88NEQS10ZpIJ0zWBlJ13xbPRvosRWKIOZA10eHIH4p9s1NKrSkwshF9b1IDDS9Uz0w2bnDku3jbG0Jk00zpYZlCNk';
 
         // Fallback "from" address (only used if seller has no address)
         const FALLBACK_FROM_ADDRESS = {
@@ -199,11 +198,11 @@
 
             subtotal = checkoutProduct.price || 0;
             
-            // Shipping cost will be determined by Shippo after calculation
-            // Calculate 8% tax on subtotal only (not on shipping)
+            // Shipping cost determined by Shippo; tax calculated by Stripe Tax at payment time
+            // Use 8% as an on-screen estimate until Stripe Tax returns the real amount
             tax = subtotal * 0.08;
-            
-            // Total = subtotal + shipping + tax
+
+            // Total = subtotal + shipping + estimated tax
             total = subtotal + shippingCost + tax;
         }
 
@@ -402,7 +401,7 @@
                     </div>
 
                     <div class="summary-row">
-                        <span>Tax (8%)</span>
+                        <span id="tax-label">Tax (est.)</span>
                         <span id="tax-cost">$${tax.toFixed(2)}</span>
                     </div>
 
@@ -808,6 +807,8 @@
                             productId: checkoutProduct.id,
                             rateObjectId: selectedShippingRate ? selectedShippingRate.object_id : null,
                             currency: 'usd',
+                            buyerState: document.getElementById('state').value.trim().toUpperCase(),
+                            buyerZip: document.getElementById('zip').value.trim(),
                         })
                     });
 
@@ -821,6 +822,18 @@
 
                     const data = await response.json();
                     console.log('Backend response:', data);
+                    console.log('[Tax] source:', data.taxSource, '| amount:', data.taxAmountCents, 'cents');
+                    if (data.taxError) console.warn('[Tax] Stripe Tax failed:', data.taxError);
+
+                    // Update order summary with server-calculated tax BEFORE confirming payment
+                    // so the displayed total matches the actual charge
+                    if (data.taxAmountCents !== undefined) {
+                        tax = data.taxAmountCents / 100;
+                        total = subtotal + shippingCost + tax;
+                        const taxLabel = document.getElementById('tax-label');
+                        if (taxLabel) taxLabel.textContent = data.taxSource === 'stripe_tax' ? 'Tax' : 'Tax (est.)';
+                        updateOrderSummary();
+                    }
                     
                     if (data.error) {
                         console.error('Backend returned error:', data.error);
@@ -918,10 +931,13 @@
                         
                         updatePaymentOverlay('Order Complete!', 'Redirecting you to your receipt...');
 
+                        // Must clear onbeforeunload before navigating or the browser
+                        // intercepts the redirect with a "Leave page?" dialog
+                        window.onbeforeunload = null;
 
-                        console.log('Seller fulfillment page:', 
+                        console.log('Seller fulfillment page:',
                             'seller-order-fulfillment.html?productId=' + checkoutProduct.id + '&orderId=' + result.paymentIntent.id);
-                        
+
                         // Redirect to order confirmation page
                         window.location.href = 'order-confirmation.html?id=' + result.paymentIntent.id;
                     } else {
