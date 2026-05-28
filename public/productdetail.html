@@ -164,7 +164,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        function escapeHtml(str) {
+        window.escapeHtml = function escapeHtml(str) {
             if (!str) return '';
             const d = document.createElement('div');
             d.textContent = str;
