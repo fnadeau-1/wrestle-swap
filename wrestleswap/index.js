@@ -781,6 +781,28 @@ exports.shippoGetRates = onRequest(
       const data = await response.json();
       console.log('Shippo rates received:', data.rates?.length || 0, 'rates');
 
+      // Reject incomplete addresses before returning rates
+      if (data.address_to?.is_complete === false) {
+        return res.status(400).json({
+          error: 'Shipping address is incomplete. Please fill in your full street address, city, state, and ZIP code.'
+        });
+      }
+
+      // Reject addresses Shippo explicitly marks as invalid (USPS database check)
+      const addrValidation = data.address_to?.validation_results;
+      if (data.address_to?.object_state === 'INVALID' || (addrValidation && addrValidation.is_valid === false)) {
+        const messages = (addrValidation?.messages || [])
+          .filter(m => m.type === 'error')
+          .map(m => m.text)
+          .filter(Boolean);
+        console.warn('Shippo address validation failed:', addrValidation);
+        return res.status(400).json({
+          error: messages.length > 0
+            ? `Address not found: ${messages[0]}`
+            : 'We could not verify this shipping address. Please double-check your street, city, state, and ZIP code.'
+        });
+      }
+
       return res.status(200).json(data);
 
     } catch (error) {
@@ -1139,7 +1161,18 @@ exports.completeOrder = onRequest(
 
     try {
       const stripe = require('stripe')(stripeSecret.value());
-      const { paymentIntentId, productId, shippingInfo, packageDimensions, buyerShippingAddress } = req.body;
+      const { paymentIntentId, productId, shippingInfo, packageDimensions, buyerShippingAddress: rawBuyerAddress } = req.body;
+
+      // Sanitize buyer address before saving — never write raw client input to Firestore
+      const buyerShippingAddress = (rawBuyerAddress && typeof rawBuyerAddress === 'object') ? {
+        name:    sanitizeString(rawBuyerAddress.name    || '', 100),
+        street1: sanitizeString(rawBuyerAddress.street1 || '', 100),
+        street2: sanitizeString(rawBuyerAddress.street2 || '', 100),
+        city:    sanitizeString(rawBuyerAddress.city    || '', 100),
+        state:   sanitizeString(rawBuyerAddress.state   || '', 50),
+        zip:     sanitizeString(rawBuyerAddress.zip     || '', 20),
+        country: 'US',
+      } : null;
 
       if (!paymentIntentId || !productId) {
         return res.status(400).json({ error: 'paymentIntentId and productId are required' });
