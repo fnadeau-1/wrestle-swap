@@ -735,11 +735,21 @@ exports.shippoGetRates = onRequest(
         email:   sanitizeString(addr.email || '', 100) || undefined,
       });
 
+      // Sanitize parcel — only allow known numeric fields, never forward raw client object
+      const cleanParcel = {
+        length:        sanitizeString(String(parcel.length  || '10'), 20),
+        width:         sanitizeString(String(parcel.width   || '10'), 20),
+        height:        sanitizeString(String(parcel.height  || '5'),  20),
+        weight:        sanitizeString(String(parcel.weight  || '2'),  20),
+        distance_unit: parcel.distance_unit === 'cm' ? 'cm' : 'in',
+        mass_unit:     parcel.mass_unit === 'kg' ? 'kg' : 'lb',
+      };
+
       // Create shipment data for Shippo API
       const shipmentData = {
         address_from: cleanAddress(addressFrom),
         address_to:   cleanAddress(addressTo),
-        parcels: [parcel],
+        parcels: [cleanParcel],
         async: false
       };
 
@@ -801,10 +811,25 @@ exports.shippoCreateLabel = onRequest(
 
     try {
       const shippoKey = shippoSecret.value();
-      const { rateObjectId, labelFileType = 'PDF', async = false, productId: labelProductId } = req.body;
+      const { rateObjectId, labelFileType = 'PDF', async: asyncLabel = false, productId: labelProductId } = req.body;
 
       if (!rateObjectId) {
         return res.status(400).json({ error: 'Missing rateObjectId' });
+      }
+
+      // Verify caller owns this product before purchasing a label on their behalf
+      if (labelProductId) {
+        const productSnap = await db.collection('products').doc(labelProductId).get();
+        if (!productSnap.exists) {
+          return res.status(404).json({ error: 'Product not found' });
+        }
+        const productOwnerData = productSnap.data();
+        if (productOwnerData.userId !== decodedToken.uid) {
+          return res.status(403).json({ error: 'Forbidden: you do not own this listing' });
+        }
+        if (!productOwnerData.sold) {
+          return res.status(400).json({ error: 'Product has not been sold yet' });
+        }
       }
 
       console.log('Creating shipping label for rate:', rateObjectId);
@@ -819,7 +844,7 @@ exports.shippoCreateLabel = onRequest(
         body: JSON.stringify({
           rate: rateObjectId,
           label_file_type: labelFileType,
-          async: async
+          async: asyncLabel
         })
       });
 
