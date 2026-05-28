@@ -256,12 +256,12 @@ exports.createPaymentIntent = onRequest(
           console.log('Stripe Tax applied:', taxInCents, 'cents for', buyerState, buyerZip);
         } catch (taxErr) {
           taxError = taxErr.message;
-          console.error('Stripe Tax calculation failed — falling back to 8%. Reason:', taxErr.message);
-          taxInCents = Math.round(productPriceInCents * 0.08);
+          console.error('Stripe Tax calculation failed — no tax applied. Reason:', taxErr.message);
+          taxInCents = 0;
         }
       } else {
-        console.warn('No buyerState/buyerZip provided — falling back to 8% tax estimate');
-        taxInCents = Math.round(productPriceInCents * 0.08);
+        console.warn('No buyerState/buyerZip provided — no tax applied');
+        taxInCents = 0;
       }
       const amount = productPriceInCents + shippingInCents + taxInCents;
 
