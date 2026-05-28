@@ -164,6 +164,13 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
         let currentUser = null;
         onAuthStateChanged(auth, (user) => {
             const menuWrapper = document.getElementById('user-menu-wrapper');
@@ -262,7 +269,7 @@
             }
         }
 
-        function displayProduct(product) {
+        async function displayProduct(product) {
             document.title = `${product.name || 'Product'} | GrappleTrade`;
             document.getElementById('breadcrumb-title').textContent = product.name || 'Product';
             document.getElementById('product-title').textContent = product.name || product.title || 'Product';
@@ -373,13 +380,6 @@
                     mainImageEl.className = 'main-image emoji';
                     mainImageEl.textContent = product.image;
                 }
-            }
-
-            function escapeHtml(str) {
-                if (!str) return '';
-                const d = document.createElement('div');
-                d.textContent = str;
-                return d.innerHTML;
             }
 
             let detailsHtml = '';
