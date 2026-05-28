@@ -104,6 +104,7 @@
             <button class="tab-btn" role="tab" onclick="switchTab('announcements', this)">Announcements</button>
             <button class="tab-btn" role="tab" onclick="switchTab('messages', this)">Messages</button>
             <button class="tab-btn" role="tab" onclick="switchTab('disputes', this)">Disputes</button>
+            <button class="tab-btn" role="tab" onclick="switchTab('salesmap', this)">Sales Map</button>
         </div>
 
         <!-- ==============================
@@ -506,6 +507,68 @@
             </div>
         </div>
 
+        <!-- ==============================
+             TAB 10: SALES MAP
+             ============================== -->
+        <div class="tab-section" id="tab-salesmap">
+            <div class="section-header">
+                <span class="section-title">Sales Map</span>
+                <button class="refresh-btn" onclick="loadSalesMap()">Refresh</button>
+            </div>
+
+            <div id="salesmap-loading" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading sales data...</p>
+            </div>
+
+            <div id="salesmap-content" style="display:none;">
+                <!-- National summary stats -->
+                <div class="stats-grid" style="margin-bottom:20px;">
+                    <div class="stat-card">
+                        <div class="stat-number" id="map-stat-total-sales">—</div>
+                        <div class="stat-label">Total Sales (National)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="map-stat-total-revenue">—</div>
+                        <div class="stat-label">Total Revenue (National)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="map-stat-states-at-risk">—</div>
+                        <div class="stat-label">States at Nexus Risk</div>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px;flex-wrap:wrap;font-size:13px;">
+                    <span style="font-weight:600;color:#333;">Tax Nexus Risk:</span>
+                    <span><span style="display:inline-block;width:14px;height:14px;background:#c8e6c9;border:1px solid #81c784;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Safe (&lt;$50k &amp; &lt;100 sales)</span>
+                    <span><span style="display:inline-block;width:14px;height:14px;background:#fff9c4;border:1px solid #f9a825;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Approaching ($50k–$80k or 100–160)</span>
+                    <span><span style="display:inline-block;width:14px;height:14px;background:#ffe0b2;border:1px solid #ef6c00;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Warning ($80k–$100k or 160–200)</span>
+                    <span><span style="display:inline-block;width:14px;height:14px;background:#ffcdd2;border:1px solid #e53935;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Register Now (&ge;$100k or &ge;200)</span>
+                    <span><span style="display:inline-block;width:14px;height:14px;background:#f0f0f0;border:1px solid #bdbdbd;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>No sales</span>
+                </div>
+
+                <!-- Map container -->
+                <div id="salesmap-svg-wrap" style="width:100%;background:#e8eef7;border-radius:12px;padding:16px;position:relative;">
+                    <svg id="us-salesmap" viewBox="0 0 975 610" style="width:100%;height:auto;display:block;"></svg>
+                </div>
+
+                <!-- Tooltip (fixed-position, shown on hover) -->
+                <div id="map-tooltip" style="position:fixed;background:rgba(20,20,20,0.92);color:#fff;padding:12px 16px;border-radius:8px;font-size:13px;pointer-events:none;display:none;z-index:9999;max-width:240px;line-height:1.7;box-shadow:0 4px 20px rgba(0,0,0,0.3);"></div>
+
+                <!-- State detail panel (shown on click) -->
+                <div id="map-state-panel" style="display:none;margin-top:20px;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:20px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                        <h3 id="map-state-name" style="margin:0;font-size:18px;font-weight:700;color:#1a1a1a;"></h3>
+                        <button onclick="document.getElementById('map-state-panel').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#999;line-height:1;">&times;</button>
+                    </div>
+                    <div id="map-state-detail" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;"></div>
+                    <div id="map-state-nexus-status" style="margin-bottom:14px;"></div>
+                    <div id="map-state-yearly"></div>
+                </div>
+            </div>
+        </div>
+
     </div><!-- /.admin-page -->
 
 
@@ -594,6 +657,7 @@
             if (name === 'announcements') { loadAnnouncement(); }
             if (name === 'messages') { loadConversations(); }
             if (name === 'disputes') { loadDisputes(); }
+            if (name === 'salesmap') { loadSalesMap(); }
         }
 
         // ============================================
@@ -2301,6 +2365,250 @@
                 showSection('disputes', 'empty');
                 document.getElementById('disputes-empty').textContent = 'Error loading disputes: ' + err.message;
             }
+        }
+
+        // ============================================
+        // TAB 10: SALES MAP
+        // ============================================
+
+        var salesMapData = {};
+
+        var STATE_NAMES = {
+            'AL':'Alabama','AK':'Alaska','AZ':'Arizona','AR':'Arkansas',
+            'CA':'California','CO':'Colorado','CT':'Connecticut','DE':'Delaware',
+            'FL':'Florida','GA':'Georgia','HI':'Hawaii','ID':'Idaho',
+            'IL':'Illinois','IN':'Indiana','IA':'Iowa','KS':'Kansas',
+            'KY':'Kentucky','LA':'Louisiana','ME':'Maine','MD':'Maryland',
+            'MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MS':'Mississippi',
+            'MO':'Missouri','MT':'Montana','NE':'Nebraska','NV':'Nevada',
+            'NH':'New Hampshire','NJ':'New Jersey','NM':'New Mexico','NY':'New York',
+            'NC':'North Carolina','ND':'North Dakota','OH':'Ohio','OK':'Oklahoma',
+            'OR':'Oregon','PA':'Pennsylvania','RI':'Rhode Island','SC':'South Carolina',
+            'SD':'South Dakota','TN':'Tennessee','TX':'Texas','UT':'Utah',
+            'VT':'Vermont','VA':'Virginia','WA':'Washington','WV':'West Virginia',
+            'WI':'Wisconsin','WY':'Wyoming','DC':'District of Columbia'
+        };
+
+        // FIPS code → state abbreviation (for topojson feature IDs)
+        var STATE_FIPS = {
+            '01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT',
+            '10':'DE','11':'DC','12':'FL','13':'GA','15':'HI','16':'ID','17':'IL',
+            '18':'IN','19':'IA','20':'KS','21':'KY','22':'LA','23':'ME','24':'MD',
+            '25':'MA','26':'MI','27':'MN','28':'MS','29':'MO','30':'MT','31':'NE',
+            '32':'NV','33':'NH','34':'NJ','35':'NM','36':'NY','37':'NC','38':'ND',
+            '39':'OH','40':'OK','41':'OR','42':'PA','44':'RI','45':'SC','46':'SD',
+            '47':'TN','48':'TX','49':'UT','50':'VT','51':'VA','53':'WA','54':'WV',
+            '55':'WI','56':'WY'
+        };
+
+        function getNexusLevel(sd) {
+            if (!sd || sd.count === 0) return 'none';
+            if (sd.revenue >= 100000 || sd.count >= 200) return 'register';
+            if (sd.revenue >= 80000  || sd.count >= 160) return 'warning';
+            if (sd.revenue >= 50000  || sd.count >= 100) return 'approaching';
+            return 'safe';
+        }
+
+        function getNexusColor(level) {
+            return { register:'#ffcdd2', warning:'#ffe0b2', approaching:'#fff9c4', safe:'#c8e6c9', none:'#f0f0f0' }[level] || '#f0f0f0';
+        }
+
+        function getNexusStroke(level) {
+            return { register:'#c62828', warning:'#e65100', approaching:'#f9a825', safe:'#2e7d32', none:'#bdbdbd' }[level] || '#bdbdbd';
+        }
+
+        function fmtMoney(n) {
+            return '$' + Number(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function loadScriptTag(src, checkFn) {
+            return new Promise(function(resolve, reject) {
+                if (checkFn && checkFn()) { resolve(); return; }
+                var s = document.createElement('script');
+                s.src = src;
+                s.onload = resolve;
+                s.onerror = function() { reject(new Error('Failed to load ' + src)); };
+                document.head.appendChild(s);
+            });
+        }
+
+        async function loadSalesMap() {
+            document.getElementById('salesmap-loading').style.display = 'block';
+            document.getElementById('salesmap-content').style.display = 'none';
+            document.getElementById('map-state-panel').style.display = 'none';
+
+            try {
+                var snap = await db.collection('products').where('sold', '==', true).get();
+
+                salesMapData = {};
+                var totalRevenue = 0;
+                var totalSales = 0;
+
+                snap.forEach(function(doc) {
+                    var d = doc.data();
+                    var addr = d.buyerShippingAddress;
+                    if (!addr) return;
+                    var state = ((addr.state || addr.province || '')).trim().toUpperCase();
+                    if (!state || state.length !== 2 || !STATE_NAMES[state]) return;
+
+                    var price = parseFloat(d.price) || 0;
+                    var year = null;
+                    if (d.soldTimestamp && typeof d.soldTimestamp.toDate === 'function') {
+                        year = d.soldTimestamp.toDate().getFullYear();
+                    }
+
+                    if (!salesMapData[state]) salesMapData[state] = { count: 0, revenue: 0, byYear: {} };
+                    salesMapData[state].count++;
+                    salesMapData[state].revenue += price;
+                    if (year) {
+                        if (!salesMapData[state].byYear[year]) salesMapData[state].byYear[year] = { count: 0, revenue: 0 };
+                        salesMapData[state].byYear[year].count++;
+                        salesMapData[state].byYear[year].revenue += price;
+                    }
+                    totalRevenue += price;
+                    totalSales++;
+                });
+
+                document.getElementById('map-stat-total-sales').textContent = totalSales.toLocaleString();
+                document.getElementById('map-stat-total-revenue').textContent = fmtMoney(totalRevenue);
+                var atRisk = Object.keys(salesMapData).filter(function(s) { return getNexusLevel(salesMapData[s]) === 'register'; }).length;
+                document.getElementById('map-stat-states-at-risk').textContent = atRisk;
+
+                document.getElementById('salesmap-loading').style.display = 'none';
+                document.getElementById('salesmap-content').style.display = 'block';
+
+                await renderUSMap();
+
+            } catch (err) {
+                console.error('Sales map error:', err);
+                document.getElementById('salesmap-loading').style.display = 'none';
+                document.getElementById('salesmap-content').style.display = 'block';
+                document.getElementById('salesmap-svg-wrap').innerHTML = '<p style="color:#c62828;padding:20px;">Error loading map: ' + escapeHtml(err.message) + '</p>';
+            }
+        }
+
+        async function renderUSMap() {
+            await loadScriptTag('https://unpkg.com/d3@7/dist/d3.min.js', function() { return typeof d3 !== 'undefined'; });
+            await loadScriptTag('https://unpkg.com/topojson-client@3/dist/topojson-client.min.js', function() { return typeof topojson !== 'undefined'; });
+
+            var usData = await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json').then(function(r) { return r.json(); });
+
+            var svgEl = document.getElementById('us-salesmap');
+            svgEl.innerHTML = '';
+
+            var svg = d3.select('#us-salesmap');
+            var path = d3.geoPath();
+            var states = topojson.feature(usData, usData.objects.states);
+            var borders = topojson.mesh(usData, usData.objects.states, function(a, b) { return a !== b; });
+
+            var tooltip = document.getElementById('map-tooltip');
+
+            svg.selectAll('.map-state')
+                .data(states.features)
+                .enter().append('path')
+                .attr('class', 'map-state')
+                .attr('d', path)
+                .each(function(d) {
+                    var abbrev = STATE_FIPS[String(d.id).padStart(2, '0')];
+                    var level = getNexusLevel(salesMapData[abbrev]);
+                    d3.select(this)
+                        .attr('fill', getNexusColor(level))
+                        .attr('stroke', getNexusStroke(level))
+                        .attr('stroke-width', '0.8')
+                        .style('cursor', 'pointer');
+                })
+                .on('mouseover', function(event, d) {
+                    var abbrev = STATE_FIPS[String(d.id).padStart(2, '0')];
+                    if (!abbrev) return;
+                    var sd = salesMapData[abbrev] || { count: 0, revenue: 0, byYear: {} };
+                    var yr = new Date().getFullYear();
+                    var yd = sd.byYear[yr] || { count: 0, revenue: 0 };
+                    var level = getNexusLevel(sd);
+                    var warn = level === 'register'
+                        ? '<br><span style="color:#ff8a80;font-weight:700;">Register for sales tax!</span>'
+                        : level === 'warning'
+                        ? '<br><span style="color:#ffcc80;font-weight:600;">Approaching nexus threshold</span>'
+                        : '';
+                    tooltip.innerHTML =
+                        '<strong>' + (STATE_NAMES[abbrev] || abbrev) + ' (' + abbrev + ')</strong><br>' +
+                        'All-time: ' + sd.count + ' sales | ' + fmtMoney(sd.revenue) + '<br>' +
+                        '<span style="color:#aaa;font-size:11px;">' + yr + ': ' + yd.count + ' sales | ' + fmtMoney(yd.revenue) + '</span>' +
+                        warn;
+                    tooltip.style.display = 'block';
+                    d3.select(this).attr('stroke-width', '2.5').attr('stroke', '#333');
+                })
+                .on('mousemove', function(event) {
+                    tooltip.style.left = (event.clientX + 14) + 'px';
+                    tooltip.style.top  = (event.clientY - 14) + 'px';
+                })
+                .on('mouseout', function(event, d) {
+                    tooltip.style.display = 'none';
+                    var abbrev = STATE_FIPS[String(d.id).padStart(2, '0')];
+                    var level = getNexusLevel(salesMapData[abbrev]);
+                    d3.select(this).attr('stroke-width', '0.8').attr('stroke', getNexusStroke(level));
+                })
+                .on('click', function(event, d) {
+                    var abbrev = STATE_FIPS[String(d.id).padStart(2, '0')];
+                    if (abbrev) showStateDetail(abbrev);
+                });
+
+            // State border lines (white, on top)
+            svg.append('path')
+                .datum(borders)
+                .attr('fill', 'none')
+                .attr('stroke', '#fff')
+                .attr('stroke-width', '0.5')
+                .attr('d', path);
+        }
+
+        function showStateDetail(abbrev) {
+            var sd = salesMapData[abbrev] || { count: 0, revenue: 0, byYear: {} };
+            var level = getNexusLevel(sd);
+            var pct200 = Math.min(Math.round((sd.count / 200) * 100), 999);
+            var pct100k = Math.min(Math.round((sd.revenue / 100000) * 100), 999);
+
+            document.getElementById('map-state-name').textContent = (STATE_NAMES[abbrev] || abbrev) + ' (' + abbrev + ')';
+
+            document.getElementById('map-state-detail').innerHTML =
+                '<div class="stat-card"><div class="stat-number">' + sd.count.toLocaleString() + '</div><div class="stat-label">Total Sales</div></div>' +
+                '<div class="stat-card"><div class="stat-number">' + fmtMoney(sd.revenue) + '</div><div class="stat-label">Total Revenue</div></div>' +
+                '<div class="stat-card"><div class="stat-number">' + pct200 + '%</div><div class="stat-label">Transaction Threshold (200)</div></div>' +
+                '<div class="stat-card"><div class="stat-number">' + pct100k + '%</div><div class="stat-label">Revenue Threshold ($100k)</div></div>';
+
+            var statusColors = { register:'#c62828', warning:'#e65100', approaching:'#f9a825', safe:'#2e7d32', none:'#999' };
+            var statusLabels = {
+                register:    '⚠ Register for sales tax NOW — economic nexus threshold reached',
+                warning:     '⚠ Approaching threshold — monitor closely',
+                approaching: 'Getting closer to economic nexus threshold',
+                safe:        '✓ Safe — well below threshold',
+                none:        'No sales recorded in this state'
+            };
+            document.getElementById('map-state-nexus-status').innerHTML =
+                '<span style="font-weight:600;color:' + (statusColors[level] || '#999') + ';">' +
+                escapeHtml(statusLabels[level] || '') + '</span>';
+
+            var years = Object.keys(sd.byYear).sort().reverse();
+            var yearlyHtml = '';
+            if (years.length > 0) {
+                yearlyHtml += '<h4 style="margin:0 0 10px;font-size:14px;color:#555;font-weight:600;">Year-by-Year Breakdown</h4>';
+                yearlyHtml += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+                yearlyHtml += '<thead><tr style="background:#f5f5f5;"><th style="padding:8px 12px;text-align:left;">Year</th><th style="padding:8px 12px;text-align:right;">Sales</th><th style="padding:8px 12px;text-align:right;">Revenue</th></tr></thead><tbody>';
+                years.forEach(function(yr) {
+                    var yd = sd.byYear[yr];
+                    yearlyHtml += '<tr style="border-bottom:1px solid #f0f0f0;">' +
+                        '<td style="padding:8px 12px;">' + escapeHtml(yr) + '</td>' +
+                        '<td style="padding:8px 12px;text-align:right;">' + yd.count.toLocaleString() + '</td>' +
+                        '<td style="padding:8px 12px;text-align:right;">' + fmtMoney(yd.revenue) + '</td>' +
+                    '</tr>';
+                });
+                yearlyHtml += '</tbody></table>';
+            } else {
+                yearlyHtml = '<p style="color:#999;font-size:13px;margin:0;">No yearly data available (soldTimestamp missing).</p>';
+            }
+            document.getElementById('map-state-yearly').innerHTML = yearlyHtml;
+
+            document.getElementById('map-state-panel').style.display = 'block';
+            document.getElementById('map-state-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         async function resolveDispute(docId, resolution, btn) {
