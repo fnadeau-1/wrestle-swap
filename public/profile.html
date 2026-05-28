@@ -251,11 +251,10 @@
 
                 const badgesContainer = document.getElementById('profile-badges');
                 badgesContainer.innerHTML = '';
-                if (totalReviews >= 10 && averageRating >= 4.5) {
-                    badgesContainer.innerHTML += '<span class="badge verified">✓ Verified Seller</span>';
-                }
-                if (soldSnap.size >= 20) {
+                if (userData.trustedTrader && !userData.sellerSuspended) {
                     badgesContainer.innerHTML += '<span class="badge trusted">🛡️ Trusted Trader</span>';
+                } else if (userData.verifiedSeller && !userData.sellerSuspended) {
+                    badgesContainer.innerHTML += '<span class="badge verified">✓ Verified Seller</span>';
                 }
                 const memberSince = userData.createdAt
                     ? new Date(userData.createdAt.toDate ? userData.createdAt.toDate() : userData.createdAt).getFullYear()
@@ -351,11 +350,10 @@
             const badgesContainer = document.getElementById('profile-badges');
             badgesContainer.innerHTML = '';
 
-            if (stats.totalReviews >= 10 && stats.averageRating >= 4.5) {
-                badgesContainer.innerHTML += '<span class="badge verified">✓ Verified Seller</span>';
-            }
-            if (stats.itemsSold >= 20) {
+            if (userData.trustedTrader && !userData.sellerSuspended) {
                 badgesContainer.innerHTML += '<span class="badge trusted">🛡️ Trusted Trader</span>';
+            } else if (userData.verifiedSeller && !userData.sellerSuspended) {
+                badgesContainer.innerHTML += '<span class="badge verified">✓ Verified Seller</span>';
             }
             badgesContainer.innerHTML += '<span class="badge member-since">📅 Member since 2024</span>';
 

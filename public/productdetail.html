@@ -129,6 +129,7 @@
                     <div class="seller-header">
                         <div class="seller-name" id="seller-name">Sold by: Loading...</div>
                         <div class="seller-rating" id="seller-rating">⭐ New seller</div>
+                        <div id="seller-badge"></div>
                     </div>
                 </div>
             </div>
@@ -419,6 +420,24 @@
             }
 
             document.getElementById('seller-name').textContent = `Sold by: ${sellerDisplayName}`;
+
+            // Show Verified Seller / Trusted Trader badge if earned
+            if (product.userId) {
+                try {
+                    const sellerUserDoc = await getDoc(doc(db, 'users', product.userId));
+                    if (sellerUserDoc.exists()) {
+                        const sd = sellerUserDoc.data();
+                        const badgeEl = document.getElementById('seller-badge');
+                        if (!sd.sellerSuspended) {
+                            if (sd.trustedTrader) {
+                                badgeEl.innerHTML = '<span class="badge trusted">🛡️ Trusted Trader</span>';
+                            } else if (sd.verifiedSeller) {
+                                badgeEl.innerHTML = '<span class="badge verified">✓ Verified Seller</span>';
+                            }
+                        }
+                    }
+                } catch (_) { /* badge is non-critical */ }
+            }
 
             document.getElementById('loading').style.display = 'none';
             document.getElementById('product-content').style.display = 'block';

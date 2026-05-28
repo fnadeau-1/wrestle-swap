@@ -74,6 +74,35 @@ async function getUserEmail(uid) {
   }
 }
 
+// Award Verified Seller / Trusted Trader badges based on completed paid-out sales.
+// Called after every successful payout — idempotent (only sets fields that aren't already true).
+async function maybeAwardSellerBadges(sellerId) {
+  try {
+    const sellerRef = db.collection('users').doc(sellerId);
+    const sellerSnap = await sellerRef.get();
+    if (!sellerSnap.exists) return;
+    const seller = sellerSnap.data();
+    if (seller.sellerSuspended) return;
+
+    const salesSnap = await db.collection('products')
+      .where('userId', '==', sellerId)
+      .where('sellerPaidOut', '==', true)
+      .get();
+    const completedSales = salesSnap.size;
+
+    const updates = {};
+    if (!seller.verifiedSeller && completedSales >= 5)  updates.verifiedSeller = true;
+    if (!seller.trustedTrader  && completedSales >= 20) updates.trustedTrader  = true;
+
+    if (Object.keys(updates).length > 0) {
+      await sellerRef.update(updates);
+      console.log(`Badges awarded to ${sellerId}:`, Object.keys(updates).join(', '));
+    }
+  } catch (err) {
+    console.error('maybeAwardSellerBadges error:', err.message);
+  }
+}
+
 // Define secrets
 const stripeSecret = defineSecret("STRIPE_SKEY");
 const shippoSecret = defineSecret("SHIPPO_API_KEY");
@@ -2074,6 +2103,9 @@ exports.confirmDelivery = onRequest(
         console.error('Email error (confirmDelivery):', emailErr.message);
       }
 
+      // Check if seller has earned a badge (fire-and-forget — never blocks response)
+      maybeAwardSellerBadges(product.userId).catch(() => {});
+
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error('confirmDelivery error:', error);
@@ -2312,6 +2344,7 @@ exports.shippoWebhook = onRequest(
         }, `${productId}_delivered_buyer`),
       ]);
 
+      maybeAwardSellerBadges(product.userId).catch(() => {});
       console.log(`Shippo webhook: delivery confirmed for product ${productDoc.id}`);
     } catch (err) {
       console.error('Shippo webhook processing error:', err);
