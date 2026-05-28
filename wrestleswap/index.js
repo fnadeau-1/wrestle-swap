@@ -333,6 +333,8 @@ exports.createPaymentIntent = onRequest(
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
         taxSource: paymentIntent.automatic_tax?.enabled ? 'automatic' : 'none',
+        taxAmountCents: paymentIntent.automatic_tax?.amount_tax || 0,
+        taxStatus: paymentIntent.automatic_tax?.status || null,
       });
     } catch (error) {
       console.error('Stripe Error:', error);

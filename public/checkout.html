@@ -846,6 +846,24 @@
                         throw new Error('No client secret received from server');
                     }
 
+                    // Update tax display from Stripe's server-side calculation
+                    // amount_tax is in cents; only shown when Stripe Tax is active and calculated
+                    const stripeTaxCents = data.taxAmountCents || 0;
+                    if (stripeTaxCents > 0) {
+                        tax = stripeTaxCents / 100;
+                        total = subtotal + shippingCost + tax;
+                        const taxEl = document.getElementById('tax-cost');
+                        const taxLabelEl = document.getElementById('tax-label');
+                        const totalEl = document.getElementById('total-amount');
+                        if (taxEl) taxEl.textContent = '$' + tax.toFixed(2);
+                        if (taxLabelEl) taxLabelEl.textContent = 'Sales Tax';
+                        if (totalEl) totalEl.textContent = '$' + total.toFixed(2);
+                        submitButton.textContent = 'Complete Purchase — $' + total.toFixed(2);
+                        console.log('[Tax] Stripe calculated:', '$' + tax.toFixed(2), '| Status:', data.taxStatus);
+                    } else {
+                        console.log('[Tax] source:', data.taxSource, '| status:', data.taxStatus, '| amount: $0');
+                    }
+
                     console.log('Client secret received');
                     console.log('Step 3: Confirming payment with Stripe...');
 
