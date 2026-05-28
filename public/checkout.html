@@ -400,8 +400,8 @@
                     </div>
 
                     <div class="summary-row">
-                        <span id="tax-label">Tax</span>
-                        <span id="tax-cost">$${tax.toFixed(2)}</span>
+                        <span id="tax-label">Tax (calculated by Stripe)</span>
+                        <span id="tax-cost">—</span>
                     </div>
 
                     <div class="summary-row total">
@@ -821,18 +821,7 @@
 
                     const data = await response.json();
                     console.log('Backend response:', data);
-                    console.log('[Tax] source:', data.taxSource, '| amount:', data.taxAmountCents, 'cents');
-                    if (data.taxError) console.warn('[Tax] Stripe Tax failed:', data.taxError);
-
-                    // Update order summary with server-calculated tax BEFORE confirming payment
-                    // so the displayed total matches the actual charge
-                    if (data.taxAmountCents !== undefined) {
-                        tax = data.taxAmountCents / 100;
-                        total = subtotal + shippingCost + tax;
-                        const taxLabel = document.getElementById('tax-label');
-                        if (taxLabel) taxLabel.textContent = data.taxSource === 'stripe_tax' ? 'Tax' : 'Tax (est.)';
-                        updateOrderSummary();
-                    }
+                    console.log('[Tax] source:', data.taxSource);
                     
                     if (data.error) {
                         console.error('Backend returned error:', data.error);

@@ -227,43 +227,9 @@ exports.createPaymentIntent = onRequest(
         shippingInCents = Math.round(parseFloat(rate.amount || 0) * 100);
       }
 
-      // --- STRIPE TAX: calculate exact tax for buyer's address ---
-      let taxInCents = 0;
-      let taxCalculationId = null;
-      let taxSource = 'fallback_8pct';
-      let taxError = null;
-      if (buyerState && buyerZip) {
-        try {
-          // tax_behavior: 'exclusive' = tax is added ON TOP of the price (standard US retail)
-          // Shipping must be passed as shipping_cost param, not as a line_item
-          const taxCalcParams = {
-            currency: 'usd',
-            customer_details: {
-              address: { country: 'US', state: buyerState.toUpperCase(), postal_code: buyerZip },
-              address_source: 'shipping',
-            },
-            line_items: [
-              { amount: productPriceInCents, reference: productId, tax_code: 'txcd_99999999', tax_behavior: 'exclusive' },
-            ],
-          };
-          if (shippingInCents > 0) {
-            taxCalcParams.shipping_cost = { amount: shippingInCents, tax_behavior: 'exclusive' };
-          }
-          const taxCalc = await stripe.tax.calculations.create(taxCalcParams);
-          taxInCents = taxCalc.tax_amount_exclusive;
-          taxCalculationId = taxCalc.id;
-          taxSource = 'stripe_tax';
-          console.log('Stripe Tax applied:', taxInCents, 'cents for', buyerState, buyerZip);
-        } catch (taxErr) {
-          taxError = taxErr.message;
-          console.error('Stripe Tax calculation failed — no tax applied. Reason:', taxErr.message);
-          taxInCents = 0;
-        }
-      } else {
-        console.warn('No buyerState/buyerZip provided — no tax applied');
-        taxInCents = 0;
-      }
-      const amount = productPriceInCents + shippingInCents + taxInCents;
+      // Tax is calculated automatically by Stripe at payment confirmation via automatic_tax.
+      // Amount excludes tax — Stripe adds the correct rate on top based on buyer's shipping address.
+      const amount = productPriceInCents + shippingInCents;
 
       // Look up seller's Stripe account from Firestore — never trust the frontend
       let sellerStripeAccountId = null;
@@ -283,8 +249,8 @@ exports.createPaymentIntent = onRequest(
       console.log('Server-verified payment breakdown:');
       console.log('  Product (from Firestore):', productPriceInCents, 'cents');
       console.log('  Shipping:', shippingInCents, 'cents');
-      console.log('  Tax:', taxInCents, 'cents');
-      console.log('  Total:', amount, 'cents');
+      console.log('  Tax: calculated automatically by Stripe at confirmation');
+      console.log('  Subtotal (pre-tax):', amount, 'cents');
       console.log('  Seller Stripe Account (from Firestore):', sellerStripeAccountId);
 
       // Build payment intent options — always attach productId to metadata
@@ -292,8 +258,22 @@ exports.createPaymentIntent = onRequest(
         amount,
         currency,
         automatic_payment_methods: { enabled: true },
-        metadata: { productId, taxAmountCents: String(taxInCents), taxCalculationId: taxCalculationId || '' },
+        automatic_tax: { enabled: true },
+        metadata: { productId },
       };
+
+      // Provide buyer address so Stripe Tax can determine the correct rate
+      if (buyerState || buyerZip) {
+        paymentIntentOptions.shipping = {
+          name: 'Buyer',
+          address: {
+            country: 'US',
+            line1: '-',
+            ...(buyerState ? { state: buyerState.toUpperCase() } : {}),
+            ...(buyerZip   ? { postal_code: buyerZip }           : {}),
+          },
+        };
+      }
 
       // Escrow model: funds go to platform, seller is paid out only after delivery confirmed.
       // This protects buyers — no destination charge, no immediate transfer to seller.
@@ -319,8 +299,6 @@ exports.createPaymentIntent = onRequest(
           sellerReceivesCents: String(sellerReceivesCents),
           platformFeeCents: String(platformFeeOnProduct),
           rateObjectId: rateObjectId || '',
-          taxAmountCents: String(taxInCents),
-          taxCalculationId: taxCalculationId || '',
         };
       } else {
         // Seller has no connected Stripe account — block purchase so they don't sell without getting paid
@@ -329,7 +307,7 @@ exports.createPaymentIntent = onRequest(
             error: 'The seller has not connected their payout account yet. Please contact the seller or check back later.',
           });
         }
-        paymentIntentOptions.metadata = { productId, buyerId: decodedToken.uid, rateObjectId: rateObjectId || '', taxAmountCents: String(taxInCents), taxCalculationId: taxCalculationId || '' };
+        paymentIntentOptions.metadata = { productId, buyerId: decodedToken.uid, rateObjectId: rateObjectId || '' };
       }
 
       const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
@@ -338,9 +316,7 @@ exports.createPaymentIntent = onRequest(
       return res.status(200).json({
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
-        taxAmountCents: taxInCents,
-        taxSource,
-        ...(taxError ? { taxError } : {}),
+        taxSource: 'automatic',
       });
     } catch (error) {
       console.error('Stripe Error:', error);
