@@ -310,13 +310,29 @@ exports.createPaymentIntent = onRequest(
         paymentIntentOptions.metadata = { productId, buyerId: decodedToken.uid, rateObjectId: rateObjectId || '' };
       }
 
-      const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
-      console.log('Payment intent created:', paymentIntent.id);
+      let paymentIntent;
+      try {
+        paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
+        console.log('Payment intent created with automatic tax:', paymentIntent.id);
+      } catch (taxErr) {
+        // Stripe Tax not activated — retry without automatic_tax so checkout still works
+        const isTaxConfigError = taxErr.message && (
+          taxErr.message.includes('automatic_tax') ||
+          taxErr.message.includes('tax') && taxErr.message.includes('not')
+        );
+        if (!isTaxConfigError) throw taxErr;
+        console.warn('Stripe Tax not configured — creating payment intent without automatic tax:', taxErr.message);
+        const optionsWithoutTax = { ...paymentIntentOptions };
+        delete optionsWithoutTax.automatic_tax;
+        delete optionsWithoutTax.shipping;
+        paymentIntent = await stripe.paymentIntents.create(optionsWithoutTax);
+        console.log('Payment intent created (no tax):', paymentIntent.id);
+      }
 
       return res.status(200).json({
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
-        taxSource: 'automatic',
+        taxSource: paymentIntent.automatic_tax?.enabled ? 'automatic' : 'none',
       });
     } catch (error) {
       console.error('Stripe Error:', error);
