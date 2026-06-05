@@ -108,9 +108,10 @@
             return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
-        // Get order ID from URL parameter
         const urlParams = new URLSearchParams(window.location.search);
-        const orderId = urlParams.get('id');
+        // Normal flow: ?id=pi_xxx  |  Stripe redirect flow (3DS etc.): ?payment_intent=pi_xxx&redirect_status=succeeded
+        const orderId = urlParams.get('id') ||
+            (urlParams.get('redirect_status') === 'succeeded' ? urlParams.get('payment_intent') : null);
 
         // Load order information from session storage
         function loadOrderInfo() {
@@ -237,7 +238,7 @@
             // Use actual values from checkout if available, otherwise calculate
             const subtotal = orderInfo?.subtotal ?? product.price ?? 0;
             const shipping = orderInfo?.shippingCost ?? product.shippingCost ?? 0;
-            const tax = orderInfo?.tax ?? (subtotal * 0.08);
+            const tax = orderInfo?.tax ?? 0;
             const total = orderInfo?.total ?? (subtotal + shipping + tax);
 
             document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
@@ -317,8 +318,8 @@
                     trackingUrl: orderData.trackingUrl || null,
                     subtotal: product.price,
                     shippingCost: orderData.shippingCost || 0,
-                    tax: product.price * 0.08,
-                    total: product.price + (orderData.shippingCost || 0) + product.price * 0.08
+                    tax: orderData.taxAmount || 0,
+                    total: product.price + (orderData.shippingCost || 0) + (orderData.taxAmount || 0)
                 };
 
                 // Re-render with real data

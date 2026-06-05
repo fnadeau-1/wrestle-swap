@@ -353,9 +353,9 @@
                         <h3 style="font-size: 18px; margin: 30px 0 15px 0;">Payment Information</h3>
                         
                         <div class="form-group">
-                            <label class="form-label">Card Information <span class="required">*</span></label>
-                            <div id="card-element"></div>
-                            <div id="card-errors" role="alert"></div>
+                            <label class="form-label">Payment Information <span class="required">*</span></label>
+                            <div id="payment-element"></div>
+                            <div id="card-errors" style="color:#c41e3a;font-size:14px;margin-top:8px;min-height:20px;"></div>
                         </div>
 
                         <button type="submit" class="pay-button" id="submit-button" disabled>
@@ -590,6 +590,11 @@
                     // Enable the payment button
                     document.getElementById('submit-button').disabled = false;
 
+                    // Keep Payment Element amount in sync for Apple Pay / Google Pay display
+                    if (window._stripeElements) {
+                        window._stripeElements.update({ amount: Math.round((subtotal + shippingCost) * 100) });
+                    }
+
                     // Update button text
                     calculateButton.disabled = false;
                     calculateButton.textContent = 'Recalculate Shipping';
@@ -740,32 +745,31 @@
 
         function initializeStripe() {
             const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-            const elements = stripe.elements();
 
-            // Create card element
-            const cardElement = elements.create('card', {
-                style: {
-                    base: {
-                        fontSize: '16px',
-                        color: '#333',
-                        '::placeholder': {
-                            color: '#aab7c4'
-                        }
+            // Payment Element — deferred intent creation (no clientSecret yet;
+            // shipping cost is unknown until the buyer enters their address).
+            // Uses Stripe's recommended deferred flow: elements({ mode }) → elements.submit()
+            // → createPaymentIntent server-side → confirmPayment({ clientSecret }).
+            const elements = stripe.elements({
+                mode: 'payment',
+                amount: Math.round(subtotal * 100), // approximate; updated after shipping calc
+                currency: 'usd',
+                appearance: {
+                    theme: 'stripe',
+                    variables: {
+                        colorPrimary: '#c41e3a',
+                        fontFamily: '"DM Sans", system-ui, sans-serif',
+                        borderRadius: '8px',
                     }
                 }
             });
 
-            cardElement.mount('#card-element');
+            // Expose so calculateShipping() can call elements.update({ amount })
+            // to keep Apple Pay / Google Pay totals accurate after shipping is known.
+            window._stripeElements = elements;
 
-            // Handle real-time validation errors
-            cardElement.on('change', function(event) {
-                const displayError = document.getElementById('card-errors');
-                if (event.error) {
-                    displayError.textContent = event.error.message;
-                } else {
-                    displayError.textContent = '';
-                }
-            });
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
 
             // Handle form submission
             const form = document.getElementById('payment-form');
@@ -786,30 +790,21 @@
                 showPaymentOverlay('Processing Payment', 'Please do not close or navigate away from this page.');
 
                 try {
-                    console.log('Step 1: Getting seller Stripe account...');
-
-                    // Get seller's Stripe account for Connect payout
-                    let sellerStripeAccountId = null;
-                    const sellerId = checkoutProduct.userId || checkoutProduct.sellerId;
-
-                    if (sellerId) {
-                        sellerStripeAccountId = await window.getSellerStripeAccountId(sellerId);
-                        if (sellerStripeAccountId) {
-                            console.log('Seller has Stripe Connect account:', sellerStripeAccountId);
-                        } else {
-                            console.log('Seller does not have Stripe Connect - payment goes to platform');
-                        }
-                    } else {
-                        console.log('No seller ID found on product - payment goes to platform');
+                    // Step 1: Validate the Payment Element (catches incomplete card numbers, etc.)
+                    const { error: submitError } = await elements.submit();
+                    if (submitError) {
+                        hidePaymentOverlay();
+                        document.getElementById('card-errors').textContent = submitError.message;
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Complete Purchase';
+                        return;
                     }
 
-                    console.log('Step 2: Creating Payment Intent...');
-
-                    // Send only productId and shippingCost — the Cloud Function fetches
-                    // the real product price from Firestore and calculates tax server-side.
-                    // Never send amounts from the frontend where they could be tampered with.
+                    // Step 2: Create PaymentIntent server-side.
+                    // Price, shipping, and seller account are all verified there — never trust the frontend.
+                    console.log('Creating Payment Intent...');
                     const idToken = await window.getIdToken();
-                    const response = await fetch('https://createpaymentintent-kebvkf67ma-uc.a.run.app', {
+                    const piResponse = await fetch('https://createpaymentintent-kebvkf67ma-uc.a.run.app', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -824,30 +819,16 @@
                         })
                     });
 
-                    console.log('Response status:', response.status);
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error('Server error response:', errorText);
-                        throw new Error(`Server error: ${response.status} - ${errorText}`);
+                    if (!piResponse.ok) {
+                        const errText = await piResponse.text();
+                        throw new Error(`Server error ${piResponse.status}: ${errText}`);
                     }
 
-                    const data = await response.json();
-                    console.log('Backend response:', data);
-                    console.log('[Tax] source:', data.taxSource);
-                    
-                    if (data.error) {
-                        console.error('Backend returned error:', data.error);
-                        throw new Error(data.error);
-                    }
-                    
-                    if (!data.clientSecret) {
-                        console.error('No clientSecret in response. Full response:', data);
-                        throw new Error('No client secret received from server');
-                    }
+                    const data = await piResponse.json();
+                    if (data.error) throw new Error(data.error);
+                    if (!data.clientSecret) throw new Error('No client secret received from server');
 
-                    // Update tax display from Stripe's server-side calculation
-                    // amount_tax is in cents; only shown when Stripe Tax is active and calculated
+                    // Update tax display from Stripe's server-side automatic_tax calculation
                     const stripeTaxCents = data.taxAmountCents || 0;
                     if (stripeTaxCents > 0) {
                         tax = stripeTaxCents / 100;
@@ -859,115 +840,96 @@
                         if (taxLabelEl) taxLabelEl.textContent = 'Sales Tax';
                         if (totalEl) totalEl.textContent = '$' + total.toFixed(2);
                         submitButton.textContent = 'Complete Purchase — $' + total.toFixed(2);
-                        console.log('[Tax] Stripe calculated:', '$' + tax.toFixed(2), '| Status:', data.taxStatus);
+                        console.log('[Tax] Stripe calculated: $' + tax.toFixed(2), '| status:', data.taxStatus);
                     } else {
-                        console.log('[Tax] source:', data.taxSource, '| status:', data.taxStatus, '| amount: $0');
+                        console.log('[Tax] source:', data.taxSource, '| status:', data.taxStatus, '| $0');
                     }
 
-                    console.log('Client secret received');
-                    console.log('Step 3: Confirming payment with Stripe...');
-
-                    // Step 2: Confirm the payment
-                    const result = await stripe.confirmCardPayment(data.clientSecret, {
-                        payment_method: {
-                            card: cardElement,
-                            billing_details: {
-                                name: document.getElementById('first-name').value + ' ' + document.getElementById('last-name').value,
-                                email: document.getElementById('email').value,
-                                phone: document.getElementById('phone').value,
-                                address: {
-                                    line1: document.getElementById('address').value,
-                                    line2: document.getElementById('address2').value,
-                                    city: document.getElementById('city').value,
-                                    state: document.getElementById('state').value,
-                                    postal_code: document.getElementById('zip').value,
-                                    country: 'US'
+                    // Step 3: Confirm payment via Payment Element.
+                    // redirect: 'if_required' — only redirects for methods that need it (e.g. 3DS,
+                    // iDEAL). For regular US cards, Apple Pay, Google Pay: returns immediately.
+                    // If a redirect does occur, Stripe sends the buyer back to return_url and the
+                    // stripeWebhook Cloud Function handles order completion as a safety net.
+                    console.log('Confirming payment...');
+                    const { error, paymentIntent } = await stripe.confirmPayment({
+                        elements,
+                        clientSecret: data.clientSecret,
+                        confirmParams: {
+                            return_url: window.location.origin + '/order-confirmation.html',
+                            payment_method_data: {
+                                billing_details: {
+                                    name: `${document.getElementById('first-name').value} ${document.getElementById('last-name').value}`.trim(),
+                                    email: document.getElementById('email').value,
+                                    phone: document.getElementById('phone').value,
+                                    address: {
+                                        line1: document.getElementById('address').value,
+                                        line2: document.getElementById('address2').value || '',
+                                        city: document.getElementById('city').value,
+                                        state: document.getElementById('state').value,
+                                        postal_code: document.getElementById('zip').value,
+                                        country: 'US'
+                                    }
                                 }
                             }
-                        }
+                        },
+                        redirect: 'if_required'
                     });
 
-                    console.log('Stripe confirmation result:', result);
-
-                    if (result.error) {
-                        console.error('Payment error:', result.error);
+                    if (error) {
+                        // Card declined, validation error, authentication failure, etc.
                         hidePaymentOverlay();
-                        const errorElement = document.getElementById('card-errors');
-                        errorElement.textContent = result.error.message;
+                        document.getElementById('card-errors').textContent = error.message;
                         submitButton.disabled = false;
                         submitButton.textContent = 'Complete Purchase';
-                    } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
-                        console.log('Payment succeeded!', result.paymentIntent);
-                        
-                        // Step 4: Create shipping label with Shippo
-                        console.log('Step 4: Creating shipping label...');
+                        return;
+                    }
+
+                    if (paymentIntent && paymentIntent.status === 'succeeded') {
+                        // Normal path — no redirect (cards, Apple Pay, Google Pay)
+                        console.log('Payment succeeded:', paymentIntent.id);
+
+                        // Step 4: Create shipping label
                         submitButton.textContent = 'Creating shipping label...';
                         updatePaymentOverlay('Payment Confirmed!', 'Creating your shipping label — almost done, do not close this page.');
-                        
+
                         let shippingInfo = null;
                         try {
                             shippingInfo = await createShippingLabel();
-                            console.log('Shipping label created successfully:', shippingInfo);
                         } catch (labelError) {
                             console.error('Failed to create shipping label:', labelError);
-                            alert('Payment successful! Note: Shipping label creation failed - we will create it manually and email it to you.');
+                            alert('Payment successful! Note: Shipping label creation failed — we will create it manually and email it to you.');
                         }
-                        
-                        // Step 5: Complete order via Cloud Function (verifies payment + marks sold)
-                        console.log('Step 5: Completing order via Cloud Function...');
+
+                        // Step 5: Complete order (marks item sold, emails buyer & seller)
                         updatePaymentOverlay('Finalizing Your Order', 'Your order is being confirmed — almost there!');
-                        const soldSuccess = await completeOrder(
-                            checkoutProduct.id,
-                            result.paymentIntent.id,
-                            shippingInfo
-                        );
-                        
-                        if (soldSuccess) {
-                            console.log('Product successfully marked as sold');
-                        } else {
-                            console.warn('Payment succeeded but failed to mark product as sold');
-                        }
-                        
-                        // Clear the checkout product from session temporarily for customer
-                        // But save it for the seller page
-                        const productForSeller = JSON.parse(JSON.stringify(checkoutProduct));
-                        
-                        // Store order info for confirmation page (customer)
+                        await completeOrder(checkoutProduct.id, paymentIntent.id, shippingInfo);
+
+                        // Step 6: Save receipt data and redirect
                         sessionStorage.setItem('orderInfo', JSON.stringify({
-                            orderId: result.paymentIntent.id,
+                            orderId: paymentIntent.id,
                             trackingNumber: shippingInfo?.tracking_number,
                             trackingUrl: shippingInfo?.tracking_url_provider,
                             labelUrl: shippingInfo?.label_url,
-                            shippingService: selectedShippingRate ? `${selectedShippingRate.provider} ${selectedShippingRate.servicelevel.name}` : 'Standard Shipping',
-                            subtotal: subtotal,
-                            shippingCost: shippingCost,
-                            tax: tax,
-                            total: total,
+                            shippingService: selectedShippingRate
+                                ? `${selectedShippingRate.provider} ${selectedShippingRate.servicelevel.name}`
+                                : 'Standard Shipping',
+                            subtotal, shippingCost, tax, total,
                         }));
 
-                        // Keep product in session for confirmation page
-                        sessionStorage.setItem('checkoutProduct', JSON.stringify(productForSeller));
-                        
                         updatePaymentOverlay('Order Complete!', 'Redirecting you to your receipt...');
-
-                        // Must clear onbeforeunload before navigating or the browser
-                        // intercepts the redirect with a "Leave page?" dialog
                         window.onbeforeunload = null;
+                        window.location.href = 'order-confirmation.html?id=' + paymentIntent.id;
 
-                        console.log('Seller fulfillment page:',
-                            'seller-order-fulfillment.html?productId=' + checkoutProduct.id + '&orderId=' + result.paymentIntent.id);
-
-                        // Redirect to order confirmation page
-                        window.location.href = 'order-confirmation.html?id=' + result.paymentIntent.id;
                     } else {
-                        console.log('Unexpected payment status:', result.paymentIntent?.status);
-                        throw new Error('Unexpected payment status: ' + (result.paymentIntent?.status || 'unknown'));
+                        // Redirect-based methods (3DS etc.) — confirmPayment already navigated
+                        // the browser away; we only land here for truly unexpected statuses.
+                        throw new Error('Unexpected payment status: ' + (paymentIntent?.status || 'unknown'));
                     }
+
                 } catch (err) {
-                    console.error('Full error details:', err);
+                    console.error('Payment error:', err);
                     hidePaymentOverlay();
-                    const cardErrors = document.getElementById('card-errors');
-                    if (cardErrors) cardErrors.textContent = 'Payment failed: ' + err.message;
+                    document.getElementById('card-errors').textContent = 'Payment failed: ' + err.message;
                     submitButton.disabled = false;
                     submitButton.textContent = 'Complete Purchase';
                 }
