@@ -12,7 +12,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="css/base.css">
-    <script src="https://www.google.com/recaptcha/enterprise.js?render=6LcM51YsAAAAAJIK9J6ztDQhKET0FdHvOBZ9p9Ah" async defer></script>
     <link rel="stylesheet" href="css/sign-in.css">
 </head>
 <body>
@@ -49,7 +48,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import {
             getAuth,
             signInWithPopup,
@@ -58,17 +57,17 @@
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
+            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+            authDomain: "grappletrade.firebaseapp.com",
+            projectId: "grappletrade",
+            storageBucket: "grappletrade.firebasestorage.app",
+            messagingSenderId: "119683736855",
+            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
+            measurementId: "G-987DNCH23C"
         };
 
         const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK'), isTokenAutoRefreshEnabled: true });
+        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -83,9 +82,6 @@
 
     <script>
         let popupInProgress = false;
-
-        const RECAPTCHA_SITE_KEY = '6LcM51YsAAAAAJIK9J6ztDQhKET0FdHvOBZ9p9Ah';
-        const RECAPTCHA_VERIFY_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/verifyRecaptcha';
 
         function showError(msg) {
             const el = document.getElementById('error-banner');
@@ -106,28 +102,6 @@
             const redirect = params.get('redirect');
             if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) return redirect;
             return 'index.html';
-        }
-
-        async function executeRecaptcha(action) {
-            if (typeof grecaptcha === 'undefined') throw new Error('reCAPTCHA not loaded');
-            await new Promise(resolve => grecaptcha.enterprise.ready(resolve));
-            return await grecaptcha.enterprise.execute(RECAPTCHA_SITE_KEY, { action });
-        }
-
-        async function verifyRecaptchaServer(action) {
-            try {
-                const token = await executeRecaptcha(action);
-                const response = await fetch(RECAPTCHA_VERIFY_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, expectedAction: action })
-                });
-                const result = await response.json();
-                return result.success;
-            } catch (error) {
-                console.error('reCAPTCHA error:', error);
-                return false;
-            }
         }
 
         function generateUsername() {
@@ -183,8 +157,6 @@
             setAllButtonsDisabled(true);
 
             try {
-                await verifyRecaptchaServer('SOCIAL_SIGN_IN');
-
                 const authProvider = new window.GoogleAuthProvider();
 
                 const result = await window.signInWithPopup(window.firebaseAuth, authProvider);
