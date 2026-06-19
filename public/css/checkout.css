@@ -275,9 +275,6 @@ body {
         grid-template-columns: 1fr;
     }
 }
-@keyframes pay-spin { to { transform: rotate(360deg); } }
-#payment-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 9999; align-items: center; justify-content: center; }
-#payment-overlay.active { display: flex; }
 
 /* Payment Processing Overlay */
 @keyframes pay-spin { to { transform: rotate(360deg); } }

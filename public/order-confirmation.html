@@ -254,18 +254,18 @@
     <!-- Firestore fallback: load order from DB if sessionStorage is empty on refresh -->
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getFirestore, collection, query, where, getDocs, getDoc, doc }
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
+            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+            authDomain: "grappletrade.firebaseapp.com",
+            projectId: "grappletrade",
+            storageBucket: "grappletrade.firebasestorage.app",
+            messagingSenderId: "119683736855",
+            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
+            measurementId: "G-987DNCH23C"
         };
         const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
         const db = getFirestore(app);

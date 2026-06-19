@@ -164,23 +164,23 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, getDoc, serverTimestamp, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
+            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+            authDomain: "grappletrade.firebaseapp.com",
+            projectId: "grappletrade",
+            storageBucket: "grappletrade.firebasestorage.app",
+            messagingSenderId: "119683736855",
+            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
+            measurementId: "G-987DNCH23C"
         };
 
         const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK'), isTokenAutoRefreshEnabled: true });
+        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
         const db = getFirestore(app);
         const storage = getStorage(app);
         const auth = getAuth(app);
@@ -254,6 +254,9 @@
         window.getDownloadURL = getDownloadURL;
         window.getCurrentUser = () => currentUser;
         window.getStripeAccountId = () => userStripeAccountId;
+        window.getDocs = getDocs;
+        window.query = query;
+        window.where = where;
 
         console.log("Firebase initialized!");
 
@@ -285,7 +288,7 @@
 
     <script>
         // ── Price guidance ────────────────────────────────────────────────────
-        const PRICE_SUGGESTIONS_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/getPriceSuggestions';
+        const PRICE_SUGGESTIONS_URL = 'https://us-central1-grappletrade.cloudfunctions.net/getPriceSuggestions';
         let priceSuggestionTimeout = null;
 
         async function loadPriceGuidance(category) {
@@ -532,9 +535,8 @@
                     // CRITICAL: Stripe Connect seller ID
                     sellerId: stripeAccountId,  // Stripe Connect account ID for payments
 
-                    // Seller information
+                    // Seller information — do NOT store email here; products are publicly readable
                     userId: currentUser.uid,
-                    sellerEmail: currentUser.email,
                     sellerName: currentUser.displayName || currentUser.email.split('@')[0],
                     
                     // Timestamps

@@ -9,31 +9,36 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
     }
 
+    // -------------------------------------------------------------------------
     // Products collection
+    // -------------------------------------------------------------------------
     match /products/{productId} {
       allow read: if true;
+
       // Seller must be authenticated, email-verified, not suspended, and must own the listing
       allow create: if request.auth != null
         && request.auth.token.email_verified == true
         && request.resource.data.userId == request.auth.uid
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('sellerSuspended', false) == false;
-      // Sellers can edit their own listings but cannot touch order/payment/fulfilment fields
-      // (those are written exclusively by Cloud Functions via Admin SDK which bypasses rules)
+
       allow update: if isAdmin()
-        // Seller can update their own listing — but never touch order/payout/escrow fields
+        // Seller can edit their own UNSOLD listing — never touch order/payout/fulfillment/status fields
         || (request.auth != null
             && resource.data.userId == request.auth.uid
+            && resource.data.sold != true
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-                'sold', 'buyerId', 'soldOrderId', 'soldAt', 'soldTimestamp',
+                'sold', 'cancelled',
+                'buyerId', 'soldOrderId', 'soldAt', 'soldTimestamp',
                 'cancelledAt', 'cancelledBy', 'refundId', 'cancelInitiated',
                 'trackingNumber', 'trackingUrl', 'carrier', 'shipped', 'shippedAt',
                 'delivered', 'deliveredAt', 'shippingCost',
                 'sellerPaidOut', 'sellerPaidOutAt', 'sellerPayoutTransferId',
                 'payoutInitiated', 'autoReleaseBlocked', 'autoReleaseWarned',
                 'autoReleaseWarningAt', 'autoReleaseWarningTimestamp',
-                'autoReleasedAt', 'autoReleaseCompleted'
+                'autoReleasedAt', 'autoReleaseCompleted',
+                'review', 'sellerRating'
             ]))
-        // Buyer can leave a review or seller rating on a delivered order they purchased
+        // Buyer can leave a review on a delivered order they purchased
         || (request.auth != null
             && resource.data.buyerId == request.auth.uid
             && resource.data.delivered == true
@@ -41,50 +46,64 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                 'review', 'sellerRating', 'updatedAt'
             ]))
-        // Buyer can flag a refund request or dispute on an active (not yet delivered, not cancelled) order
+        // Buyer can flag a refund request or dispute on an active (sold, not cancelled, not yet delivered) order
         || (request.auth != null
             && resource.data.buyerId == request.auth.uid
             && resource.data.sold == true
             && resource.data.cancelled != true
+            && resource.data.delivered != true
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                 'refundRequested', 'refundRequestedAt', 'refundReason',
                 'disputeOpened', 'updatedAt'
             ]));
-      // Sellers can delete their own unsold listings; sold listings are locked (active order in flight)
-      allow delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid && resource.data.sold != true);
+
+      // Sellers can delete their own unsold listings; sold/active listings are locked
+      allow delete: if isAdmin()
+        || (request.auth != null
+            && resource.data.userId == request.auth.uid
+            && resource.data.sold != true);
     }
 
+    // -------------------------------------------------------------------------
     // Users collection
-    // Full doc (incl. stripeAccountId, penalties, isAdmin) only visible to owner + admins.
-    // Other authenticated users get read access for public seller profiles — Firestore
-    // doesn't support field-level restrictions, so keep sensitive fields off this doc
-    // long-term (move to a private subcollection). For now the exposure is low-risk:
-    // stripeAccountId is not a secret, and isAdmin/penalty fields are informational only.
+    // -------------------------------------------------------------------------
     match /users/{userId} {
+      // Owner + admins get full read; any authenticated user can read public seller profiles.
+      // Firestore doesn't support field-level restrictions — sensitive fields (stripeAccountId,
+      // isAdmin) are exposed to authenticated users. Accepted tradeoff for public seller profiles.
       allow read: if isAdmin()
         || (request.auth != null && request.auth.uid == userId)
         || request.auth != null;
-      // New users can create their own profile document
-      allow create: if request.auth != null && request.auth.uid == userId;
-      // Admins can update anything; regular users can update their own doc
-      // but cannot touch penalty/suspension/privilege fields
+
+      // New users create their own profile; privilege/suspension fields are blocked at creation
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.get('isAdmin', false) == false
+        && request.resource.data.get('sellerSuspended', false) == false
+        && request.resource.data.get('sellerCancellationCount', 0) == 0;
+
+      // Admins can update anything; regular users can update their own doc but cannot
+      // touch privilege, suspension, penalty, or Stripe identity fields
       allow update: if isAdmin()
         || (request.auth != null
           && request.auth.uid == userId
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
               'sellerSuspended', 'sellerCancellationCount', 'sellerPenalties', 'isAdmin',
-              'stripeAccountId', 'stripeCreatedAt'
+              'stripeAccountId', 'stripeCreatedAt', 'stripePayoutsEnabled'
           ])
-          // displayName must always match username — no real name leakage
+          // displayName must always equal username — no real-name leakage
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName', 'username'])
               || request.resource.data.get('displayName', '') == request.resource.data.get('username', '')));
+
       allow delete: if isAdmin();
     }
 
-    // Usernames collection (for username uniqueness)
+    // -------------------------------------------------------------------------
+    // Usernames collection (uniqueness reservation)
+    // -------------------------------------------------------------------------
     match /usernames/{username} {
       allow read: if true;
-      // Create: only if no document exists yet (prevents overwriting someone else's username)
+      // Create: only if no document exists (prevents overwriting another user's reservation)
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
         && !exists(/databases/$(database)/documents/usernames/$(username));
@@ -92,38 +111,39 @@ service cloud.firestore {
       allow update: if request.auth != null
         && request.resource.data.userId == request.auth.uid
         && resource.data.userId == request.auth.uid;
-      // Delete: only the owner can release their username; Cloud Functions handle this via Admin SDK
+      // Delete: only the owner can release their username
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
+    // -------------------------------------------------------------------------
     // Orders collection
-    // All order mutations (status, tracking, fulfilment, cancellation) are handled
-    // exclusively by Cloud Functions via Admin SDK, which bypasses these rules.
-    // Client-side update is intentionally denied — if direct client writes are ever
-    // needed, add explicit field allowlists here rather than opening it broadly.
+    // All mutations handled exclusively by Cloud Functions via Admin SDK
+    // -------------------------------------------------------------------------
     match /orders/{orderId} {
-      // Admins can read/write any order; buyers and sellers can access their own
-      allow read: if isAdmin() || (request.auth != null && (
-        resource.data.buyerId == request.auth.uid ||
-        resource.data.sellerId == request.auth.uid
-      ));
-      // Only the buyer can create an order for themselves
-      allow create: if request.auth != null && request.resource.data.buyerId == request.auth.uid;
-      // No client-side updates — all order mutations go through Cloud Functions
+      allow read: if isAdmin()
+        || (request.auth != null && (
+          resource.data.buyerId == request.auth.uid ||
+          resource.data.sellerId == request.auth.uid
+        ));
+      allow create: if false;
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
-    // Conversations collection (messaging)
-    // participants array contains [buyerId, sellerId] — enables array-contains queries
+    // -------------------------------------------------------------------------
+    // Conversations + messages (messaging)
+    // -------------------------------------------------------------------------
     match /conversations/{conversationId} {
       allow read: if isAdmin()
         || (request.auth != null && request.auth.uid in resource.data.participants);
+
+      // Buyer initiates conversation; must include exactly 2 participants
       allow create: if request.auth != null
         && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.size() == 2
         && request.resource.data.buyerId == request.auth.uid;
-      // Participants can only update messaging metadata — never structural fields like
-      // participants, sellerId, productId, etc.
+
+      // Participants can only update messaging metadata — never structural fields
       allow update: if request.auth != null
         && request.auth.uid in resource.data.participants
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -135,42 +155,52 @@ service cloud.firestore {
         allow read: if isAdmin()
           || (request.auth != null
             && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants);
-        allow write: if request.auth != null
+        // Create only — editing or deleting existing messages is not permitted
+        allow create: if request.auth != null
           && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
       }
     }
 
-    // Watchlists — only owner can read/write
+    // -------------------------------------------------------------------------
+    // Watchlists — owner only
+    // -------------------------------------------------------------------------
     match /watchlists/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Seller ratings — anyone can read; only verified buyers can create a review,
-    // and only for products they actually purchased and that have been delivered.
-    // ratingId must be {orderId}_{buyerUid} — enforced here to prevent duplicate reviews
-    // (a second create attempt uses the same deterministic ID, which Firestore rejects as an update)
+    // -------------------------------------------------------------------------
+    // Seller ratings
+    // -------------------------------------------------------------------------
     match /sellerRatings/{ratingId} {
       allow read: if true;
       allow create: if request.auth != null
         && request.auth.uid == request.resource.data.buyerId
         && ratingId == request.resource.data.orderId + '_' + request.auth.uid
         && get(/databases/$(database)/documents/products/$(request.resource.data.orderId)).data.buyerId == request.auth.uid
-        && get(/databases/$(database)/documents/products/$(request.resource.data.orderId)).data.delivered == true;
+        && get(/databases/$(database)/documents/products/$(request.resource.data.orderId)).data.delivered == true
+        // Rating must be a whole number between 1 and 5
+        && request.resource.data.get('rating', 0) >= 1
+        && request.resource.data.get('rating', 0) <= 5;
       allow update, delete: if isAdmin();
     }
 
-    // Community reports — authenticated users can file a report,
-    // only admins can read or manage reports
+    // -------------------------------------------------------------------------
+    // Community reports — anyone can file; only admins can read/manage
+    // -------------------------------------------------------------------------
     match /reports/{reportId} {
       allow create: if request.auth != null;
       allow read, update, delete: if isAdmin();
     }
 
-    // Refund requests — buyers can create for their own orders only, buyer or seller can read their own,
-    // admins can read and update all
+    // -------------------------------------------------------------------------
+    // Refund requests
+    // -------------------------------------------------------------------------
     match /refundRequests/{requestId} {
       allow create: if request.auth != null
-        && request.resource.data.buyerId == request.auth.uid;
+        && request.resource.data.buyerId == request.auth.uid
+        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.buyerId == request.auth.uid
+        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.sold == true
+        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.get('cancelled', false) != true;
       allow read: if isAdmin()
         || (request.auth != null && (
           resource.data.buyerId == request.auth.uid ||
@@ -179,27 +209,35 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
-    // Platform config (announcements, site settings) — anyone can read,
-    // only admins can write
+    // -------------------------------------------------------------------------
+    // Platform config (announcements, site settings)
+    // -------------------------------------------------------------------------
     match /config/{configId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
+    // -------------------------------------------------------------------------
     // In-app notifications — recipient can read; Cloud Functions write via Admin SDK
-    // Users can update only the 'read' field on their own notifications
+    // -------------------------------------------------------------------------
     match /notifications/{userId}/items/{notifId} {
       allow read: if request.auth != null && request.auth.uid == userId;
+      // Users can only mark their own notifications as read
       allow update: if request.auth != null
         && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
       allow create, delete: if false;
     }
 
-    // Disputes — buyers can create for their own orders, buyer/seller can read their own
+    // -------------------------------------------------------------------------
+    // Disputes
+    // -------------------------------------------------------------------------
     match /disputes/{disputeId} {
       allow create: if request.auth != null
-        && request.resource.data.buyerId == request.auth.uid;
+        && request.resource.data.buyerId == request.auth.uid
+        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.buyerId == request.auth.uid
+        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.sold == true
+        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.get('cancelled', false) != true;
       allow read: if isAdmin()
         || (request.auth != null && (
           resource.data.buyerId == request.auth.uid ||
@@ -208,17 +246,23 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Abandoned carts — written exclusively by Cloud Functions via Admin SDK; clients denied
+    // -------------------------------------------------------------------------
+    // Abandoned carts — written exclusively by Cloud Functions via Admin SDK
+    // -------------------------------------------------------------------------
     match /abandonedCarts/{docId} {
       allow read, write: if false;
     }
 
-    // Rate limit counters — written only by Cloud Functions via Admin SDK, never by clients
+    // -------------------------------------------------------------------------
+    // Rate limit counters — written exclusively by Cloud Functions via Admin SDK
+    // -------------------------------------------------------------------------
     match /rateLimits/{userId} {
       allow read, write: if false;
     }
 
-    // Default deny for everything else
+    // -------------------------------------------------------------------------
+    // Default deny for all other collections
+    // -------------------------------------------------------------------------
     match /{document=**} {
       allow read, write: if false;
     }

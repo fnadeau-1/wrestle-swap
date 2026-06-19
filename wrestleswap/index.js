@@ -7,8 +7,6 @@ const { CloudBillingClient } = require("@google-cloud/billing");
 
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
-  'https://wrestleswap.web.app',
-  'https://wrestleswap.firebaseapp.com',
   'https://grappletrade.web.app',
   'https://grappletrade.firebaseapp.com',
   'https://grappletrade.com',
@@ -338,7 +336,7 @@ exports.createPaymentIntent = onRequest(
       });
     } catch (error) {
       console.error('Stripe Error:', error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -537,7 +535,7 @@ exports.cancelOrder = onRequest(
 
     } catch (error) {
       console.error('Cancellation Error:', error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -703,7 +701,7 @@ exports.createConnectedAccount = onRequest(
 
     } catch (error) {
       console.error('Error creating connected account:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -862,19 +860,23 @@ exports.shippoCreateLabel = onRequest(
         return res.status(400).json({ error: 'Missing rateObjectId' });
       }
 
+      // productId is required — prevents any authenticated user from purchasing arbitrary
+      // Shippo labels charged to the platform without a matching sold order.
+      if (!labelProductId) {
+        return res.status(400).json({ error: 'Missing productId' });
+      }
+
       // Verify caller owns this product before purchasing a label on their behalf
-      if (labelProductId) {
-        const productSnap = await db.collection('products').doc(labelProductId).get();
-        if (!productSnap.exists) {
-          return res.status(404).json({ error: 'Product not found' });
-        }
-        const productOwnerData = productSnap.data();
-        if (productOwnerData.userId !== decodedToken.uid) {
-          return res.status(403).json({ error: 'Forbidden: you do not own this listing' });
-        }
-        if (!productOwnerData.sold) {
-          return res.status(400).json({ error: 'Product has not been sold yet' });
-        }
+      const productSnap = await db.collection('products').doc(labelProductId).get();
+      if (!productSnap.exists) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      const productOwnerData = productSnap.data();
+      if (productOwnerData.userId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'Forbidden: you do not own this listing' });
+      }
+      if (!productOwnerData.sold) {
+        return res.status(400).json({ error: 'Product has not been sold yet' });
       }
 
       console.log('Creating shipping label for rate:', rateObjectId);
@@ -1042,7 +1044,7 @@ exports.checkSellerStatus = onRequest(
 
     } catch (error) {
       console.error('Error checking seller status:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -1075,7 +1077,7 @@ exports.verifyRecaptcha = onRequest(
 
       // Call reCAPTCHA Enterprise API
       const response = await fetch(
-        `https://recaptchaenterprise.googleapis.com/v1/projects/wrestleswap/assessments?key=${apiKey}`,
+        `https://recaptchaenterprise.googleapis.com/v1/projects/grappletrade/assessments?key=${apiKey}`,
         {
           method: 'POST',
           headers: {
@@ -1377,7 +1379,7 @@ exports.completeOrder = onRequest(
 
     } catch (error) {
       console.error('completeOrder error:', error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -1548,7 +1550,7 @@ exports.sellerCancelOrder = onRequest(
 
     } catch (error) {
       console.error('sellerCancelOrder error:', error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -1794,7 +1796,7 @@ exports.adminDeleteUser = onRequest(
         await db.collection('users').doc(userId).delete().catch(() => {});
         return res.status(200).json({ success: true, note: 'Auth user not found but Firestore doc removed' });
       }
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -1898,7 +1900,7 @@ exports.adminIssueRefund = onRequest(
 
     } catch (error) {
       console.error('adminIssueRefund error:', error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -1917,10 +1919,16 @@ exports.markAsShipped = onRequest(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { productId, trackingNumber, trackingUrl, carrier } = req.body;
+    const { productId, trackingNumber, trackingUrl, carrier: rawCarrier } = req.body;
     if (!productId || !trackingNumber) {
       return res.status(400).json({ error: 'Missing productId or trackingNumber' });
     }
+
+    // Allowlist carrier to prevent path injection into Shippo tracking API URLs
+    const ALLOWED_CARRIERS = ['usps', 'ups', 'fedex', 'dhl', 'ontrac', 'lasership', 'amazon', 'shippo', 'other'];
+    const carrier = rawCarrier && ALLOWED_CARRIERS.includes(String(rawCarrier).toLowerCase())
+      ? String(rawCarrier).toLowerCase()
+      : null;
 
     try {
       const productRef = db.collection('products').doc(productId);
@@ -1934,6 +1942,27 @@ exports.markAsShipped = onRequest(
       }
       if (!product.sold) {
         return res.status(400).json({ error: 'This product has not been sold' });
+      }
+
+      // Validate trackingUrl — prevent phishing links being emailed to buyers
+      if (trackingUrl) {
+        const SAFE_TRACKING_HOSTS = [
+          'tools.usps.com', 'informeddelivery.usps.com', 'usps.com',
+          'ups.com', 'wwwapps.ups.com',
+          'fedex.com', 'www.fedex.com',
+          'dhl.com', 'www.dhl.com',
+          'tracking.shippo.com',
+          'parcelsapp.com', '17track.net',
+        ];
+        let urlOk = false;
+        try {
+          const u = new URL(trackingUrl);
+          urlOk = u.protocol === 'https:' &&
+            SAFE_TRACKING_HOSTS.some(h => u.hostname === h || u.hostname.endsWith('.' + h));
+        } catch (_) { urlOk = false; }
+        if (!urlOk) {
+          return res.status(400).json({ error: 'Invalid tracking URL. Must be a trusted carrier HTTPS link (USPS, UPS, FedEx, DHL, Shippo).' });
+        }
       }
 
       // Update product doc
@@ -1989,7 +2018,7 @@ exports.markAsShipped = onRequest(
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error('markAsShipped error:', error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -2136,7 +2165,7 @@ exports.confirmDelivery = onRequest(
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error('confirmDelivery error:', error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -2173,13 +2202,22 @@ exports.trackShipment = onRequest(
         return res.status(403).json({ error: 'Forbidden' });
       }
 
-      const { trackingNumber, carrier } = product;
-      if (!trackingNumber || !carrier) {
+      const { trackingNumber, carrier: rawCarrier } = product;
+      if (!trackingNumber || !rawCarrier) {
         return res.status(200).json({ tracking_status: null, tracking_history: [], message: 'No tracking info yet' });
       }
 
+      // Allowlist carrier before using in URL path — prevents path injection against Shippo API
+      const ALLOWED_CARRIERS = ['usps', 'ups', 'fedex', 'dhl', 'ontrac', 'lasership', 'amazon', 'shippo', 'other'];
+      const carrier = ALLOWED_CARRIERS.includes(String(rawCarrier).toLowerCase())
+        ? encodeURIComponent(String(rawCarrier).toLowerCase())
+        : null;
+      if (!carrier) {
+        return res.status(200).json({ tracking_status: null, tracking_history: [], message: 'Carrier not recognized' });
+      }
+
       const shippoKey = shippoSecret.value();
-      const trackRes = await fetch(`https://api.goshippo.com/tracks/${carrier}/${trackingNumber}`, {
+      const trackRes = await fetch(`https://api.goshippo.com/tracks/${carrier}/${encodeURIComponent(trackingNumber)}`, {
         headers: { 'Authorization': `ShippoToken ${shippoKey}` },
       });
 
@@ -2192,7 +2230,7 @@ exports.trackShipment = onRequest(
       return res.status(200).json(trackData);
     } catch (error) {
       console.error('trackShipment error:', error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -2590,7 +2628,7 @@ exports.reactivateListing = onRequest(
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error('reactivateListing error:', error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -2694,6 +2732,12 @@ exports.notifyNewMessage = onRequest(
       if (!convSnap.exists) return res.status(404).json({ error: 'Conversation not found' });
 
       const conv = convSnap.data();
+
+      // Verify caller is a participant — prevents non-participants from triggering spam notifications
+      if (!Array.isArray(conv.participants) || !conv.participants.includes(decodedToken.uid)) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
       const isBuyer  = conv.buyerId  === decodedToken.uid;
       const recipientId = isBuyer ? conv.sellerId : conv.buyerId;
 
@@ -2738,7 +2782,7 @@ exports.notifyNewMessage = onRequest(
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error('notifyNewMessage error:', error.message);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -2760,6 +2804,28 @@ exports.selfDeleteAccount = onRequest(
     }
 
     const uid = decodedToken.uid;
+
+    // Block deletion if seller has active unfulfilled orders
+    const activeSales = await db.collection('products')
+      .where('userId', '==', uid)
+      .where('sold', '==', true)
+      .where('shipped', '==', false)
+      .limit(1).get();
+    if (!activeSales.empty) {
+      return res.status(400).json({ error: 'Cannot delete your account while you have active unfulfilled orders. Please wait for orders to be fulfilled or cancelled first.' });
+    }
+
+    // Block deletion if user has active orders as a buyer that haven't been delivered/cancelled
+    // (prevents stranding in-flight purchases with no recourse for refund disputes)
+    const activePurchases = await db.collection('products')
+      .where('buyerId', '==', uid)
+      .where('sold', '==', true)
+      .where('delivered', '==', false)
+      .limit(1).get();
+    if (!activePurchases.empty) {
+      return res.status(400).json({ error: 'Cannot delete your account while you have an order in progress. Please wait for your order to be delivered or cancelled first.' });
+    }
+
     try {
       // 1. Delete username reservation
       const usernameSnap = await db.collection('usernames').where('userId', '==', uid).get();
@@ -2777,7 +2843,7 @@ exports.selfDeleteAccount = onRequest(
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error('selfDeleteAccount error:', error.message);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -2827,7 +2893,7 @@ exports.getPriceSuggestions = onRequest(
       return res.status(200).json({ count: prices.length, min, max, avg: parseFloat(avg.toFixed(2)) });
     } catch (error) {
       console.error('getPriceSuggestions error:', error.message);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -2870,7 +2936,7 @@ exports.recordAbandonedCart = onRequest(
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error('recordAbandonedCart error:', error.message);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -3206,7 +3272,7 @@ exports.autoReleaseOrders = onSchedule(
 //   Principal: <PROJECT_NUMBER>-compute@developer.gserviceaccount.com
 //   Role: roles/billing.projectManager  (granted at the BILLING ACCOUNT level, not project level)
 //   Where: Billing → Account Management → Add Principal
-const BILLING_PROJECT = 'wrestleswap';
+const BILLING_PROJECT = 'grappletrade';
 
 exports.killBillingOnBudgetAlert = onMessagePublished(
   { topic: 'billing-alerts', maxInstances: 1 },

@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="css/base.css">
 
     <link rel="stylesheet" href="css/listings-manager.css">
-    <link rel="icon" href="favicon.png" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         @media (max-width: 700px) {
@@ -38,6 +37,13 @@
                 <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
                 <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
         </div>
     </div>
 
@@ -381,18 +387,18 @@
         // ============================================
         
         const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
+            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+            authDomain: "grappletrade.firebaseapp.com",
+            projectId: "grappletrade",
+            storageBucket: "grappletrade.firebasestorage.app",
+            messagingSenderId: "119683736855",
+            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
+            measurementId: "G-987DNCH23C"
         };
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        firebase.appCheck().activate('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK', true);
+        firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), true);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
@@ -498,7 +504,7 @@
             
             const _imgSrc = safeUrl(listing.images && listing.images[0]);
             const imageDisplay = _imgSrc
-                ? `<img src="${_imgSrc}" alt="${esc(listing.title)}">`
+                ? `<img src="${esc(_imgSrc)}" alt="${esc(listing.title)}">`
                 : '<span>📦 No Image</span>';
 
             // For sold items, create fulfillment page link
@@ -765,8 +771,7 @@
                 await renderListings();
                 showInfo('Listing updated successfully!');
             } catch (error) {
-                document.getElementById('editError').innerHTML = 
-                    '<div class="error-message">Failed to save changes: ' + error.message + '</div>';
+                document.getElementById('editError').textContent = 'Failed to save changes: ' + error.message;
             } finally {
                 saveBtn.textContent = originalText;
                 saveBtn.disabled = false;
@@ -791,7 +796,7 @@
         // RELIST CANCELLED ITEM
         // ============================================
 
-        const REACTIVATE_LISTING_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/reactivateListing';
+        const REACTIVATE_LISTING_URL = 'https://us-central1-grappletrade.cloudfunctions.net/reactivateListing';
 
         async function reactivateListing(listingId) {
             try {
@@ -857,7 +862,7 @@
         // SELLER CANCEL ORDER FUNCTIONALITY
         // ============================================
 
-        const SELLER_CANCEL_ORDER_URL = 'https://sellercancelorder-kebvkf67ma-uc.a.run.app';
+        const SELLER_CANCEL_ORDER_URL = 'https://us-central1-grappletrade.cloudfunctions.net/sellerCancelOrder';
         let saleToCancel = null;
 
         function openSellerCancelModal(listingId) {
@@ -1243,7 +1248,7 @@
                         : '—';
                     const _rSrc = safeUrl(l.images && l.images[0]);
                     const imgHtml = _rSrc
-                        ? '<img src="' + _rSrc + '" style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;">'
+                        ? '<img src="' + esc(_rSrc) + '" style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;">'
                         : '<div style="width:40px;height:40px;border-radius:6px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📦</div>';
                     return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f5f5f5;">' +
                         imgHtml +

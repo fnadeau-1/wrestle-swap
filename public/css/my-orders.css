@@ -13,6 +13,49 @@
     --radius: 8px;
 }
 
+/* Main Header + Logo */
+.main-header {
+    background-color: #fff;
+    padding: 14px 0;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.logo {
+    font-family: 'Impact', 'Arial Narrow', Arial, sans-serif;
+    font-size: 0;
+    color: #c41e3a;
+    text-decoration: none;
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1;
+    letter-spacing: 0.07em;
+    cursor: pointer;
+}
+
+.logo::before {
+    content: 'GRAPPLE';
+    font-size: 36px;
+    display: block;
+}
+
+.logo::after {
+    content: 'TRADE';
+    font-size: 27px;
+    display: block;
+}
+
 /* Top Bar */
 .top-bar {
     background-color: #f7f7f7;

@@ -5,6 +5,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
+    <link rel="icon" type="image/png" href="/grapple_trade_logo.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wrestling Shoes, Gear & Apparel | GrappleTrade</title>
@@ -17,7 +18,6 @@
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/index.css">
 </head>
-<link rel="icon" type="image/png" href="/grapple_trade_logo.png">
 <body>
     <!-- Top Bar -->
     <div class="top-bar">
@@ -145,38 +145,36 @@
                     <a href="legal/terms-of-service.html">Terms of Service</a>
                 </div>
             </div>
-            <footer style="background: #dad0d0; padding: 30px; text-align: center;">
-                <div>
-                    <a href="legal/privacy-policy.html" style="color: #333; margin: 0 15px;">Privacy Policy</a>
-                    <a href="legal/cookie.html" style="color: #333; margin: 0 15px;">Cookie Policy</a>
-                    <a href="legal/adchoice.html" style="color: #333; margin: 0 15px;">AdChoices</a>
-                </div>
-                <p style="margin-top: 15px; font-size: 12px; color: #666;">
-                    © 2026 GrappleTrade. All rights reserved.
-                </p>
-            </footer>
+            <div class="footer-bottom">
+                <a href="legal/privacy-policy.html">Privacy Policy</a>
+                &nbsp;&middot;&nbsp;
+                <a href="legal/cookie.html">Cookie Policy</a>
+                &nbsp;&middot;&nbsp;
+                <a href="legal/adchoice.html">AdChoices</a>
+                <p style="margin-top: 10px;">© 2026 GrappleTrade. All rights reserved.</p>
+            </div>
         </div>
     </div>
 
     <!-- Firebase SDK for User Greeting and Products -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, query, where, getDocs, orderBy, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
+            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+            authDomain: "grappletrade.firebaseapp.com",
+            projectId: "grappletrade",
+            storageBucket: "grappletrade.firebasestorage.app",
+            messagingSenderId: "119683736855",
+            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
+            measurementId: "G-987DNCH23C"
         };
 
         const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK'), isTokenAutoRefreshEnabled: true });
+        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -225,7 +223,7 @@
             const html = products.map(product => {
                 const imgSrc = safeUrl(product.images && product.images[0]);
                 const imageDisplay = imgSrc
-                    ? `<img src="${imgSrc}" alt="${esc(product.title)}" loading="lazy">`
+                    ? `<img src="${esc(imgSrc)}" alt="${esc(product.title)}" loading="lazy">`
                     : '📦';
                 return `
                     <div class="product-card" onclick="window.location.href='productdetail.html?id=${esc(product.id)}'">

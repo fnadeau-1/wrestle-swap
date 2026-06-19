@@ -226,7 +226,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getAuth, onAuthStateChanged, updatePassword, updateProfile, EmailAuthProvider,
                  reauthenticateWithCredential, signOut, deleteUser }
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -235,17 +235,17 @@
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
+            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+            authDomain: "grappletrade.firebaseapp.com",
+            projectId: "grappletrade",
+            storageBucket: "grappletrade.firebasestorage.app",
+            messagingSenderId: "119683736855",
+            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
+            measurementId: "G-987DNCH23C"
         };
 
         const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK'), isTokenAutoRefreshEnabled: true });
+        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -293,7 +293,7 @@
         // ── Auth state ─────────────────────────────────────────────────────
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
-                window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.href);
+                window.location.href = 'sign-in.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
             currentUser = user;
@@ -557,7 +557,7 @@
             if (!confirm('All your data will be permanently deleted. Confirm?')) return;
             try {
                 const idToken = await currentUser.getIdToken();
-                const response = await fetch('https://us-central1-wrestleswap.cloudfunctions.net/selfDeleteAccount', {
+                const response = await fetch('https://us-central1-grappletrade.cloudfunctions.net/selfDeleteAccount', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                     body: JSON.stringify({}),

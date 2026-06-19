@@ -145,22 +145,22 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, collection, query, limit, getDocs, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
+            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+            authDomain: "grappletrade.firebaseapp.com",
+            projectId: "grappletrade",
+            storageBucket: "grappletrade.firebasestorage.app",
+            messagingSenderId: "119683736855",
+            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
+            measurementId: "G-987DNCH23C"
         };
 
         const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK'), isTokenAutoRefreshEnabled: true });
+        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -496,21 +496,34 @@
                     const productName = product.name || product.title || 'Product';
                     const productImage = product.image || (product.images && product.images[0]) || null;
 
-                    const imageHtml = productImage
-                        ? (isImageURL(productImage)
-                            ? `<img src="${productImage}" alt="${productName}">`
-                            : productImage)
-                        : '📦';
+                    // Build image element safely via DOM (never innerHTML with user content)
+                    const imageDiv = document.createElement('div');
+                    if (isImageURL(productImage)) {
+                        imageDiv.className = 'related-image';
+                        const img = document.createElement('img');
+                        img.src = productImage;           // assigned as property — no injection risk
+                        img.alt = productName;            // assigned as property — no injection risk
+                        imageDiv.appendChild(img);
+                    } else {
+                        imageDiv.className = 'related-image emoji';
+                        imageDiv.textContent = productImage || '📦';
+                    }
 
-                    const imageClass = isImageURL(productImage) ? '' : 'emoji';
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'related-info';
 
-                    item.innerHTML = `
-                        <div class="related-image ${imageClass}">${imageHtml}</div>
-                        <div class="related-info">
-                            <div class="related-name">${productName}</div>
-                            <div class="related-price">$${(product.price || 0).toFixed(2)}</div>
-                        </div>
-                    `;
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'related-name';
+                    nameDiv.textContent = productName;    // textContent is XSS-safe
+
+                    const priceDiv = document.createElement('div');
+                    priceDiv.className = 'related-price';
+                    priceDiv.textContent = `$${(product.price || 0).toFixed(2)}`;
+
+                    infoDiv.appendChild(nameDiv);
+                    infoDiv.appendChild(priceDiv);
+                    item.appendChild(imageDiv);
+                    item.appendChild(infoDiv);
                     relatedContainer.appendChild(item);
                 });
 
@@ -563,7 +576,7 @@
             if (existingToast) existingToast.remove();
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            toast.innerHTML = `<span style="font-size: 20px;">${type === 'success' ? '✓' : '✕'}</span><span>${message}</span>`;
+            toast.innerHTML = `<span style="font-size: 20px;">${type === 'success' ? '✓' : '✕'}</span><span>${escapeHtml(message)}</span>`;
             document.body.appendChild(toast);
             setTimeout(() => {
                 toast.classList.add('hiding');
@@ -780,7 +793,7 @@
         window.reportListing = reportListing;
 
         // Cloud Function URL for shipping rates
-        const SHIPPO_RATES_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/shippingRates';
+        const SHIPPO_RATES_URL = 'https://us-central1-grappletrade.cloudfunctions.net/shippingRates';
 
         // Fallback address if seller hasn't set one
         const FALLBACK_FROM_ADDRESS = {
@@ -974,7 +987,7 @@
             <p>You need to be signed in to buy items on GrappleTrade. It only takes a moment!</p>
             <div class="signin-modal-buttons">
                 <button class="btn btn-secondary" onclick="document.getElementById('signin-modal-overlay').classList.remove('show')">Cancel</button>
-                <button class="btn btn-primary" onclick="window.location.href='sign-in.html?redirect=' + encodeURIComponent(window.location.href)">Sign In</button>
+                <button class="btn btn-primary" onclick="window.location.href='sign-in.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)">Sign In</button>
             </div>
         </div>
     </div>

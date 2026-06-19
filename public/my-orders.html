@@ -7,7 +7,7 @@
     <link rel="manifest" href="/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Orders</title>
+    <title>My Orders | GrappleTrade</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:wght@300;400;600;700&display=swap">
@@ -230,18 +230,18 @@
         // ============================================
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
+            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+            authDomain: "grappletrade.firebaseapp.com",
+            projectId: "grappletrade",
+            storageBucket: "grappletrade.firebasestorage.app",
+            messagingSenderId: "119683736855",
+            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
+            measurementId: "G-987DNCH23C"
         };
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        firebase.appCheck().activate('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK', true);
+        firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), true);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
@@ -335,7 +335,7 @@
             const _imgSrc0 = order.images && order.images.length > 0 ? String(order.images[0]) : '';
             const _safeSrc0 = (_imgSrc0.startsWith('https://') || _imgSrc0.startsWith('http://')) ? _imgSrc0 : '';
             const imageDisplay = _safeSrc0
-                ? `<img src="${_safeSrc0}" alt="${esc(order.title)}">`
+                ? `<img src="${esc(_safeSrc0)}" alt="${esc(order.title)}">`
                 : '<span>📦 No Image</span>';
 
             const orderDate = order.soldTimestamp 
@@ -490,7 +490,7 @@
                 const _imgSrcModal = order.images && order.images.length > 0 ? String(order.images[0]) : '';
                 const _safeSrcModal = (_imgSrcModal.startsWith('https://') || _imgSrcModal.startsWith('http://')) ? _imgSrcModal : '';
                 const imageDisplay = _safeSrcModal
-                    ? `<img src="${_safeSrcModal}" alt="${esc(order.title)}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin-bottom: 20px;">`
+                    ? `<img src="${esc(_safeSrcModal)}" alt="${esc(order.title)}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin-bottom: 20px;">`
                     : '<div style="text-align: center; font-size: 60px; padding: 40px;">📦</div>';
 
                 const orderDate = order.soldTimestamp 
@@ -526,7 +526,7 @@
                             </div>
                             <div class="info-box">
                                 <div class="info-label">Shipping Method</div>
-                                <div class="info-value">${order.shippingMethod || 'Standard Shipping'}</div>
+                                <div class="info-value">${esc(order.shippingMethod || 'Standard Shipping')}</div>
                             </div>
                             <div class="info-box">
                                 <div class="info-label">Quantity</div>
@@ -788,9 +788,9 @@
         // CANCEL ORDER FUNCTIONALITY
         // ============================================
 
-        const CANCEL_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/cancelOrder';
-        const CONFIRM_DELIVERY_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/confirmDelivery';
-        const TRACK_SHIPMENT_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/trackShipment';
+        const CANCEL_ORDER_URL = 'https://us-central1-grappletrade.cloudfunctions.net/cancelOrder';
+        const CONFIRM_DELIVERY_URL = 'https://us-central1-grappletrade.cloudfunctions.net/confirmDelivery';
+        const TRACK_SHIPMENT_URL = 'https://us-central1-grappletrade.cloudfunctions.net/trackShipment';
 
         async function loadTracking(productId) {
             const container = document.getElementById('tracking-timeline');

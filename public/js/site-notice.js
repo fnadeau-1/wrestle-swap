@@ -18,12 +18,12 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-    authDomain: "wrestleswap.firebaseapp.com",
-    projectId: "wrestleswap",
-    storageBucket: "wrestleswap.firebasestorage.app",
-    messagingSenderId: "857051782398",
-    appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af"
+    apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+    authDomain: "grappletrade.firebaseapp.com",
+    projectId: "grappletrade",
+    storageBucket: "grappletrade.firebasestorage.app",
+    messagingSenderId: "119683736855",
+    appId: "1:119683736855:web:0d0bc6cea784290ded8352"
 };
 
 // Reuse existing Firebase app if already initialized on this page

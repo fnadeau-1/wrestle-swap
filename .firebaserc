@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "wrestleswap"
-  }
+    "default": "grappletrade",
+    "production": "grappletrade"
+  },
+  "targets": {},
+  "etags": {}
 }

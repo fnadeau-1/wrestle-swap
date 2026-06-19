@@ -111,13 +111,13 @@
     <script>
         // Initialize Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
+            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+            authDomain: "grappletrade.firebaseapp.com",
+            projectId: "grappletrade",
+            storageBucket: "grappletrade.firebasestorage.app",
+            messagingSenderId: "119683736855",
+            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
+            measurementId: "G-987DNCH23C"
         };
         
         firebase.initializeApp(firebaseConfig);
@@ -207,7 +207,7 @@
                 console.log('Email:', currentUser.email);
                 
                 // Call your Firebase Cloud Function
-                const CLOUD_FUNCTION_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/createConnectedAccount';
+                const CLOUD_FUNCTION_URL = 'https://us-central1-grappletrade.cloudfunctions.net/createConnectedAccount';
                 console.log('Cloud Function URL:', CLOUD_FUNCTION_URL);
                 
                 const requestBody = {

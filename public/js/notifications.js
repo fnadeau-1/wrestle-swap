@@ -9,12 +9,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-    authDomain: "wrestleswap.firebaseapp.com",
-    projectId: "wrestleswap",
-    storageBucket: "wrestleswap.firebasestorage.app",
-    messagingSenderId: "857051782398",
-    appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af"
+    apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+    authDomain: "grappletrade.firebaseapp.com",
+    projectId: "grappletrade",
+    storageBucket: "grappletrade.firebasestorage.app",
+    messagingSenderId: "119683736855",
+    appId: "1:119683736855:web:0d0bc6cea784290ded8352"
 };
 
 // Reuse existing app if already initialized on this page
@@ -23,6 +23,10 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let unsubscribeNotifs = null;
+
+function esc(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 function injectBell() {
     // Find top-bar-content right div and inject bell button before the last child
@@ -93,12 +97,13 @@ function renderNotifications(notifs) {
         const ts = n.createdAt?.toDate ? n.createdAt.toDate() : new Date(n.createdAt || Date.now());
         const ago = formatAgo(ts);
         return `
-            <div onclick="handleNotifClick('${n.id}', '${(n.link || '').replace(/'/g, "\\'")}', this)"
+            <div data-notif-id="${esc(n.id)}" data-link="${esc(n.link || '')}"
+                 onclick="handleNotifClick(this.dataset.notifId, this.dataset.link, this)"
                  style="padding:14px 16px;border-bottom:1px solid #f8f8f8;cursor:pointer;background:${n.read ? 'white' : '#f0f9ff'};display:flex;gap:12px;align-items:flex-start;transition:background 0.15s;"
                  onmouseenter="this.style.background='#f5f5f5'" onmouseleave="this.style.background='${n.read ? 'white' : '#f0f9ff'}'">
-                <span style="font-size:20px;flex-shrink:0;">${n.icon || '🔔'}</span>
+                <span style="font-size:20px;flex-shrink:0;">${esc(n.icon || '🔔')}</span>
                 <div style="flex:1;min-width:0;">
-                    <div style="font-size:13px;color:#1a1a1a;font-weight:${n.read ? '400' : '600'};line-height:1.4;">${n.message || ''}</div>
+                    <div style="font-size:13px;color:#1a1a1a;font-weight:${n.read ? '400' : '600'};line-height:1.4;">${esc(n.message || '')}</div>
                     <div style="font-size:11px;color:#999;margin-top:3px;">${ago}</div>
                 </div>
                 ${!n.read ? `<span style="width:8px;height:8px;background:#c41e3a;border-radius:50%;flex-shrink:0;margin-top:4px;"></span>` : ''}
@@ -116,7 +121,8 @@ window.handleNotifClick = async function(notifId, link, el) {
     try {
         await updateDoc(doc(db, 'notifications', uid, 'items', notifId), { read: true });
     } catch (e) { /* ignore */ }
-    if (link) window.location.href = link;
+    // Only navigate to relative paths — never javascript: or external URLs
+    if (link && /^[^:]*$/.test(link)) window.location.href = link;
 };
 
 window.markAllRead = async function() {

@@ -29,7 +29,7 @@
 
     <!-- Header -->
     <div class="top-bar">
-        <div class="header-content">
+        <div class="top-bar-content">
             <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
             <div class="secure-badge">
                 🔒 Secure Checkout
@@ -45,22 +45,22 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBrNzOA__bI6zA2PvTFTujmFiBLsCe1iBk",
-            authDomain: "wrestleswap.firebaseapp.com",
-            projectId: "wrestleswap",
-            storageBucket: "wrestleswap.firebasestorage.app",
-            messagingSenderId: "857051782398",
-            appId: "1:857051782398:web:bb4ab3f98e8dbbc8cad9af",
-            measurementId: "G-B411WXLF3J"
+            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
+            authDomain: "grappletrade.firebaseapp.com",
+            projectId: "grappletrade",
+            storageBucket: "grappletrade.firebasestorage.app",
+            messagingSenderId: "119683736855",
+            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
+            measurementId: "G-987DNCH23C"
         };
 
         const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lcny-4sAAAAALggwEx1aZAEAGmOnuhx_OGfvBKK'), isTokenAutoRefreshEnabled: true });
+        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -111,19 +111,31 @@
                 zip: zip,
                 country: 'US',
                 phone: '',
-                email: listing.sellerEmail || ''
             };
         };
     </script>
 
     <script>
         // ============================================
+        // HELPERS
+        // ============================================
+
+        function esc(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // ============================================
         // CLOUD FUNCTION URLS
         // ============================================
-        const SHIPPO_GET_RATES_URL = 'https://shippogetrates-kebvkf67ma-uc.a.run.app';
-        const SHIPPO_CREATE_LABEL_URL = 'https://shippocreatelabel-kebvkf67ma-uc.a.run.app';
-        const COMPLETE_ORDER_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/completeOrder';
-        const RECORD_ABANDONED_CART_URL = 'https://us-central1-wrestleswap.cloudfunctions.net/recordAbandonedCart';
+        const SHIPPO_GET_RATES_URL = 'https://us-central1-grappletrade.cloudfunctions.net/shippoGetRates';
+        const SHIPPO_CREATE_LABEL_URL = 'https://us-central1-grappletrade.cloudfunctions.net/shippoCreateLabel';
+        const COMPLETE_ORDER_URL = 'https://us-central1-grappletrade.cloudfunctions.net/completeOrder';
+        const RECORD_ABANDONED_CART_URL = 'https://us-central1-grappletrade.cloudfunctions.net/recordAbandonedCart';
         const STRIPE_PUBLISHABLE_KEY = 'pk_live_51SVksvGjf88NEQS10ZpIJ0zWBlJ13xbPRvosRWKIOZA10eHIH4p9s1NKrSkwshF9b1IDDS9Uz0w2bnDku3jbG0Jk00zpYZlCNk';
 
         // Fallback "from" address (only used if seller has no address)
@@ -216,10 +228,10 @@
                     if (shippingInfoElement && selectedShippingRate) {
                         const serviceName = `${selectedShippingRate.provider} ${selectedShippingRate.servicelevel.name}`;
                         const estimatedDays = selectedShippingRate.estimated_days || 'Standard';
-                        const deliveryTime = typeof estimatedDays === 'number' 
-                            ? `${estimatedDays} business days` 
+                        const deliveryTime = typeof estimatedDays === 'number'
+                            ? `${estimatedDays} business days`
                             : estimatedDays;
-                        shippingInfoElement.innerHTML = `<div class="shipping-info-display">${serviceName} (${deliveryTime})</div>`;
+                        shippingInfoElement.innerHTML = `<div class="shipping-info-display">${esc(serviceName)} (${esc(String(deliveryTime))})</div>`;
                     }
                 } else if (shippingCalculated && shippingCost === 0) {
                     shippingElement.textContent = 'FREE';
@@ -275,8 +287,8 @@
             );
 
             const imageHtml = isImageUrl
-                ? `<img src="${productImage}" alt="${productTitle}">`
-                : productImage || '📦';
+                ? `<img src="${esc(productImage)}" alt="${esc(productTitle)}">`
+                : esc(productImage || '📦');
 
             container.innerHTML = `
                 <!-- Checkout Form -->
@@ -362,7 +374,7 @@
                             Complete Purchase
                         </button>
 
-                        <a href="productdetail.html?id=${checkoutProduct.id}" class="back-to-cart">← Back to Product</a>
+                        <a href="productdetail.html?id=${encodeURIComponent(checkoutProduct.id)}" class="back-to-cart">← Back to Product</a>
                     </form>
 
                     <div class="security-badges">
@@ -380,8 +392,8 @@
                     <div class="order-item">
                         <div class="item-image">${imageHtml}</div>
                         <div class="item-details">
-                            <div class="item-name">${productTitle}</div>
-                            ${checkoutProduct.condition ? `<div class="item-condition">${checkoutProduct.condition}</div>` : ''}
+                            <div class="item-name">${esc(productTitle)}</div>
+                            ${checkoutProduct.condition ? `<div class="item-condition">${esc(checkoutProduct.condition)}</div>` : ''}
                             <div class="item-price">$${subtotal.toFixed(2)}</div>
                         </div>
                     </div>
@@ -581,8 +593,8 @@
 
                     resultMessage.innerHTML = `
                         <div class="success-message">
-                            Shipping calculated: ${serviceName}<br>
-                            Estimated delivery: ${deliveryTime}<br>
+                            Shipping calculated: ${esc(serviceName)}<br>
+                            Estimated delivery: ${esc(String(deliveryTime))}<br>
                             Cost: $${shippingCost.toFixed(2)}
                         </div>
                     `;
@@ -607,7 +619,7 @@
                 console.error('Error calculating shipping:', error);
                 resultMessage.innerHTML = `
                     <div class="error-message">
-                        Error calculating shipping: ${error.message}<br>
+                        Error calculating shipping: ${esc(error.message)}<br>
                         Please check your address and try again.
                     </div>
                 `;
@@ -804,7 +816,7 @@
                     // Price, shipping, and seller account are all verified there — never trust the frontend.
                     console.log('Creating Payment Intent...');
                     const idToken = await window.getIdToken();
-                    const piResponse = await fetch('https://createpaymentintent-kebvkf67ma-uc.a.run.app', {
+                    const piResponse = await fetch('https://us-central1-grappletrade.cloudfunctions.net/createPaymentIntent', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -820,8 +832,8 @@
                     });
 
                     if (!piResponse.ok) {
-                        const errText = await piResponse.text();
-                        throw new Error(`Server error ${piResponse.status}: ${errText}`);
+                        const errData = await piResponse.json().catch(() => ({}));
+                        throw new Error(errData.error || `Unable to prepare payment (${piResponse.status}). Please try again.`);
                     }
 
                     const data = await piResponse.json();

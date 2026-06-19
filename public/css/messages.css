@@ -239,7 +239,7 @@ body {
     font-size: 14px;
     outline: none;
     resize: none;
-    font-family: Arial, sans-serif;
+    font-family: inherit;
 }
 
 .message-input:focus {
