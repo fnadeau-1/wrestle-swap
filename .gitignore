@@ -1,8 +1,14 @@
 .netlify
+netlify/
 .env
 node_modules/
 .firebase/
 class/
+class2/
+final_project/
+stripe_API/
+dataconnect/
+src/
 functions/sendgrid.env
 functions/
 public/functions/
