@@ -212,12 +212,19 @@ exports.createPaymentIntent = onRequest(
       const productPriceInCents = Math.round((productData.price || 0) * 100);
 
       // Verify shipping cost server-side via Shippo — never trust client-sent amount
+      // Fetch Shippo rate and seller doc in parallel — both are independent of each other
+      const shippoKey = shippoSecret.value();
+      const [rateRes, sellerDoc] = await Promise.all([
+        rateObjectId
+          ? fetch(`https://api.goshippo.com/rates/${rateObjectId}`, { headers: { 'Authorization': `ShippoToken ${shippoKey}` } })
+          : Promise.resolve(null),
+        productData.userId
+          ? db.collection('users').doc(productData.userId).get()
+          : Promise.resolve(null),
+      ]);
+
       let shippingInCents = 0;
       if (rateObjectId) {
-        const shippoKey = shippoSecret.value();
-        const rateRes = await fetch(`https://api.goshippo.com/rates/${rateObjectId}`, {
-          headers: { 'Authorization': `ShippoToken ${shippoKey}` },
-        });
         if (!rateRes.ok) {
           return res.status(400).json({ error: 'Invalid shipping rate. Please recalculate shipping.' });
         }
@@ -231,16 +238,13 @@ exports.createPaymentIntent = onRequest(
 
       // Look up seller's Stripe account from Firestore — never trust the frontend
       let sellerStripeAccountId = null;
-      if (productData.userId) {
-        const sellerDoc = await db.collection('users').doc(productData.userId).get();
-        if (sellerDoc.exists) {
-          const sellerData = sellerDoc.data();
-          if (sellerData.sellerSuspended) {
-            return res.status(403).json({ error: 'This seller is currently suspended and cannot accept payments' });
-          }
-          if (sellerData.stripeAccountId) {
-            sellerStripeAccountId = sellerData.stripeAccountId;
-          }
+      if (sellerDoc && sellerDoc.exists) {
+        const sellerData = sellerDoc.data();
+        if (sellerData.sellerSuspended) {
+          return res.status(403).json({ error: 'This seller is currently suspended and cannot accept payments' });
+        }
+        if (sellerData.stripeAccountId) {
+          sellerStripeAccountId = sellerData.stripeAccountId;
         }
       }
 
@@ -505,9 +509,11 @@ exports.cancelOrder = onRequest(
       // Email buyer (refund confirmation) and seller (order cancelled)
       try {
         emails.init(sendgridSecret.value());
-        const buyerEmail = await getUserEmail(decodedToken.uid);
-        const sellerEmail = await getUserEmail(productData.userId);
-        const buyerRecord = await admin.auth().getUser(decodedToken.uid);
+        const [buyerEmail, sellerEmail, buyerRecord] = await Promise.all([
+          getUserEmail(decodedToken.uid),
+          getUserEmail(productData.userId),
+          admin.auth().getUser(decodedToken.uid),
+        ]);
         const buyerName = buyerRecord.displayName || buyerRecord.email.split('@')[0];
         await Promise.all([
           emails.sendBuyerCancelledToBuyer(buyerEmail, {
@@ -1317,10 +1323,12 @@ exports.completeOrder = onRequest(
           const freshSnap = await db.collection('products').doc(productId).get();
           prod = freshSnap.data();
         }
-        const sellerEmail = await getUserEmail(prod.userId);
-        const buyerEmail = await getUserEmail(decodedToken.uid);
-        const buyerRecord = await admin.auth().getUser(decodedToken.uid);
-        const sellerRecord = prod.userId ? await admin.auth().getUser(prod.userId).catch(() => null) : null;
+        const [sellerEmail, buyerEmail, buyerRecord, sellerRecord] = await Promise.all([
+          getUserEmail(prod.userId),
+          getUserEmail(decodedToken.uid),
+          admin.auth().getUser(decodedToken.uid),
+          prod.userId ? admin.auth().getUser(prod.userId).catch(() => null) : Promise.resolve(null),
+        ]);
         const buyerName = buyerRecord.displayName || buyerRecord.email.split('@')[0];
         const sellerName = sellerRecord
           ? (sellerRecord.displayName || sellerRecord.email.split('@')[0])
@@ -1517,9 +1525,11 @@ exports.sellerCancelOrder = onRequest(
       // Email buyer (full refund) and seller (strike warning)
       try {
         emails.init(sendgridSecret.value());
-        const buyerEmail = await getUserEmail(productData.buyerId);
-        const sellerEmail = await getUserEmail(decodedToken.uid);
-        const sellerRecord = await admin.auth().getUser(decodedToken.uid);
+        const [buyerEmail, sellerEmail, sellerRecord] = await Promise.all([
+          getUserEmail(productData.buyerId),
+          getUserEmail(decodedToken.uid),
+          admin.auth().getUser(decodedToken.uid),
+        ]);
         const sellerName = sellerRecord.displayName || sellerRecord.email.split('@')[0];
         await Promise.all([
           emails.sendSellerCancelledToBuyer(buyerEmail, {
@@ -1703,8 +1713,10 @@ exports.checkOverdueOrders = onSchedule(
             : {};
           const strikesRemaining2 = Math.max(0, SELLER_STRIKES_LIMIT - ((sellerData2.sellerCancellationCount || 0) + 1));
           const suspended2 = ((sellerData2.sellerCancellationCount || 0) + 1) >= SELLER_STRIKES_LIMIT;
-          const buyerEmail2 = await getUserEmail(productData.buyerId);
-          const sellerEmail2 = await getUserEmail(productData.userId);
+          const [buyerEmail2, sellerEmail2] = await Promise.all([
+            getUserEmail(productData.buyerId),
+            getUserEmail(productData.userId),
+          ]);
           const refundDisplay = refundId
             ? (await (async () => {
                 try {
@@ -2138,10 +2150,12 @@ exports.confirmDelivery = onRequest(
       // Send confirmation emails to buyer and seller
       try {
         emails.init(sendgridSecret.value());
-        const buyerEmail = await getUserEmail(product.buyerId);
-        const sellerEmail = await getUserEmail(product.userId);
-        const buyerRecord = product.buyerId ? await admin.auth().getUser(product.buyerId) : null;
-        const sellerRecord = product.userId ? await admin.auth().getUser(product.userId) : null;
+        const [buyerEmail, sellerEmail, buyerRecord, sellerRecord] = await Promise.all([
+          getUserEmail(product.buyerId),
+          getUserEmail(product.userId),
+          product.buyerId ? admin.auth().getUser(product.buyerId).catch(() => null) : Promise.resolve(null),
+          product.userId ? admin.auth().getUser(product.userId).catch(() => null) : Promise.resolve(null),
+        ]);
         const buyerName = buyerRecord?.displayName || 'the buyer';
         const sellerName = sellerRecord?.displayName || 'the seller';
 
@@ -2374,10 +2388,12 @@ exports.shippoWebhook = onRequest(
       // Send confirmation emails
       try {
         emails.init(sendgridSecret.value());
-        const buyerEmail = await getUserEmail(product.buyerId);
-        const sellerEmail = await getUserEmail(product.userId);
-        const buyerRecord = product.buyerId ? await admin.auth().getUser(product.buyerId).catch(() => null) : null;
-        const sellerRecord = product.userId ? await admin.auth().getUser(product.userId).catch(() => null) : null;
+        const [buyerEmail, sellerEmail, buyerRecord, sellerRecord] = await Promise.all([
+          getUserEmail(product.buyerId),
+          getUserEmail(product.userId),
+          product.buyerId ? admin.auth().getUser(product.buyerId).catch(() => null) : Promise.resolve(null),
+          product.userId ? admin.auth().getUser(product.userId).catch(() => null) : Promise.resolve(null),
+        ]);
         const buyerName = buyerRecord?.displayName || 'the buyer';
         const sellerName = sellerRecord?.displayName || 'the seller';
 
@@ -2539,10 +2555,12 @@ exports.stripeWebhook = onRequest(
       // Emails
       try {
         emails.init(sendgridSecret.value());
-        const sellerEmail  = await getUserEmail(prod.userId);
-        const buyerEmail   = await getUserEmail(buyerId);
-        const buyerRecord  = await admin.auth().getUser(buyerId);
-        const sellerRecord = prod.userId ? await admin.auth().getUser(prod.userId).catch(() => null) : null;
+        const [sellerEmail, buyerEmail, buyerRecord, sellerRecord] = await Promise.all([
+          getUserEmail(prod.userId),
+          getUserEmail(buyerId),
+          admin.auth().getUser(buyerId),
+          prod.userId ? admin.auth().getUser(prod.userId).catch(() => null) : Promise.resolve(null),
+        ]);
         const buyerName    = buyerRecord.displayName || buyerRecord.email.split('@')[0];
         const sellerName   = sellerRecord
           ? (sellerRecord.displayName || sellerRecord.email.split('@')[0])
