@@ -1,10 +1,14 @@
 .netlify
 .env
 node_modules/
+.firebase/
 class/
 functions/sendgrid.env
 functions/
 public/functions/
+my-next-app/
 *.env
 *.key
 *.pem
+*-sa.json
+auth-export.json
