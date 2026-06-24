@@ -1,4 +1,6 @@
 User-agent: *
 Disallow: /fin.html
 Disallow: /admin.html
-Disallow: /checkoout.html
+Disallow: /checkout.html
+
+Sitemap: https://grappletrade.com/sitemap.xml

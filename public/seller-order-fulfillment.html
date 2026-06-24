@@ -327,7 +327,6 @@
             if (orderInfoStr) {
                 try {
                     orderInfo = JSON.parse(orderInfoStr);
-                    console.log('Order info from session:', orderInfo);
                 } catch (e) {
                     console.error('Error parsing order info:', e);
                 }
@@ -336,7 +335,6 @@
             if (checkoutProductStr) {
                 try {
                     product = JSON.parse(checkoutProductStr);
-                    console.log('Product from session:', product);
                 } catch (e) {
                     console.error('Error parsing product:', e);
                 }
@@ -361,12 +359,15 @@
                         const fp = productSnap.data();
 
                         // Fill any missing fields from the orders collection
+                        // Sensitive fields (buyerShippingAddress, shippingLabel, rateObjectId) live only in orders
                         if (!ordersSnap.empty) {
                             const od = ordersSnap.docs[0].data();
                             if (!fp.trackingNumber && od.trackingNumber) fp.trackingNumber = od.trackingNumber;
                             if (!fp.trackingUrl && od.trackingUrl) fp.trackingUrl = od.trackingUrl;
                             if (!fp.shippingLabel && od.shippingLabel) fp.shippingLabel = od.shippingLabel;
                             if (!fp.carrier && od.carrier) fp.carrier = od.carrier;
+                            if (!fp.buyerShippingAddress && od.buyerShippingAddress) fp.buyerShippingAddress = od.buyerShippingAddress;
+                            if (!fp.rateObjectId && od.rateObjectId) fp.rateObjectId = od.rateObjectId;
                         }
 
                         // Always populate orderInfo from Firestore

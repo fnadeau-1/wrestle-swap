@@ -45,6 +45,7 @@
                         class="search-input"
                         id="search-input"
                         placeholder="Search for wrestling shoes, singlets, gear..."
+                        aria-label="Search for wrestling gear"
                         onkeypress="if(event.key==='Enter') performSearch()"
                     >
                 </div>
@@ -54,7 +55,7 @@
     </div>
 
     <!-- Nav Bar -->
-    <div class="nav-bar">
+    <nav class="nav-bar" aria-label="Main navigation">
         <div class="nav-content">
             <a href="watchlist.html">Saved</a>
             <a href="messages.html" style="color:#3665f3;font-weight:600;">Messages</a>
@@ -64,10 +65,10 @@
             <a href="search.html?q=shirt">Shirts</a>
             <a href="search.html?q=shorts">Shorts</a>
         </div>
-    </div>
+    </nav>
 
     <!-- Chat Container -->
-    <div class="chat-container">
+    <main class="chat-container">
         <!-- Conversations Sidebar -->
         <div class="conversations-sidebar">
             <div class="sidebar-header">
@@ -89,7 +90,7 @@
                 <div class="empty-text">Select a conversation to start chatting</div>
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -267,7 +268,7 @@
                         rows="1"
                         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"
                     ></textarea>
-                    <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+                    <button class="send-btn" id="send-btn" onclick="sendMessage()" aria-label="Send message">➤</button>
                 </div>
             `;
 

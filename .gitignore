@@ -18,3 +18,5 @@ my-next-app/
 *.pem
 *-sa.json
 auth-export.json
+wrestleswap/migrate.js
+wrestleswap/cleanup-seller-email.js

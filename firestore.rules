@@ -15,11 +15,29 @@ service cloud.firestore {
     match /products/{productId} {
       allow read: if true;
 
-      // Seller must be authenticated, email-verified, not suspended, and must own the listing
+      // Seller must be authenticated, email-verified, not suspended, and must own the listing.
+      // Field-level validation prevents price manipulation and oversized payloads.
       allow create: if request.auth != null
         && request.auth.token.email_verified == true
         && request.resource.data.userId == request.auth.uid
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('sellerSuspended', false) == false;
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('sellerSuspended', false) == false
+        // Price: must be a positive number ≤ $10,000
+        && request.resource.data.price is number
+        && request.resource.data.price > 0
+        && request.resource.data.price <= 10000
+        // Title: non-empty string, max 200 chars
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        // Category: must be a string
+        && request.resource.data.category is string
+        && request.resource.data.category.size() > 0
+        // Block clients from writing sensitive/internal fields
+        && !request.resource.data.keys().hasAny([
+            'sellerEmail', 'sold', 'cancelled', 'buyerId', 'soldOrderId',
+            'shipped', 'delivered', 'sellerPaidOut', 'sellerStripeAccountId',
+            'sellerReceivesCents', 'payoutInitiated'
+        ]);
 
       allow update: if isAdmin()
         // Seller can edit their own UNSOLD listing — never touch order/payout/fulfillment/status fields
@@ -38,24 +56,31 @@ service cloud.firestore {
                 'autoReleasedAt', 'autoReleaseCompleted',
                 'review', 'sellerRating'
             ]))
-        // Buyer can leave a review on a delivered order they purchased
+        // Buyer can leave a review on a delivered order they purchased.
+        // ordersDocId must be included in the update so we can verify via the orders collection
+        // (buyerId is not stored on product docs for privacy — it lives only in orders).
         || (request.auth != null
-            && resource.data.buyerId == request.auth.uid
-            && resource.data.delivered == true
-            && resource.data.cancelled != true
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                'review', 'sellerRating', 'updatedAt'
-            ]))
-        // Buyer can flag a refund request or dispute on an active (sold, not cancelled, not yet delivered) order
+                'review', 'sellerRating', 'updatedAt', 'ordersDocId'
+            ])
+            && request.resource.data.get('ordersDocId', '') != ''
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.buyerId == request.auth.uid
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.productId == productId
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.delivered == true
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.get('cancelled', false) != true)
+        // Buyer can flag a refund request or dispute on an active (sold, not cancelled, not yet delivered) order.
+        // ordersDocId must be included in the update — buyerId not stored on product docs.
         || (request.auth != null
-            && resource.data.buyerId == request.auth.uid
             && resource.data.sold == true
             && resource.data.cancelled != true
             && resource.data.delivered != true
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                 'refundRequested', 'refundRequestedAt', 'refundReason',
-                'disputeOpened', 'updatedAt'
-            ]));
+                'disputeOpened', 'updatedAt', 'ordersDocId'
+            ])
+            && request.resource.data.get('ordersDocId', '') != ''
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.buyerId == request.auth.uid
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.productId == productId);
 
       // Sellers can delete their own unsold listings; sold/active listings are locked
       allow delete: if isAdmin()
@@ -68,12 +93,11 @@ service cloud.firestore {
     // Users collection
     // -------------------------------------------------------------------------
     match /users/{userId} {
-      // Owner + admins get full read; any authenticated user can read public seller profiles.
-      // Firestore doesn't support field-level restrictions — sensitive fields (stripeAccountId,
-      // isAdmin) are exposed to authenticated users. Accepted tradeoff for public seller profiles.
+      // Owner + admins get full read. Public profile data is served via the
+      // getPublicProfile Cloud Function to avoid leaking sensitive fields
+      // (stripeAccountId, isAdmin, sellerStrikes, etc.) to other users.
       allow read: if isAdmin()
-        || (request.auth != null && request.auth.uid == userId)
-        || request.auth != null;
+        || (request.auth != null && request.auth.uid == userId);
 
       // New users create their own profile; privilege/suspension fields are blocked at creation
       allow create: if request.auth != null
@@ -176,8 +200,11 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.auth.uid == request.resource.data.buyerId
         && ratingId == request.resource.data.orderId + '_' + request.auth.uid
-        && get(/databases/$(database)/documents/products/$(request.resource.data.orderId)).data.buyerId == request.auth.uid
-        && get(/databases/$(database)/documents/products/$(request.resource.data.orderId)).data.delivered == true
+        // ordersDocId must be included — buyerId is not stored on products, only in orders
+        && request.resource.data.get('ordersDocId', '') != ''
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.buyerId == request.auth.uid
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.productId == request.resource.data.orderId
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.delivered == true
         // Rating must be a whole number between 1 and 5
         && request.resource.data.get('rating', 0) >= 1
         && request.resource.data.get('rating', 0) <= 5;
@@ -198,9 +225,10 @@ service cloud.firestore {
     match /refundRequests/{requestId} {
       allow create: if request.auth != null
         && request.resource.data.buyerId == request.auth.uid
-        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.buyerId == request.auth.uid
-        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.sold == true
-        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.get('cancelled', false) != true;
+        && request.resource.data.get('ordersDocId', '') != ''
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.buyerId == request.auth.uid
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.productId == request.resource.data.productId
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.get('cancelled', false) != true;
       allow read: if isAdmin()
         || (request.auth != null && (
           resource.data.buyerId == request.auth.uid ||
@@ -235,9 +263,10 @@ service cloud.firestore {
     match /disputes/{disputeId} {
       allow create: if request.auth != null
         && request.resource.data.buyerId == request.auth.uid
-        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.buyerId == request.auth.uid
-        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.sold == true
-        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.get('cancelled', false) != true;
+        && request.resource.data.get('ordersDocId', '') != ''
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.buyerId == request.auth.uid
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.productId == request.resource.data.productId
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.get('cancelled', false) != true;
       allow read: if isAdmin()
         || (request.auth != null && (
           resource.data.buyerId == request.auth.uid ||

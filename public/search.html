@@ -38,7 +38,7 @@
             <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
             <div class="search-container">
                 <div class="search-box">
-                    <input type="text" class="search-input" id="search-input" placeholder="Search for wrestling gear...">
+                    <input type="text" class="search-input" id="search-input" placeholder="Search for wrestling gear..." aria-label="Search for wrestling gear">
                 </div>
                 <button class="search-btn" onclick="performSearch()">Search</button>
             </div>
@@ -143,7 +143,7 @@
                     <span id="price-min-label">$0</span>
                     <span id="price-max-label">$500+</span>
                 </div>
-                <input type="range" id="price-slider" min="0" max="500" value="500" step="5" oninput="onPriceSlider(this.value)">
+                <input type="range" id="price-slider" min="0" max="500" value="500" step="5" oninput="onPriceSlider(this.value)" aria-label="Maximum price filter" aria-valuemin="0" aria-valuemax="500">
                 <input type="hidden" id="price-min" value="0">
                 <input type="hidden" id="price-max" value="">
             </div>
@@ -555,7 +555,7 @@
                 const imgSrc = safeUrl(product.images && product.images[0]);
                 const imageDisplay = imgSrc
                     ? `<img src="${esc(imgSrc)}" alt="${esc(product.name)}" loading="lazy">`
-                    : product.icon;
+                    : esc(product.icon || '📦');
                 const soldClass = product.sold ? 'sold' : '';
                 const soldBadge = product.sold ? '<div class="sold-badge">SOLD</div>' : '';
                 const inWatchlist = userWatchlist.has(product.id);
@@ -563,7 +563,7 @@
                 const trustBadge = product.sellerRating >= 4.5 ? '<span class="trust-badge">Top Seller</span>' : '';
                 const locationText = product.zipCode ? `· Ships from ${esc(product.zipCode)}` : '';
                 return `
-                    <div class="product-item ${soldClass}" onclick="window.location.href='productdetail.html?id=${esc(product.id)}'">
+                    <a class="product-item ${soldClass}" href="productdetail.html?id=${esc(product.id)}" style="text-decoration:none;color:inherit;">
                         ${soldBadge}
                         ${heartHtml}
                         <div class="product-img">${imageDisplay}</div>
@@ -573,7 +573,7 @@
                             <div class="product-condition">${formatCondition(product.condition)}</div>
                             <div class="seller-trust">${trustBadge}<span>${esc(product.sellerName)}${locationText}</span></div>
                         </div>
-                    </div>
+                    </a>
                 `;
             }).join('');
         }

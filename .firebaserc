@@ -4,5 +4,9 @@
     "production": "grappletrade"
   },
   "targets": {},
-  "etags": {}
+  "etags": {
+    "grappletrade": {
+      "extensionInstances": {}
+    }
+  }
 }

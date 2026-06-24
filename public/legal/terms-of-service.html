@@ -35,6 +35,7 @@
         <div class="content-section">
             <div class="highlight-box">
                 <p><strong>Welcome to GrappleTrade!</strong> These Terms of Service ("Terms") govern your use of our website, application, and services. By accessing or using our platform, you agree to be bound by these Terms. If you do not agree, please do not use the Platform.</p>
+                <p style="margin-top:10px;">Sellers are additionally subject to the <a href="seller-agreement.html">Seller Agreement</a>. Our fee structure is detailed on the <a href="fees.html">Fees &amp; Pricing</a> page.</p>
             </div>
         </div>
 
@@ -149,19 +150,20 @@
         </div>
 
         <div class="content-section">
-            <h2><span class="section-number">5</span> Payments</h2>
-            <p>Payment processing on GrappleTrade is handled as follows:</p>
-            
+            <h2><span class="section-number">5</span> Payments & Escrow</h2>
+            <p>GrappleTrade operates an escrow model to protect both buyers and sellers:</p>
+
             <ul>
-                <li><strong>Third-party processors:</strong> All payments are processed through secure third-party payment providers</li>
-                <li><strong>Platform role:</strong> We do not store, control, or hold user funds at any time</li>
-                <li><strong>Payment issues:</strong> We are not responsible for payment processing errors, chargebacks, disputes, or delays</li>
-                <li><strong>Fees:</strong> Platform fees (if applicable) will be clearly disclosed before transaction completion</li>
-                <li><strong>Refunds:</strong> Refund policies are determined by individual sellers, not by the platform</li>
+                <li><strong>Payment processor:</strong> All payments are processed by Stripe. Card data never touches our servers.</li>
+                <li><strong>Escrow hold:</strong> When a buyer completes a purchase, funds are held by Stripe on behalf of GrappleTrade until the buyer confirms delivery of the item.</li>
+                <li><strong>Seller payout:</strong> Funds are released to the seller's connected Stripe account only after the buyer confirms the item was received as described, or after our dispute resolution process concludes.</li>
+                <li><strong>Platform fee:</strong> GrappleTrade charges a 10% fee on the item sale price. There are no listing fees. See our <a href="fees.html">Fees &amp; Pricing page</a> for full details.</li>
+                <li><strong>Refunds:</strong> Buyers are protected by our <a href="money-back.html">Money Back Guarantee</a>. Refunds are issued by GrappleTrade when a valid claim is approved, not at individual seller discretion.</li>
+                <li><strong>Cancellations:</strong> If a seller cancels an order or fails to ship within 10 days, the buyer receives a full refund automatically.</li>
             </ul>
 
             <div class="highlight-box">
-                <p><strong>Payment Security:</strong> While we use reputable payment processors, you are responsible for maintaining the security of your payment information and monitoring your accounts for unauthorized transactions.</p>
+                <p><strong>Payment Security:</strong> Stripe is a PCI-DSS Level 1 certified payment processor. While we use reputable payment processors, you are responsible for maintaining the security of your account and monitoring for unauthorized activity.</p>
             </div>
         </div>
 

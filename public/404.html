@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found | GrappleTrade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <style>
+        .not-found-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .not-found-code {
+            font-size: 96px;
+            font-weight: 700;
+            color: #c0392b;
+            line-height: 1;
+            margin-bottom: 16px;
+        }
+        .not-found-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 12px;
+        }
+        .not-found-msg {
+            font-size: 16px;
+            color: #666;
+            max-width: 420px;
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+        .not-found-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .not-found-actions .btn {
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #c0392b;
+            color: #fff;
+            border: none;
+        }
+        .btn-primary:hover { background: #a93226; }
+        .btn-secondary {
+            background: #fff;
+            color: #1a1a2e;
+            border: 2px solid #e0e0e0;
+        }
+        .btn-secondary:hover { border-color: #c0392b; color: #c0392b; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-content">
+            <div>
+                <button class="top-bar-btn" onclick="window.location.href='/help.html'">Help &amp; Contact</button>
+            </div>
+            <div>
+                <button class="top-bar-btn" onclick="window.location.href='/sell.html'">Sell</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-header">
+        <div class="header-content">
+            <a href="/index.html" class="logo" aria-label="GrappleTrade home"></a>
+        </div>
+    </div>
+
+    <main class="container">
+        <div class="not-found-container">
+            <div class="not-found-code">404</div>
+            <h1 class="not-found-title">Page not found</h1>
+            <p class="not-found-msg">The page you're looking for doesn't exist or may have been moved. Try searching for wrestling gear or head back home.</p>
+            <div class="not-found-actions">
+                <a href="/index.html" class="btn btn-primary">Go Home</a>
+                <a href="/search.html" class="btn btn-secondary">Search Gear</a>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="/js/site-notice.js"></script>
+</body>
+</html>

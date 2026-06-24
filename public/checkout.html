@@ -38,9 +38,9 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container" id="checkout-container">
+    <main class="container" id="checkout-container">
         <!-- Content will be loaded by JavaScript -->
-    </div>
+    </main>
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -88,10 +88,8 @@
                 const userDoc = await getDoc(userRef);
 
                 if (userDoc.exists() && userDoc.data().stripeAccountId) {
-                    console.log('Found seller Stripe account:', userDoc.data().stripeAccountId);
                     return userDoc.data().stripeAccountId;
                 }
-                console.log('Seller does not have a Stripe account');
                 return null;
             } catch (error) {
                 console.error('Error fetching seller Stripe account:', error);
@@ -194,11 +192,6 @@
 
                 // Build seller FROM address from the listing's zipCode
                 sellerFromAddress = window.getSellerAddress(checkoutProduct);
-                if (sellerFromAddress) {
-                    console.log('Seller FROM zip:', sellerFromAddress.zip);
-                } else {
-                    console.log('Listing has no zipCode — will use fallback');
-                }
             } catch (error) {
                 console.error('Error loading checkout product:', error);
                 displayEmptyCheckout();
@@ -513,11 +506,9 @@
 
                 // Get the product's category to determine package size
                 const productCategory = checkoutProduct.category || 'default';
-                console.log('Product category:', productCategory);
 
                 // Select the appropriate parcel dimensions
                 const parcel = packageDimensions[productCategory] || packageDimensions['default'];
-                console.log('Using parcel dimensions:', parcel);
 
                 // Save parcel dimensions globally so we can use them later
                 usedParcelDimensions = parcel;
@@ -529,9 +520,6 @@
                 if (!fromAddress.zip) {
                     throw new Error('This listing is missing a ships-from ZIP code. Please contact the seller.');
                 }
-
-                console.log('Shipping from:', fromAddress.city, fromAddress.state);
-                console.log('Requesting shipping rates via Cloud Function...');
 
                 // Get Firebase auth token (required by cloud function)
                 const idToken = await window.getIdToken();
@@ -553,8 +541,6 @@
                     })
                 });
 
-                console.log('Response status:', response.status);
-
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     console.error('Cloud Function error:', errorData);
@@ -562,7 +548,6 @@
                 }
 
                 const data = await response.json();
-                console.log('Shippo response:', data);
 
                 // Check if we got rates back
                 if (data.rates && data.rates.length > 0) {
@@ -633,8 +618,6 @@
          */
         async function createShippingLabel() {
             try {
-                console.log('Creating shipping label with rate:', selectedShippingRate);
-
                 // Get Firebase auth token (required by Cloud Function)
                 const idToken = await window.getIdToken();
                 if (!idToken) throw new Error('Not authenticated');
@@ -660,12 +643,8 @@
                 }
 
                 const transaction = await response.json();
-                console.log('Shippo transaction response:', transaction);
 
                 if (transaction.status === 'SUCCESS') {
-                    console.log('Shipping label created successfully!');
-                    console.log('Label URL:', transaction.label_url);
-                    console.log('Tracking number:', transaction.tracking_number);
                     return transaction;
                 } else {
                     throw new Error(transaction.messages?.[0]?.text || 'Failed to create shipping label');
@@ -726,7 +705,6 @@
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || 'Failed to complete order');
 
-                console.log('Order completed via Cloud Function:', productId);
                 return true;
             } catch (error) {
                 console.error('Error completing order:', error);
@@ -814,7 +792,6 @@
 
                     // Step 2: Create PaymentIntent server-side.
                     // Price, shipping, and seller account are all verified there — never trust the frontend.
-                    console.log('Creating Payment Intent...');
                     const idToken = await window.getIdToken();
                     const piResponse = await fetch('https://us-central1-grappletrade.cloudfunctions.net/createPaymentIntent', {
                         method: 'POST',
@@ -842,7 +819,7 @@
 
                     // Update tax display from Stripe's server-side automatic_tax calculation
                     const stripeTaxCents = data.taxAmountCents || 0;
-                    if (stripeTaxCents > 0) {
+                    if (data.taxSource === 'automatic') {
                         tax = stripeTaxCents / 100;
                         total = subtotal + shippingCost + tax;
                         const taxEl = document.getElementById('tax-cost');
@@ -852,9 +829,11 @@
                         if (taxLabelEl) taxLabelEl.textContent = 'Sales Tax';
                         if (totalEl) totalEl.textContent = '$' + total.toFixed(2);
                         submitButton.textContent = 'Complete Purchase — $' + total.toFixed(2);
-                        console.log('[Tax] Stripe calculated: $' + tax.toFixed(2), '| status:', data.taxStatus);
-                    } else {
-                        console.log('[Tax] source:', data.taxSource, '| status:', data.taxStatus, '| $0');
+                    }
+
+                    // Sync Apple Pay / Google Pay wallet sheet to tax-inclusive total
+                    if (window._stripeElements) {
+                        window._stripeElements.update({ amount: Math.round((subtotal + shippingCost + tax) * 100) });
                     }
 
                     // Step 3: Confirm payment via Payment Element.
@@ -862,7 +841,6 @@
                     // iDEAL). For regular US cards, Apple Pay, Google Pay: returns immediately.
                     // If a redirect does occur, Stripe sends the buyer back to return_url and the
                     // stripeWebhook Cloud Function handles order completion as a safety net.
-                    console.log('Confirming payment...');
                     const { error, paymentIntent } = await stripe.confirmPayment({
                         elements,
                         clientSecret: data.clientSecret,
@@ -898,7 +876,6 @@
 
                     if (paymentIntent && paymentIntent.status === 'succeeded') {
                         // Normal path — no redirect (cards, Apple Pay, Google Pay)
-                        console.log('Payment succeeded:', paymentIntent.id);
 
                         // Step 4: Create shipping label
                         submitButton.textContent = 'Creating shipping label...';
@@ -914,7 +891,15 @@
 
                         // Step 5: Complete order (marks item sold, emails buyer & seller)
                         updatePaymentOverlay('Finalizing Your Order', 'Your order is being confirmed — almost there!');
-                        await completeOrder(checkoutProduct.id, paymentIntent.id, shippingInfo);
+                        const orderSuccess = await completeOrder(checkoutProduct.id, paymentIntent.id, shippingInfo);
+                        if (!orderSuccess) {
+                            hidePaymentOverlay();
+                            document.getElementById('card-errors').textContent =
+                                `Your payment was received but we had trouble recording your order. Please contact support with your payment reference: ${paymentIntent.id}`;
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'Complete Purchase';
+                            return;
+                        }
 
                         // Step 6: Save receipt data and redirect
                         sessionStorage.setItem('orderInfo', JSON.stringify({

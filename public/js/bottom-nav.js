@@ -82,7 +82,7 @@
 
         nav.innerHTML = PAGES.map(p => `
             <a href="${p.href}" class="bottom-nav-item${p.id === active ? ' active' : ''}" aria-label="${p.label}">
-                <span class="nav-icon">${p.icon}</span>
+                <span class="nav-icon" aria-hidden="true">${p.icon}</span>
                 <span>${p.label}</span>
             </a>
         `).join('');

@@ -14,6 +14,31 @@
  *   dismissible: boolean  — whether the ✕ button appears
  */
 
+// ── Sentry error monitoring ───────────────────────────────────────────────────
+// To enable: replace SENTRY_DSN_PLACEHOLDER with your real DSN from sentry.io
+//   1. Create a free Browser JavaScript project at https://sentry.io
+//   2. Copy the DSN (looks like https://abc123@o123456.ingest.sentry.io/789)
+//   3. Replace the value below and redeploy
+const SENTRY_DSN = 'SENTRY_DSN_PLACEHOLDER';
+
+(function initSentry() {
+    if (!SENTRY_DSN || SENTRY_DSN === 'SENTRY_DSN_PLACEHOLDER') return;
+    const script = document.createElement('script');
+    script.src = 'https://browser.sentry-cdn.com/8.38.0/bundle.tracing.min.js';
+    script.crossOrigin = 'anonymous';
+    script.onload = function () {
+        if (window.Sentry) {
+            window.Sentry.init({
+                dsn: SENTRY_DSN,
+                environment: 'production',
+                tracesSampleRate: 0.1,
+            });
+        }
+    };
+    document.head.appendChild(script);
+})();
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -139,6 +164,67 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadAnnouncement);
 } else {
     loadAnnouncement();
+}
+
+// Cookie consent banner
+const COOKIE_CONSENT_KEY = 'gt_cookie_consent';
+
+function showCookieBanner() {
+    if (localStorage.getItem(COOKIE_CONSENT_KEY)) return;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        #cookie-consent-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            font-size: 13px;
+            z-index: 99999;
+            flex-wrap: wrap;
+            font-family: inherit;
+        }
+        #cookie-consent-banner a { color: #90caf9; text-decoration: underline; }
+        #cookie-consent-accept {
+            background: #3665f3;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 18px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        #cookie-consent-accept:hover { background: #254cc7; }
+    `;
+    document.head.appendChild(style);
+
+    const banner = document.createElement('div');
+    banner.id = 'cookie-consent-banner';
+    banner.innerHTML = `
+        <span>We use cookies for authentication, security, and analytics. See our <a href="/legal/cookie.html">Cookie Policy</a>.</span>
+        <button id="cookie-consent-accept">Accept</button>
+    `;
+    document.body.appendChild(banner);
+
+    document.getElementById('cookie-consent-accept').addEventListener('click', () => {
+        localStorage.setItem(COOKIE_CONSENT_KEY, '1');
+        banner.remove();
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showCookieBanner);
+} else {
+    showCookieBanner();
 }
 
 // Spacebar triggers the logo slam animation

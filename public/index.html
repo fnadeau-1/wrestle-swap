@@ -51,6 +51,7 @@
                         class="search-input"
                         id="search-input"
                         placeholder="Search for wrestling shoes, singlets, gear..."
+                        aria-label="Search for wrestling gear"
                         onkeypress="if(event.key==='Enter') performSearch()"
                     >
                 </div>
@@ -61,7 +62,7 @@
     </div>
 
     <!-- Navigation -->
-    <div class="nav-bar">
+    <nav class="nav-bar" aria-label="Main navigation">
         <div class="nav-content">
             <a href="watchlist.html">Saved</a>
             <a href="search.html?q=shoes">Wrestling Shoes</a>
@@ -70,7 +71,7 @@
             <a href="search.html?q=shorts">Shorts</a>
             <a href="search.html?q=bags">Bags</a>
         </div>
-    </div>
+    </nav>
 
     <!-- Main Content -->
     <main class="container">
@@ -84,26 +85,26 @@
         <!-- Categories -->
         <h2 class="section-title">Explore Popular Categories</h2>
         <div class="categories">
-            <div class="category-card" onclick="window.location.href='search.html?q=shoes'">
+            <a class="category-card" href="search.html?q=shoes" style="text-decoration:none;color:inherit;">
                 <img src="https://cdn11.bigcommerce.com/s-ob1gxw6h/images/stencil/1280x1280/products/1815/16182/Untitled_design_60__78315.1727788914.png?c=20" alt="Wrestling Shoes" width="80" height="80" loading="lazy" style="object-fit: contain; margin-bottom: 10px;">
                 <div class="category-name">Wrestling Shoes</div>
-            </div>
-            <div class="category-card" onclick="window.location.href='search.html?q=singlet'">
+            </a>
+            <a class="category-card" href="search.html?q=singlet" style="text-decoration:none;color:inherit;">
                 <img src="https://www.wrestlingmart.com/cdn/shop/files/NIKEUSAWRESTLINGWOMENSCLOUDSINGLET-RED-QR.jpg?crop=center&height=1200&v=1744832852&width=1200" alt="Singlets" width="80" height="80" loading="lazy" style="object-fit: contain; margin-bottom: 10px;">
                 <div class="category-name">Singlets</div>
-            </div>
-            <div class="category-card" onclick="window.location.href='search.html?q=Shirt'">
+            </a>
+            <a class="category-card" href="search.html?q=Shirt" style="text-decoration:none;color:inherit;">
                 <img src="https://images.footballfanatics.com/usa-wrestling/mens-heather-gray-usa-wrestling-radiating-victory-t-shirt_ss5_p-200582126+pv-1+u-qyxjpp1vyzbbqjic0ara+v-bntg3xaqmktnhj5tbivy.jpg?_hv=2&w=1018" alt="Shirts" width="80" height="80" loading="lazy" style="object-fit: contain; margin-bottom: 10px;">
                 <div class="category-name">Shirts</div>
-            </div>
-            <div class="category-card" onclick="window.location.href='search.html?q=Shorts'">
+            </a>
+            <a class="category-card" href="search.html?q=Shorts" style="text-decoration:none;color:inherit;">
                 <img src="https://www.flowholdsd.com/cdn/shop/files/IMG_1427_jpg-min_720x.png?v=1698344274" alt="Shorts" width="80" height="80" loading="lazy" style="object-fit: contain; margin-bottom: 10px;">
                 <div class="category-name">Shorts</div>
-            </div>
-            <div class="category-card" onclick="window.location.href='search.html?q=bags'">
+            </a>
+            <a class="category-card" href="search.html?q=bags" style="text-decoration:none;color:inherit;">
                 <img src="https://cliffkeen.com/cdn/shop/files/MBP13-WH_1.png?crop=center&height=1200&v=1709304359&width=1200" alt="Bags" width="80" height="80" loading="lazy" style="object-fit: contain; margin-bottom: 10px;">
                 <div class="category-name">Bags</div>
-            </div>
+            </a>
         </div>
 
         <!-- Products -->
@@ -224,16 +225,16 @@
                 const imgSrc = safeUrl(product.images && product.images[0]);
                 const imageDisplay = imgSrc
                     ? `<img src="${esc(imgSrc)}" alt="${esc(product.title)}" loading="lazy">`
-                    : '📦';
+                    : '<span aria-hidden="true">📦</span>';
                 return `
-                    <div class="product-card" onclick="window.location.href='productdetail.html?id=${esc(product.id)}'">
+                    <a class="product-card" href="productdetail.html?id=${esc(product.id)}" style="text-decoration:none;color:inherit;">
                         <div class="product-image">${imageDisplay}</div>
                         <div class="product-info">
                             <div class="product-title">${esc(product.title)}</div>
                             <div class="product-price">$${product.price.toFixed(2)}</div>
                             <div class="product-seller">${esc(product.sellerName)}</div>
                         </div>
-                    </div>
+                    </a>
                 `;
             }).join('');
             if (append) {

@@ -154,7 +154,6 @@
             if (orderInfoStr) {
                 try {
                     orderInfo = JSON.parse(orderInfoStr);
-                    console.log('Order info loaded:', orderInfo);
                 } catch (e) {
                     console.error('Error parsing order info:', e);
                 }
@@ -163,11 +162,9 @@
             // Try to get product from orderInfo first, then fallback to checkoutProduct
             if (orderInfo && orderInfo.product) {
                 product = orderInfo.product;
-                console.log('Product loaded from orderInfo:', product);
             } else if (checkoutProductStr) {
                 try {
                     product = JSON.parse(checkoutProductStr);
-                    console.log('Product loaded from session:', product);
                 } catch (e) {
                     console.error('Error parsing product:', e);
                 }

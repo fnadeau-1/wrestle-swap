@@ -36,9 +36,15 @@
         </div>
     </div>
 
-    <div class="container">
+    <main class="container">
         <h1 class="page-title">List Your Wrestling Gear</h1>
         <p class="page-subtitle">Fill out the details below to sell your item</p>
+
+        <!-- Email verification reminder (hidden by default) -->
+        <div id="email-verify-banner" style="display:none;margin-bottom:16px;padding:14px 18px;background:#fff8e1;border-left:4px solid #f59e0b;border-radius:6px;font-size:14px;color:#7c4e00;">
+            <strong>Verify your email before listing.</strong> Check your inbox for a verification link.
+            <button id="resend-verify-btn" type="button" style="margin-left:12px;background:none;border:1px solid #f59e0b;border-radius:4px;padding:4px 10px;font-size:13px;color:#7c4e00;cursor:pointer;">Resend email</button>
+        </div>
 
         <!-- Stripe Account Warning (hidden by default) -->
         <div class="stripe-warning" id="stripe-warning">
@@ -112,13 +118,17 @@
 
             <div class="form-section">
                 <h2 class="section-title">Photos</h2>
-                <div class="upload-area" id="upload-area" onclick="document.getElementById('file-upload').click()">
-                    <div class="upload-icon">📸</div>
+                <div class="upload-area" id="upload-area"
+                    role="button" tabindex="0"
+                    aria-label="Upload photos — click or press Enter to browse files"
+                    onclick="document.getElementById('file-upload').click()"
+                    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('file-upload').click();}">
+                    <div class="upload-icon" aria-hidden="true">📸</div>
                     <div class="upload-text">
                         <strong>Click to upload photos or drag and drop</strong><br>
                         Add up to 6 photos (recommended: at least 3)
                     </div>
-                    <input type="file" id="file-upload" class="file-input" multiple accept="image/*">
+                    <input type="file" id="file-upload" class="file-input" multiple accept="image/*" aria-label="Photo upload">
                 </div>
                 <p class="helper-text">Clear photos from multiple angles help your item sell faster</p>
                 <div class="preview-container" id="preview-container"></div>
@@ -159,13 +169,16 @@
                 <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">Cancel</button>
                 <button type="submit" class="btn btn-primary" id="submit-btn">List Item</button>
             </div>
+            <p style="margin-top:12px;text-align:center;font-size:12px;color:#888;">
+                By listing, you agree to the <a href="legal/seller-agreement.html" target="_blank">Seller Agreement</a> and <a href="legal/fees.html" target="_blank">Fee Schedule</a> (10% of sale price).
+            </p>
         </form>
-    </div>
+    </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, getDoc, serverTimestamp, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
@@ -201,7 +214,11 @@
                     document.getElementById('submit-btn').disabled = true;
                 } else {
                     document.getElementById('stripe-warning').classList.remove('show');
-                    document.getElementById('submit-btn').disabled = false;
+                    // Only enable submit if email is also verified — email verification check runs first
+                    // and disables the button; we must not re-enable it for unverified users
+                    if (user.emailVerified !== false) {
+                        document.getElementById('submit-btn').disabled = false;
+                    }
                 }
 
                 return data.stripeAccountId || null;
@@ -222,7 +239,22 @@
                 window.location.href = 'sign-in.html';
             } else {
                 currentUser = user;
-                console.log('User logged in:', user.email);
+
+                // Email verification check
+                if (!user.emailVerified) {
+                    const banner = document.getElementById('email-verify-banner');
+                    if (banner) banner.style.display = 'block';
+                    document.getElementById('submit-btn').disabled = true;
+                    document.getElementById('resend-verify-btn').addEventListener('click', async () => {
+                        try {
+                            await sendEmailVerification(user);
+                            document.getElementById('resend-verify-btn').textContent = 'Email sent!';
+                            document.getElementById('resend-verify-btn').disabled = true;
+                        } catch (e) {
+                            alert('Could not send verification email. Please try again shortly.');
+                        }
+                    });
+                }
 
                 // Update greeting with dropdown
                 const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -257,8 +289,6 @@
         window.getDocs = getDocs;
         window.query = query;
         window.where = where;
-
-        console.log("Firebase initialized!");
 
         // Banned keywords — loaded once on page open.
         // Admins can override this list via Firestore: config/bannedItems { keywords: [...] }
@@ -544,8 +574,6 @@
                     updatedAt: window.serverTimestamp(),
                     status: 'active'
                 };
-
-                console.log('Creating product with sellerId:', stripeAccountId);
 
                 // Save to Firestore
                 const docRef = await window.addDoc(window.collection(window.firestoreDB, 'products'), productData);

@@ -64,7 +64,7 @@
     </div>
 
     <!-- Main Container -->
-    <div class="container" id="profileContainer" style="display: none;">
+    <main class="container" id="profileContainer" style="display: none;">
         <!-- Profile Header -->
         <div class="profile-header">
             <div class="profile-image" id="profile-image">
@@ -133,7 +133,7 @@
                 <p>No reviews yet</p>
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -186,9 +186,20 @@
 
         async function loadUserProfile(userId) {
             try {
-                // Load user data from Firestore users collection
-                const userDocSnap = await getDoc(doc(db, 'users', userId));
-                const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+                let userData = {};
+
+                if (isOwnProfile && currentUser) {
+                    // Owner: read own doc directly from Firestore (authenticated)
+                    const userDocSnap = await getDoc(doc(db, 'users', userId));
+                    userData = userDocSnap.exists() ? userDocSnap.data() : {};
+                } else {
+                    // Non-owner: use Cloud Function to avoid exposing sensitive fields
+                    const resp = await fetch(
+                        `https://us-central1-grappletrade.cloudfunctions.net/getPublicProfile?uid=${encodeURIComponent(userId)}`
+                    );
+                    if (!resp.ok) throw new Error('Profile not found');
+                    userData = await resp.json();
+                }
 
                 // Determine display name: own profile uses Auth data, others use Firestore
                 let displayName, username, bio, photoURL;

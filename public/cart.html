@@ -46,7 +46,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container">
+    <main class="container">
         <h1 class="page-title">Shopping Cart</h1>
         <p class="cart-count" id="cart-count">0 items</p>
 
@@ -114,7 +114,7 @@
             <p class="empty-text">Add some wrestling gear to get started!</p>
             <button class="browse-btn" onclick="window.location.href='index.html'">Browse Items</button>
         </div>
-    </div>
+    </main>
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -285,7 +285,7 @@
                 const _isImgUrl = _rawIcon && (_rawIcon.startsWith('https://') || _rawIcon.startsWith('http://'));
                 const displayIcon = _isImgUrl
                     ? `<img src="${esc(_rawIcon)}" alt="${esc(item.name || '')}" style="width:100%;height:100%;object-fit:cover;">`
-                    : (_rawIcon || '📦');
+                    : esc(_rawIcon || '📦');
 
                 // Handle condition property which might not exist
                 const condition = item.condition || 'Used';
@@ -326,9 +326,9 @@
                                 ${shipping === 0 ? 'Free shipping' : '+$' + shipping.toFixed(2) + ' shipping'}
                             </div>
                             <div class="quantity-controls">
-                                <button class="qty-btn" onclick="updateQty('${item.id}', -1)">−</button>
-                                <div class="qty-display" id="qty-${item.id}">${item.quantity}</div>
-                                <button class="qty-btn" onclick="updateQty('${item.id}', 1)">+</button>
+                                <button class="qty-btn" onclick="updateQty('${item.id}', -1)" aria-label="Decrease quantity">−</button>
+                                <div class="qty-display" id="qty-${item.id}" aria-live="polite">${item.quantity}</div>
+                                <button class="qty-btn" onclick="updateQty('${item.id}', 1)" aria-label="Increase quantity">+</button>
                             </div>
                         </div>
                     </div>
@@ -478,8 +478,6 @@
 
                 // Write to sessionStorage in the format checkout.html expects
                 sessionStorage.setItem('checkoutProduct', JSON.stringify(product));
-
-                console.log('Proceeding to checkout with:', product);
 
                 // Redirect to checkout page
                 window.location.href = 'checkout.html';

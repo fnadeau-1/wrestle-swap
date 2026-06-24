@@ -270,9 +270,9 @@
         }
 
         async function displayProduct(product) {
-            document.title = `${product.name || 'Product'} | GrappleTrade`;
-            document.getElementById('breadcrumb-title').textContent = product.name || 'Product';
-            document.getElementById('product-title').textContent = product.name || product.title || 'Product';
+            document.title = `${product.title || 'Product'} | GrappleTrade`;
+            document.getElementById('breadcrumb-title').textContent = product.title || 'Product';
+            document.getElementById('product-title').textContent = product.title || 'Product';
             document.getElementById('product-condition').textContent = product.condition ? `Condition: ${product.condition}` : '';
             document.getElementById('product-price').textContent = `$${(product.price || 0).toFixed(2)}`;
 

@@ -40,7 +40,7 @@
         </div>
     </div>
 
-    <div class="container">
+    <main class="container">
         <header>
             <div>
                 <h1>My Orders</h1>
@@ -81,7 +81,7 @@
         <div id="errorState" style="display:none;text-align:center;padding:60px 20px;">
             <p style="color:#dc2626;font-size:1rem;">Something went wrong loading your orders. Please refresh the page.</p>
         </div>
-    </div>
+    </main>
 
     <!-- Order Details Modal -->
     <div class="modal" id="orderModal">
@@ -262,32 +262,20 @@
                 return [];
             }
 
-            console.log('Fetching orders for user:', user.uid);
-
-            // Active orders: query products collection (sold=true, buyerId=user)
-            const activeSnapshot = await db.collection('products')
-                .where('sold', '==', true)
+            // Query the orders collection — source of truth for all buyer orders.
+            // (Sensitive fields like buyerId, paymentIntentId, shippingCost are stored
+            //  here rather than the publicly-readable products collection.)
+            const allSnapshot = await db.collection('orders')
                 .where('buyerId', '==', user.uid)
                 .get();
 
             const orders = [];
-            activeSnapshot.forEach(doc => {
-                orders.push({ id: doc.id, ...doc.data() });
-            });
-
-            // Cancelled orders: query orders collection (cancelled=true, buyerId=user)
-            // These are invisible in the products collection because sold is set to false on cancel
-            const cancelledSnapshot = await db.collection('orders')
-                .where('buyerId', '==', user.uid)
-                .where('cancelled', '==', true)
-                .get();
-
-            cancelledSnapshot.forEach(doc => {
+            allSnapshot.forEach(doc => {
                 const d = doc.data();
-                // Normalize to match the shape renderOrderCard expects
                 orders.push({
                     id: d.productId,          // product ID so cancel/review ops still work
                     _ordersDocId: doc.id,
+                    sellerId: d.sellerId || null,
                     title: d.productTitle || 'Order',
                     price: d.productPrice || 0,
                     images: d.productImages || [],
@@ -295,16 +283,16 @@
                     shippingCost: d.shippingCost || 0,
                     soldTimestamp: d.createdTimestamp || 0,
                     soldOrderId: d.paymentIntentId || null,
-                    cancelled: true,
+                    cancelled: d.cancelled || false,
                     cancelledAt: d.cancelledAt || null,
                     cancelledBy: d.cancelledBy || null,
                     refundId: d.refundId || null,
                     trackingNumber: d.trackingNumber || null,
+                    trackingUrl: d.trackingUrl || null,
                     delivered: d.delivered || false,
+                    refundRequested: d.refundRequested || false,
                 });
             });
-
-            console.log('Found', orders.length, 'orders for this user');
 
             // Sort by date (newest first)
             orders.sort((a, b) => (b.soldTimestamp || 0) - (a.soldTimestamp || 0));
@@ -459,6 +447,7 @@
 
         let currentOrderId = null;
         let currentOrder = null;
+        let currentOrdersDocId = null;
 
         async function openOrderModal(orderId) {
             currentOrderId = orderId;
@@ -476,6 +465,7 @@
 
                 const order = doc.data();
                 currentOrder = order;
+                currentOrdersDocId = orderSnap.empty ? null : orderSnap.docs[0].id;
 
                 // Overlay financial data from the orders collection (more reliable source for what was actually charged)
                 if (!orderSnap.empty) {
@@ -483,6 +473,7 @@
                     if (od.shippingCost != null) order.shippingCost = od.shippingCost;
                     if (od.trackingNumber && !order.trackingNumber) order.trackingNumber = od.trackingNumber;
                     if (od.trackingUrl && !order.trackingUrl) order.trackingUrl = od.trackingUrl;
+                    if (od.paymentIntentId && !order.soldOrderId) order.soldOrderId = od.paymentIntentId;
                 }
 
                 const status = getOrderStatus(order);
@@ -1022,13 +1013,14 @@
                     sellerId: disputeSellerId,
                     buyerId: user.uid,
                     buyerEmail: user.email,
+                    ordersDocId: currentOrdersDocId,
                     issueType,
                     description,
                     status: 'open',
                     createdAt: new Date()
                 });
 
-                await db.collection('products').doc(disputeOrderId).update({ disputeOpened: true });
+                await db.collection('products').doc(disputeOrderId).update({ disputeOpened: true, ordersDocId: currentOrdersDocId });
 
                 closeDisputeModal();
                 showSuccess('Your report has been submitted. We\'ll follow up via email within 24 hours.');
@@ -1069,6 +1061,7 @@
                     sellerId: orderToRefundData.userId,
                     productTitle: orderToRefundData.title,
                     productPrice: orderToRefundData.price,
+                    ordersDocId: currentOrdersDocId,
                     reason: reason,
                     details: details,
                     status: 'pending',
@@ -1080,7 +1073,8 @@
                 await db.collection('products').doc(orderToRefund).update({
                     refundRequested: true,
                     refundRequestedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    refundReason: reason
+                    refundReason: reason,
+                    ordersDocId: currentOrdersDocId
                 });
 
                 closeRefundRequestModal();
@@ -1211,6 +1205,7 @@
                         userId: user.uid,
                         userName: user.displayName || user.email || 'Anonymous'
                     },
+                    ordersDocId: currentOrdersDocId,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
@@ -1251,13 +1246,14 @@
                     buyerId: user.uid,
                     buyerName: user.displayName || user.email || 'Anonymous',
                     orderId: orderId,
+                    ordersDocId: currentOrdersDocId,
                     rating: selectedSellerRating,
                     text: sellerReviewText || '',
                     createdAt: Date.now(),
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // Also save to the product for easy access
+                // Also save to the product for easy access (ordersDocId enables Firestore rule verification)
                 await db.collection('products').doc(orderId).update({
                     sellerRating: {
                         rating: selectedSellerRating,
@@ -1266,6 +1262,7 @@
                         userId: user.uid,
                         userName: user.displayName || user.email || 'Anonymous'
                     },
+                    ordersDocId: currentOrdersDocId,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
@@ -1322,8 +1319,6 @@
             const menuWrapper = document.getElementById('user-menu-wrapper');
 
             if (user) {
-                console.log('User authenticated:', user.uid);
-
                 // Update header with dropdown
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
                 menuWrapper.innerHTML = `

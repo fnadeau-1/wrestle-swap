@@ -107,6 +107,23 @@
         { "fieldPath": "emailSent", "order": "ASCENDING" },
         { "fieldPath": "createdTimestamp", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "shipped", "order": "ASCENDING" },
+        { "fieldPath": "delivered", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

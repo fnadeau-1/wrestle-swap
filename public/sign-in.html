@@ -21,7 +21,7 @@
 
         <div class="section-title">Sign in or create an account</div>
 
-        <div class="error-banner" id="error-banner"></div>
+        <div class="error-banner" id="error-banner" role="alert" aria-live="polite"></div>
 
         <div class="social-buttons">
             <!-- Google -->
@@ -37,6 +37,12 @@
 
         </div>
 
+        <div class="terms-note">
+            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;text-align:left;">
+                <input type="checkbox" id="age-confirm" style="margin-top:3px;flex-shrink:0;" onchange="onAgeCheckChange()">
+                <span>I confirm I am 18 years of age or older.</span>
+            </label>
+        </div>
         <div class="terms-note">
             By continuing, you agree to GrappleTrade's
             <a href="legal/terms-of-service.html">Terms of Service</a>
@@ -82,6 +88,16 @@
 
     <script>
         let popupInProgress = false;
+
+        // Disable sign-in until age gate is confirmed
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btn-google').disabled = true;
+        });
+
+        function onAgeCheckChange() {
+            const checked = document.getElementById('age-confirm').checked;
+            if (!popupInProgress) document.getElementById('btn-google').disabled = !checked;
+        }
 
         function showError(msg) {
             const el = document.getElementById('error-banner');
@@ -152,6 +168,10 @@
 
         async function socialLogin() {
             if (popupInProgress) return;
+            if (!document.getElementById('age-confirm').checked) {
+                showError('Please confirm you are 18 or older to continue.');
+                return;
+            }
             hideError();
             popupInProgress = true;
             setAllButtonsDisabled(true);

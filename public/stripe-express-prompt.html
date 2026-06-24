@@ -105,6 +105,7 @@
 
     <!-- Firebase SDK (Compat version for easier global access) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
@@ -119,8 +120,9 @@
             appId: "1:119683736855:web:0d0bc6cea784290ded8352",
             measurementId: "G-987DNCH23C"
         };
-        
+
         firebase.initializeApp(firebaseConfig);
+        firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), true);
         const auth = firebase.auth();
         const db = firebase.firestore();
     </script>
@@ -128,25 +130,18 @@
     <script>
         let currentUser = null;
 
-        console.log('Page loaded - waiting for Firebase auth...');
-
         // Check if user is logged in and if they already have a Stripe account
         auth.onAuthStateChanged(async (user) => {
-            console.log('Auth state changed. User:', user ? user.uid : 'Not logged in');
-            
             if (user) {
                 currentUser = user;
-                console.log('✓ User logged in:', user.uid);
-                console.log('Email:', user.email);
-                
+
                 // Enable the button since user is logged in
                 document.getElementById('createAccountBtn').disabled = false;
-                
+
                 // Check if user already has a Stripe account connected
                 try {
                     const userDoc = await db.collection('users').doc(user.uid).get();
-                    console.log('User doc exists:', userDoc.exists);
-                    
+
                     if (userDoc.exists) {
                         const userData = userDoc.data();
 
@@ -165,14 +160,11 @@
                                 document.getElementById('onboarding-section').style.display = 'block';
                             });
                         }
-                    } else {
-                        console.log('No user document found - first time user');
                     }
                 } catch (error) {
                     console.error('Error checking user status:', error);
                 }
             } else {
-                console.log('✗ No user logged in');
                 showError('Please sign in to become a seller');
                 document.getElementById('createAccountBtn').disabled = true;
             }
@@ -180,11 +172,7 @@
 
         // Button click handler
         document.getElementById('createAccountBtn').addEventListener('click', async function() {
-            console.log('🔘 Button clicked!');
-            console.log('Current user:', currentUser ? currentUser.uid : 'none');
-            
             if (!currentUser) {
-                console.log('✗ No user - showing error');
                 showError('Please sign in first');
                 return;
             }
@@ -202,22 +190,13 @@
             errorDiv.classList.remove('active');
 
             try {
-                console.log('📤 Sending request to Cloud Function...');
-                console.log('User ID:', currentUser.uid);
-                console.log('Email:', currentUser.email);
-                
-                // Call your Firebase Cloud Function
                 const CLOUD_FUNCTION_URL = 'https://us-central1-grappletrade.cloudfunctions.net/createConnectedAccount';
-                console.log('Cloud Function URL:', CLOUD_FUNCTION_URL);
-                
                 const requestBody = {
                     userId: currentUser.uid,
                     email: currentUser.email,
                     returnUrl: window.location.origin + '/sell.html',
                     refreshUrl: window.location.origin + '/stripe-express-prompt.html'
                 };
-                console.log('Request body:', requestBody);
-                
                 const idToken = await currentUser.getIdToken();
                 const response = await fetch(CLOUD_FUNCTION_URL, {
                     method: 'POST',
@@ -228,9 +207,6 @@
                     body: JSON.stringify(requestBody),
                 });
 
-                console.log('📥 Response status:', response.status);
-                console.log('Response OK:', response.ok);
-
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('❌ Server error response:', errorText);
@@ -238,7 +214,6 @@
                 }
 
                 const data = await response.json();
-                console.log('✓ Response data:', data);
 
                 if (data.error) {
                     console.error('❌ Error in response:', data.error);
@@ -250,9 +225,6 @@
                     throw new Error('No onboarding URL received from server');
                 }
 
-                console.log('✓ Got onboarding URL:', data.url);
-                console.log('🔄 Redirecting to Stripe...');
-                
                 // Redirect to Stripe Connect onboarding
                 window.location.href = data.url;
 

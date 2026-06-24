@@ -7,7 +7,7 @@ const sgMail = require('@sendgrid/mail');
 
 const FROM_EMAIL = 'noreply@grappletrade.com';
 const FROM_NAME = 'GrappleTrade';
-const SITE_URL = 'https://grappletrade.web.app';
+const SITE_URL = 'https://grappletrade.com';
 
 function init(apiKey) {
   sgMail.setApiKey(apiKey);
@@ -41,8 +41,9 @@ function wrap(bodyHtml) {
           <td style="background:#f9f9f9;padding:20px 40px;text-align:center;border-top:1px solid #e5e5e5;">
             <p style="margin:0;color:#999;font-size:12px;">
               &copy; 2026 GrappleTrade &nbsp;&middot;&nbsp;
-              <a href="${SITE_URL}" style="color:#999;text-decoration:underline;">grappletrade.web.app</a>
+              <a href="${SITE_URL}" style="color:#999;text-decoration:underline;">grappletrade.com</a>
             </p>
+            <p style="font-size:11px;color:#999;margin-top:8px;margin-bottom:0;">To unsubscribe from order notifications, <a href="${SITE_URL}/settings.html" style="color:#999;text-decoration:underline;">manage your preferences</a>.</p>
           </td>
         </tr>
       </table>
@@ -65,9 +66,9 @@ async function send(to, subject, html) {
   if (!to) return;
   try {
     await sgMail.send({ to, from: { email: FROM_EMAIL, name: FROM_NAME }, subject, html });
-    console.log(`Email sent → ${to} | ${subject}`);
+    console.log(`Email sent | ${subject}`);
   } catch (err) {
-    console.error(`Email failed → ${to} | ${subject}:`, err.response ? JSON.stringify(err.response.body) : err.message);
+    console.error(`Email failed | ${subject}:`, err.response ? JSON.stringify(err.response.body) : err.message);
   }
 }
 

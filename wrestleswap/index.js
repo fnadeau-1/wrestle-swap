@@ -1,4 +1,6 @@
+// GrappleTrade Cloud Functions
 const { onRequest } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onMessagePublished } = require("firebase-functions/v2/pubsub");
 const { defineSecret } = require("firebase-functions/params");
@@ -112,6 +114,14 @@ const stripeAccountWebhookSecret = defineSecret("STRIPE_ACCOUNT_WEBHOOK_SECRET")
 
 const emails = require('./emails');
 
+// Fetch the order record for a product from the orders collection (source of truth for
+// buyerId, paymentIntentId, and financial fields — never read these from the product doc,
+// which is publicly readable via `allow read: if true` in Firestore rules).
+async function getOrderByProductId(productId) {
+  const snap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
+  return snap.empty ? null : snap.docs[0].data();
+}
+
 // Write an in-app notification to Firestore (fires-and-forgets — never throws)
 // idempotencyKey: optional deterministic doc ID — prevents duplicates on retries
 async function createNotification(userId, { icon, message, link }, idempotencyKey = null) {
@@ -200,8 +210,8 @@ exports.createPaymentIntent = onRequest(
         return res.status(404).json({ error: 'Product not found' });
       }
       const productData = productDoc.data();
-      if (productData.sold) {
-        return res.status(400).json({ error: 'This item has already been sold' });
+      if (productData.sold === true || productData.active === false) {
+        return res.status(409).json({ error: 'This item is no longer available.' });
       }
 
       // Prevent a seller from buying their own listing
@@ -210,6 +220,10 @@ exports.createPaymentIntent = onRequest(
       }
 
       const productPriceInCents = Math.round((productData.price || 0) * 100);
+
+      if (productPriceInCents > 1_000_000) {
+        return res.status(400).json({ error: 'Transaction exceeds maximum allowed amount' });
+      }
 
       // Verify shipping cost server-side via Shippo — never trust client-sent amount
       // Fetch Shippo rate and seller doc in parallel — both are independent of each other
@@ -248,13 +262,6 @@ exports.createPaymentIntent = onRequest(
         }
       }
 
-      console.log('Server-verified payment breakdown:');
-      console.log('  Product (from Firestore):', productPriceInCents, 'cents');
-      console.log('  Shipping:', shippingInCents, 'cents');
-      console.log('  Tax: calculated automatically by Stripe at confirmation');
-      console.log('  Subtotal (pre-tax):', amount, 'cents');
-      console.log('  Seller Stripe Account (from Firestore):', sellerStripeAccountId);
-
       // Build payment intent options — always attach productId to metadata
       const paymentIntentOptions = {
         amount,
@@ -264,15 +271,21 @@ exports.createPaymentIntent = onRequest(
         metadata: { productId },
       };
 
+      // Validate and sanitize buyer address — invalid values are nulled rather than passed to Stripe Tax
+      const zipRe = /^\d{5}(-\d{4})?$/;
+      const stateRe = /^[A-Z]{2}$/i;
+      const safeZip = zipRe.test(buyerZip) ? buyerZip : null;
+      const safeState = stateRe.test(buyerState) ? buyerState.toUpperCase() : null;
+
       // Provide buyer address so Stripe Tax can determine the correct rate
-      if (buyerState || buyerZip) {
+      if (safeState || safeZip) {
         paymentIntentOptions.shipping = {
           name: 'Buyer',
           address: {
             country: 'US',
             line1: '-',
-            ...(buyerState ? { state: buyerState.toUpperCase() } : {}),
-            ...(buyerZip   ? { postal_code: buyerZip }           : {}),
+            ...(safeState ? { state: safeState }         : {}),
+            ...(safeZip   ? { postal_code: safeZip }     : {}),
           },
         };
       }
@@ -289,10 +302,6 @@ exports.createPaymentIntent = onRequest(
         const platformFeeOnProduct = Math.round(productPriceInCents * PLATFORM_FEE_PERCENT);
         const sellerReceivesCents = productPriceInCents - platformFeeOnProduct;
 
-        console.log('Escrow mode — seller paid at confirmed delivery');
-        console.log('  Seller receives at delivery:', sellerReceivesCents, 'cents');
-        console.log('  Platform fee (10%):', platformFeeOnProduct, 'cents');
-
         // Store seller payout info in Stripe metadata so completeOrder can save it to Firestore
         paymentIntentOptions.metadata = {
           productId,
@@ -301,6 +310,7 @@ exports.createPaymentIntent = onRequest(
           sellerReceivesCents: String(sellerReceivesCents),
           platformFeeCents: String(platformFeeOnProduct),
           rateObjectId: rateObjectId || '',
+          shippingCents: String(shippingInCents),
         };
       } else {
         // Seller has no connected Stripe account — block purchase so they don't sell without getting paid
@@ -309,13 +319,12 @@ exports.createPaymentIntent = onRequest(
             error: 'The seller has not connected their payout account yet. Please contact the seller or check back later.',
           });
         }
-        paymentIntentOptions.metadata = { productId, buyerId: decodedToken.uid, rateObjectId: rateObjectId || '' };
+        paymentIntentOptions.metadata = { productId, buyerId: decodedToken.uid, rateObjectId: rateObjectId || '', shippingCents: String(shippingInCents) };
       }
 
       let paymentIntent;
       try {
         paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
-        console.log('Payment intent created with automatic tax:', paymentIntent.id);
       } catch (taxErr) {
         // Stripe Tax not activated — retry without automatic_tax so checkout still works
         const isTaxConfigError = taxErr.message && (
@@ -328,7 +337,6 @@ exports.createPaymentIntent = onRequest(
         delete optionsWithoutTax.automatic_tax;
         delete optionsWithoutTax.shipping;
         paymentIntent = await stripe.paymentIntents.create(optionsWithoutTax);
-        console.log('Payment intent created (no tax):', paymentIntent.id);
       }
 
       return res.status(200).json({
@@ -384,6 +392,22 @@ exports.cancelOrder = onRequest(
         return res.status(400).json({ error: 'paymentIntentId and productId are required' });
       }
 
+      // Validate the Stripe payment intent BEFORE touching Firestore.
+      // This prevents the cancelInitiated lock from being set when the PI is invalid,
+      // which would permanently block the buyer from ever cancelling their order.
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (paymentIntent.metadata.productId !== productId) {
+        return res.status(403).json({ error: 'Payment intent does not match this product' });
+      }
+      if (!paymentIntent.latest_charge) {
+        return res.status(400).json({ error: 'No charge found for this payment' });
+      }
+      // Verify buyer identity via Stripe metadata (source of truth) — not the product doc
+      // which is publicly readable and no longer stores buyerId.
+      if (paymentIntent.metadata.buyerId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'You are not the buyer of this order' });
+      }
+
       // Atomically validate order state and acquire cancel lock — prevents double-refund
       // from concurrent cancel requests (same pattern as confirmDelivery payout lock)
       let productData;
@@ -393,7 +417,6 @@ exports.cancelOrder = onRequest(
           const snap = await t.get(productRef);
           if (!snap.exists) throw Object.assign(new Error('Product not found'), { httpStatus: 404 });
           const d = snap.data();
-          if (d.buyerId !== decodedToken.uid) throw Object.assign(new Error('You are not the buyer of this order'), { httpStatus: 403 });
           if (!d.sold || d.cancelled || d.cancelInitiated) throw Object.assign(new Error('Order is not in a cancellable state'), { httpStatus: 400 });
           if (d.trackingNumber || d.shipped) throw Object.assign(new Error('This order has already been shipped and cannot be cancelled. Please use Request Refund instead.'), { httpStatus: 400 });
           productData = d;
@@ -402,16 +425,6 @@ exports.cancelOrder = onRequest(
       } catch (txErr) {
         if (txErr.httpStatus) return res.status(txErr.httpStatus).json({ error: txErr.message });
         throw txErr;
-      }
-
-      // Retrieve payment intent and verify it belongs to this product
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      if (paymentIntent.metadata.productId !== productId) {
-        return res.status(403).json({ error: 'Payment intent does not match this product' });
-      }
-
-      if (!paymentIntent.latest_charge) {
-        return res.status(400).json({ error: 'No charge found for this payment' });
       }
 
       const chargeId = paymentIntent.latest_charge;
@@ -471,8 +484,6 @@ exports.cancelOrder = onRequest(
         active: false,
         soldAt: null,
         soldTimestamp: null,
-        soldOrderId: null,
-        buyerId: null,
         cancelled: true,
         cancelInitiated: admin.firestore.FieldValue.delete(),
         cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -690,8 +701,8 @@ exports.createConnectedAccount = onRequest(
 
       const accountLink = await stripe.accountLinks.create({
         account: stripeAccountId,
-        refresh_url: refreshUrl || 'https://grappletrade.web.app/stripe-express-prompt.html',
-        return_url: returnUrl || 'https://grappletrade.web.app/sell.html',
+        refresh_url: refreshUrl || 'https://grappletrade.com/stripe-express-prompt.html',
+        return_url: returnUrl || 'https://grappletrade.com/sell.html',
         type: 'account_onboarding',
         // Only collect minimum required fields upfront — defer bank/ID verification
         // until the seller is ready to cash out. Reduces signup friction.
@@ -927,15 +938,19 @@ exports.shippoCreateLabel = onRequest(
             }
           }
 
-          const trackingUpdate = {
-            shippingLabel: transaction.label_url || null,
+          // Product doc only gets tracking info — shippingLabel (contains buyer address) goes to orders only
+          const productTrackingUpdate = {
             trackingNumber: transaction.tracking_number || null,
             trackingUrl: transaction.tracking_url_provider || null,
             carrier: carrier || null,
             labelCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
           };
+          const orderTrackingUpdate = {
+            ...productTrackingUpdate,
+            shippingLabel: transaction.label_url || null,
+          };
 
-          await db.collection('products').doc(labelProductId).update(trackingUpdate);
+          await db.collection('products').doc(labelProductId).update(productTrackingUpdate);
 
           // Also update the corresponding order doc
           const orderSnaps = await db.collection('orders')
@@ -943,7 +958,7 @@ exports.shippoCreateLabel = onRequest(
             .limit(1)
             .get();
           if (!orderSnaps.empty) {
-            await orderSnaps.docs[0].ref.update(trackingUpdate);
+            await orderSnaps.docs[0].ref.update(orderTrackingUpdate);
           }
 
           console.log('Saved tracking info to Firestore for product:', labelProductId);
@@ -951,23 +966,23 @@ exports.shippoCreateLabel = onRequest(
           // Notify buyer — label is purchased which means shipping is imminent
           try {
             const productSnap2 = await db.collection('products').doc(labelProductId).get();
-            if (productSnap2.exists) {
-              const pdata = productSnap2.data();
-              if (pdata.buyerId) {
-                await createNotification(pdata.buyerId, {
+            const labelProductTitle = productSnap2.exists ? (productSnap2.data().title || 'item') : 'item';
+            const labelOrder = await getOrderByProductId(labelProductId);
+            const labelBuyerId = labelOrder?.buyerId || null;
+            if (labelBuyerId) {
+                await createNotification(labelBuyerId, {
                   icon: '📦',
-                  message: `Your "${pdata.title || 'item'}" is being prepared for shipment. Tracking: ${transaction.tracking_number || 'pending'}`,
+                  message: `Your "${labelProductTitle}" is being prepared for shipment. Tracking: ${transaction.tracking_number || 'pending'}`,
                   link: 'my-orders.html',
                 }, `${labelProductId}_label_created_buyer`);
                 emails.init(sendgridSecret.value());
-                const buyerEmail = await getUserEmail(pdata.buyerId);
+                const buyerEmail = await getUserEmail(labelBuyerId);
                 await emails.sendTrackingToBuyer(buyerEmail, {
-                  productName: pdata.title || 'your item',
+                  productName: labelProductTitle,
                   trackingNumber: transaction.tracking_number || '',
                   trackingUrl: transaction.tracking_url_provider || null,
                   carrier: carrier || null,
                 });
-              }
             }
           } catch (notifyErr) {
             console.error('Failed to notify buyer after label creation:', notifyErr.message);
@@ -1229,6 +1244,7 @@ exports.completeOrder = onRequest(
       const productRef = db.collection('products').doc(productId);
       let prod = null;
       let shippingCost = 0;
+      let taxAmountCents = 0;
 
       // Use a transaction to atomically check sold=false and mark sold=true
       // This prevents two buyers from both completing the same order
@@ -1239,30 +1255,23 @@ exports.completeOrder = onRequest(
           if (snap.data().sold) throw Object.assign(new Error('already_sold'), { code: 'ALREADY_SOLD' });
           prod = snap.data();
 
-          const prodPriceCents = Math.round((prod.price || 0) * 100);
-          const taxCents = parseInt(paymentIntent.metadata.taxAmountCents || 0);
-          const shippingCents = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
+          const shippingCents = parseInt(paymentIntent.metadata.shippingCents || '0', 10);
+          taxAmountCents = paymentIntent.automatic_tax?.amount_tax ?? 0;
           shippingCost = shippingCents / 100;
 
+          // Only write public-safe fields to the product doc (allow read: if true).
+          // buyerId, soldOrderId, shippingCost, taxAmountCents live in the orders collection only.
           const updateData = {
             sold: true,
             soldAt: admin.firestore.FieldValue.serverTimestamp(),
             soldTimestamp: Date.now(),
-            soldOrderId: paymentIntentId,
-            buyerId: decodedToken.uid,
-            shippingCost,
-            // Escrow: store seller payout details for later transfer at delivery
-            sellerStripeAccountId: sellerStripeAccountId || null,
-            sellerReceivesCents: sellerReceivesCents || 0,
+            sellerPaidOut: false, // explicit false so autoReleaseOrders query (sellerPaidOut == false) matches
           };
-          if (savedRateObjectId) updateData.rateObjectId = savedRateObjectId;
           if (shippingInfo) {
-            updateData.shippingLabel = shippingInfo.label_url || null;
             updateData.trackingNumber = shippingInfo.tracking_number || null;
             updateData.trackingUrl = shippingInfo.tracking_url_provider || null;
           }
           if (packageDimensions) updateData.packageDimensions = packageDimensions;
-          if (buyerShippingAddress) updateData.buyerShippingAddress = buyerShippingAddress;
 
           t.update(productRef, updateData);
         });
@@ -1287,6 +1296,8 @@ exports.completeOrder = onRequest(
           productImages: prod.images || [],
           productCondition: prod.condition || null,
           shippingCost,
+          taxAmountCents,
+          taxStatus: paymentIntent.automatic_tax?.status || 'not_collected',
           sellerStripeAccountId: sellerStripeAccountId || null,
           sellerReceivesCents: sellerReceivesCents || 0,
           rateObjectId: savedRateObjectId || null,
@@ -1411,6 +1422,12 @@ exports.sellerCancelOrder = onRequest(
     }
 
     try {
+      await checkRateLimit(decodedToken.uid, 'sellerCancel', 5, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'You have reached the cancellation limit for today. Please contact support if you need assistance.' });
+    }
+
+    try {
       const stripe = require('stripe')(stripeSecret.value());
       const { productId } = req.body;
 
@@ -1436,7 +1453,11 @@ exports.sellerCancelOrder = onRequest(
         throw txErr;
       }
 
-      const paymentIntentId = productData.soldOrderId;
+      // Read paymentIntentId and buyerId from the orders collection — the product doc
+      // (publicly readable) no longer stores these sensitive fields.
+      const sellerCancelOrder = await getOrderByProductId(productId);
+      const paymentIntentId = sellerCancelOrder?.paymentIntentId;
+      const cancelledBuyerId = sellerCancelOrder?.buyerId;
       if (!paymentIntentId) {
         return res.status(400).json({ error: 'No payment found for this order' });
       }
@@ -1484,8 +1505,6 @@ exports.sellerCancelOrder = onRequest(
         active: false,
         soldAt: null,
         soldTimestamp: null,
-        soldOrderId: null,
-        buyerId: null,
         cancelled: true,
         cancelInitiated: admin.firestore.FieldValue.delete(),
         cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1516,7 +1535,7 @@ exports.sellerCancelOrder = onRequest(
         : `Order cancelled. The buyer has been fully refunded. Strike ${newCount} of ${SELLER_STRIKES_LIMIT} — you have ${strikesRemaining} strike${strikesRemaining !== 1 ? 's' : ''} remaining before you can no longer sell.`;
 
       // In-app notification to buyer
-      await createNotification(productData.buyerId, {
+      await createNotification(cancelledBuyerId, {
         icon: '↩️',
         message: `The seller cancelled your order for "${productData.title || 'an item'}". You've been fully refunded.`,
         link: 'my-orders.html',
@@ -1526,7 +1545,7 @@ exports.sellerCancelOrder = onRequest(
       try {
         emails.init(sendgridSecret.value());
         const [buyerEmail, sellerEmail, sellerRecord] = await Promise.all([
-          getUserEmail(productData.buyerId),
+          getUserEmail(cancelledBuyerId),
           getUserEmail(decodedToken.uid),
           admin.auth().getUser(decodedToken.uid),
         ]);
@@ -1636,10 +1655,13 @@ exports.checkOverdueOrders = onSchedule(
       const productData = doc.data();
 
       try {
-        // Issue full refund if payment exists
+        // Issue full refund if payment exists — read paymentIntentId from orders, not product doc
+        const overdueOrder = await getOrderByProductId(productId);
+        const overduePaymentIntentId = overdueOrder?.paymentIntentId || null;
+        const overdueBuyerId = overdueOrder?.buyerId || null;
         let refundId = null;
-        if (productData.soldOrderId) {
-          const paymentIntent = await stripe.paymentIntents.retrieve(productData.soldOrderId);
+        if (overduePaymentIntentId) {
+          const paymentIntent = await stripe.paymentIntents.retrieve(overduePaymentIntentId);
           if (paymentIntent.latest_charge) {
             // Escrow model: funds never left the platform, simple refund
             const refund = await stripe.refunds.create({
@@ -1665,7 +1687,7 @@ exports.checkOverdueOrders = onSchedule(
             sellerPenalties: admin.firestore.FieldValue.arrayUnion({
               type: 'overdue_shipment',
               productId,
-              orderId: productData.soldOrderId || null,
+              orderId: overduePaymentIntentId || null,
               timestamp: Date.now(),
               strikeNumber: newCount
             }),
@@ -1681,8 +1703,6 @@ exports.checkOverdueOrders = onSchedule(
           active: false,
           soldAt: null,
           soldTimestamp: null,
-          soldOrderId: null,
-          buyerId: null,
           cancelled: true,
           cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
           cancelledBy: 'system',
@@ -1711,10 +1731,11 @@ exports.checkOverdueOrders = onSchedule(
           const sellerData2 = productData.userId
             ? (await db.collection('users').doc(productData.userId).get()).data() || {}
             : {};
-          const strikesRemaining2 = Math.max(0, SELLER_STRIKES_LIMIT - ((sellerData2.sellerCancellationCount || 0) + 1));
-          const suspended2 = ((sellerData2.sellerCancellationCount || 0) + 1) >= SELLER_STRIKES_LIMIT;
+          // sellerData2 is fetched after the increment — count is already the new value
+          const strikesRemaining2 = Math.max(0, SELLER_STRIKES_LIMIT - (sellerData2.sellerCancellationCount || 0));
+          const suspended2 = (sellerData2.sellerCancellationCount || 0) >= SELLER_STRIKES_LIMIT;
           const [buyerEmail2, sellerEmail2] = await Promise.all([
-            getUserEmail(productData.buyerId),
+            getUserEmail(overdueBuyerId),
             getUserEmail(productData.userId),
           ]);
           const refundDisplay = refundId
@@ -1845,15 +1866,17 @@ exports.adminIssueRefund = onRequest(
     try {
       const stripe = require('stripe')(stripeSecret.value());
 
-      // Look up the product to get the payment intent ID
+      // Look up the order record to get the payment intent ID.
+      // The product doc (publicly readable) no longer stores soldOrderId.
       const productRef = db.collection('products').doc(productId);
       const productSnap = await productRef.get();
       if (!productSnap.exists) {
         return res.status(404).json({ error: 'Product not found' });
       }
-
       const productData = productSnap.data();
-      const paymentIntentId = productData.soldOrderId;
+
+      const adminRefundOrder = await getOrderByProductId(productId);
+      const paymentIntentId = adminRefundOrder?.paymentIntentId;
       if (!paymentIntentId) {
         return res.status(400).json({ error: 'No payment intent found for this order' });
       }
@@ -1891,12 +1914,35 @@ exports.adminIssueRefund = onRequest(
       };
 
       if (relist) {
-        // Clear sold state so the listing becomes active again
+        // Clear sold state and all fulfillment fields so the listing becomes active again
+        const del = admin.firestore.FieldValue.delete();
         updatePayload.sold = false;
-        updatePayload.buyerId = admin.firestore.FieldValue.delete();
-        updatePayload.soldOrderId = admin.firestore.FieldValue.delete();
-        updatePayload.soldAt = admin.firestore.FieldValue.delete();
-        updatePayload.soldTimestamp = admin.firestore.FieldValue.delete();
+        updatePayload.active = true;
+        updatePayload.soldAt = del;
+        updatePayload.soldTimestamp = del;
+        updatePayload.cancelled = del;
+        updatePayload.cancelledAt = del;
+        updatePayload.cancelledBy = del;
+        updatePayload.cancellationReason = del;
+        updatePayload.shipped = del;
+        updatePayload.shippedAt = del;
+        updatePayload.trackingNumber = del;
+        updatePayload.trackingUrl = del;
+        updatePayload.carrier = del;
+        updatePayload.delivered = del;
+        updatePayload.deliveredAt = del;
+        updatePayload.sellerPaidOut = del;
+        updatePayload.sellerPaidOutAt = del;
+        updatePayload.sellerPayoutTransferId = del;
+        updatePayload.payoutInitiated = del;
+        updatePayload.autoReleaseWarned = del;
+        updatePayload.autoReleaseWarningAt = del;
+        updatePayload.autoReleaseWarningTimestamp = del;
+        updatePayload.autoReleasedAt = del;
+        updatePayload.autoReleaseCompleted = del;
+        updatePayload.refundRequested = del;
+        updatePayload.refundRequestedAt = del;
+        updatePayload.disputeOpened = del;
       }
 
       await productRef.update(updatePayload);
@@ -1956,6 +2002,10 @@ exports.markAsShipped = onRequest(
         return res.status(400).json({ error: 'This product has not been sold' });
       }
 
+      // Fetch buyerId from orders — product doc no longer stores it
+      const markShippedOrder = await getOrderByProductId(productId);
+      const shippedBuyerId = markShippedOrder?.buyerId || null;
+
       // Validate trackingUrl — prevent phishing links being emailed to buyers
       if (trackingUrl) {
         const SAFE_TRACKING_HOSTS = [
@@ -2000,7 +2050,7 @@ exports.markAsShipped = onRequest(
       }
 
       // In-app notification to buyer
-      await createNotification(product.buyerId, {
+      await createNotification(shippedBuyerId, {
         icon: '📦',
         message: `Your "${product.title || 'item'}" has shipped! Tracking: ${trackingNumber}`,
         link: 'my-orders.html',
@@ -2016,7 +2066,7 @@ exports.markAsShipped = onRequest(
       // Send tracking email to buyer
       try {
         emails.init(sendgridSecret.value());
-        const buyerEmail = await getUserEmail(product.buyerId);
+        const buyerEmail = await getUserEmail(shippedBuyerId);
         await emails.sendTrackingToBuyer(buyerEmail, {
           productName: product.title || 'your item',
           trackingNumber,
@@ -2055,6 +2105,13 @@ exports.confirmDelivery = onRequest(
     try {
       const productRef = db.collection('products').doc(productId);
 
+      // Verify buyer identity from the orders collection — product doc no longer stores buyerId.
+      const confirmDeliveryOrder = await getOrderByProductId(productId);
+      if (!confirmDeliveryOrder) return res.status(404).json({ error: 'Order record not found' });
+      if (confirmDeliveryOrder.buyerId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'You are not the buyer of this product' });
+      }
+
       // ── Step 1: Transaction — validate + atomically acquire payout lock ────
       // This prevents double-payout if the auto-release scheduler fires at the same time.
       let product = null;
@@ -2065,7 +2122,6 @@ exports.confirmDelivery = onRequest(
           const snap = await t.get(productRef);
           if (!snap.exists) throw Object.assign(new Error('Product not found'), { httpStatus: 404 });
           const d = snap.data();
-          if (d.buyerId !== decodedToken.uid) throw Object.assign(new Error('You are not the buyer of this product'), { httpStatus: 403 });
           if (!d.sold) throw Object.assign(new Error('This product has not been sold'), { httpStatus: 400 });
 
           product = d;
@@ -2095,20 +2151,30 @@ exports.confirmDelivery = onRequest(
       }
 
       // ── Step 2: Stripe transfer (must happen outside transaction) ──────────
-      if (!skipPayout && product.sellerStripeAccountId && product.sellerReceivesCents > 0) {
+      // Read payout info from orders collection — never from product doc (publicly readable).
+      const stripe = require('stripe')(stripeSecret.value());
+      let payoutStripeAccountId = null;
+      let payoutReceivesCents = 0;
+      const confirmPaymentIntentId = confirmDeliveryOrder.paymentIntentId || null;
+      if (!skipPayout && confirmPaymentIntentId) {
+        const pi = await stripe.paymentIntents.retrieve(confirmPaymentIntentId);
+        payoutStripeAccountId = pi.metadata.sellerStripeAccountId || null;
+        payoutReceivesCents = parseInt(pi.metadata.sellerReceivesCents || 0);
+      }
+
+      if (!skipPayout && payoutStripeAccountId && payoutReceivesCents > 0) {
         try {
-          const stripe = require('stripe')(stripeSecret.value());
           // Idempotency key ensures Stripe deduplicates even if this runs twice
           const transfer = await stripe.transfers.create({
-            amount: product.sellerReceivesCents,
+            amount: payoutReceivesCents,
             currency: 'usd',
-            destination: product.sellerStripeAccountId,
-            transfer_group: product.soldOrderId,
+            destination: payoutStripeAccountId,
+            transfer_group: confirmPaymentIntentId,
             metadata: { productId, reason: 'delivery_confirmed', triggeredBy: 'buyer' },
           }, {
             idempotencyKey: `payout_${productId}`,
           });
-          console.log(`Seller payout: ${product.sellerReceivesCents} cents → ${product.sellerStripeAccountId} — transfer ${transfer.id}`);
+          console.log(`Seller payout: ${payoutReceivesCents} cents → ${payoutStripeAccountId} — transfer ${transfer.id}`);
           await productRef.update({
             sellerPayoutTransferId: transfer.id,
             sellerPaidOut: true,
@@ -2134,13 +2200,14 @@ exports.confirmDelivery = onRequest(
       }
 
       // In-app notifications for delivery
+      const confirmBuyerId = confirmDeliveryOrder.buyerId;
       await Promise.all([
         createNotification(product.userId, {
           icon: '💰',
           message: `Delivery confirmed! Payment for "${product.title || 'your item'}" is on its way.`,
           link: 'listings-manager.html',
         }, `${productId}_delivered_seller`),
-        createNotification(product.buyerId, {
+        createNotification(confirmBuyerId, {
           icon: '⭐',
           message: `You received "${product.title || 'your item'}"! Don't forget to leave a review.`,
           link: 'my-orders.html',
@@ -2151,9 +2218,9 @@ exports.confirmDelivery = onRequest(
       try {
         emails.init(sendgridSecret.value());
         const [buyerEmail, sellerEmail, buyerRecord, sellerRecord] = await Promise.all([
-          getUserEmail(product.buyerId),
+          getUserEmail(confirmBuyerId),
           getUserEmail(product.userId),
-          product.buyerId ? admin.auth().getUser(product.buyerId).catch(() => null) : Promise.resolve(null),
+          confirmBuyerId ? admin.auth().getUser(confirmBuyerId).catch(() => null) : Promise.resolve(null),
           product.userId ? admin.auth().getUser(product.userId).catch(() => null) : Promise.resolve(null),
         ]);
         const buyerName = buyerRecord?.displayName || 'the buyer';
@@ -2211,8 +2278,10 @@ exports.trackShipment = onRequest(
       if (!productDoc.exists) return res.status(404).json({ error: 'Product not found' });
       const product = productDoc.data();
 
-      // Only buyer or seller can track
-      if (product.buyerId !== decodedToken.uid && product.userId !== decodedToken.uid) {
+      // Verify buyer or seller — buyerId comes from orders, not the publicly-readable product doc
+      const trackOrder = await getOrderByProductId(productId);
+      const trackBuyerId = trackOrder?.buyerId || null;
+      if (trackBuyerId !== decodedToken.uid && product.userId !== decodedToken.uid) {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
@@ -2241,7 +2310,15 @@ exports.trackShipment = onRequest(
       }
 
       const trackData = await trackRes.json();
-      return res.status(200).json(trackData);
+      // Return only tracking fields needed by the client — strip address_from/address_to
+      // to avoid leaking seller/buyer address data in the API response.
+      return res.status(200).json({
+        tracking_status: trackData.tracking_status || null,
+        tracking_history: trackData.tracking_history || [],
+        eta: trackData.eta || null,
+        carrier: trackData.carrier || null,
+        tracking_number: trackData.tracking_number || null,
+      });
     } catch (error) {
       console.error('trackShipment error:', error);
       return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
@@ -2255,10 +2332,20 @@ exports.shippoWebhook = onRequest(
   async (req, res) => {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-    // Validate secret token passed as query param (?token=...)
-    const incomingToken = req.query.token;
-    if (!incomingToken || incomingToken !== shippoWebhookSecret.value()) {
-      console.warn('Shippo webhook: invalid or missing token');
+    // Validate Shippo HMAC-SHA256 signature from x-shippo-signature header
+    const crypto = require('crypto');
+    const signature = req.headers['x-shippo-signature'];
+    if (!signature) {
+      console.warn('Shippo webhook: missing x-shippo-signature header');
+      return res.status(401).send('Unauthorized');
+    }
+    const expectedSig = crypto.createHmac('sha256', shippoWebhookSecret.value())
+      .update(req.rawBody)
+      .digest('hex');
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expectedSig);
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      console.warn('Shippo webhook: invalid signature');
       return res.status(401).send('Unauthorized');
     }
 
@@ -2285,18 +2372,24 @@ exports.shippoWebhook = onRequest(
           .get();
         if (!tSnap.empty) {
           const tProduct = tSnap.docs[0].data();
+          const tProductId = tSnap.docs[0].id;
           const statusMessages = {
             PRE_TRANSIT:      'A shipping label has been created for your order.',
             TRANSIT:          'Your order is in transit and on its way!',
             OUT_FOR_DELIVERY: 'Your order is out for delivery today!',
           };
           const icon = status === 'OUT_FOR_DELIVERY' ? '🚚' : '📦';
-          if (tProduct.buyerId && statusMessages[status]) {
-            await createNotification(tProduct.buyerId, {
-              icon,
-              message: `"${tProduct.title || 'Your item'}": ${statusMessages[status]}`,
-              link: 'my-orders.html',
-            });
+          if (statusMessages[status]) {
+            // buyerId is not stored on the product doc — fetch from orders
+            const transitOrder = await getOrderByProductId(tProductId);
+            const transitBuyerId = transitOrder?.buyerId || null;
+            if (transitBuyerId) {
+              await createNotification(transitBuyerId, {
+                icon,
+                message: `"${tProduct.title || 'Your item'}": ${statusMessages[status]}`,
+                link: 'my-orders.html',
+              });
+            }
           }
         }
       } catch (transitErr) {
@@ -2327,6 +2420,12 @@ exports.shippoWebhook = onRequest(
       }
 
       const productId = productDoc.id;
+
+      // Read payout info from orders — never from product doc (which is publicly readable)
+      const orderPayoutSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
+      const orderPayoutData = !orderPayoutSnap.empty ? orderPayoutSnap.docs[0].data() : {};
+      const shippoPayoutAccountId = orderPayoutData.sellerStripeAccountId || null;
+      const shippoPayoutReceivesCents = orderPayoutData.sellerReceivesCents || 0;
 
       // Atomically mark delivered + acquire payout lock (prevents race with confirmDelivery / autoRelease)
       let skipPayout = false;
@@ -2360,19 +2459,19 @@ exports.shippoWebhook = onRequest(
       }
 
       // Escrow payout: transfer seller's share now that carrier confirmed delivery
-      if (!skipPayout && product.sellerStripeAccountId && product.sellerReceivesCents > 0) {
+      if (!skipPayout && shippoPayoutAccountId && shippoPayoutReceivesCents > 0) {
         try {
           const stripe = require('stripe')(stripeSecret.value());
           const transfer = await stripe.transfers.create({
-            amount: product.sellerReceivesCents,
+            amount: shippoPayoutReceivesCents,
             currency: 'usd',
-            destination: product.sellerStripeAccountId,
-            transfer_group: product.soldOrderId,
+            destination: shippoPayoutAccountId,
+            transfer_group: orderPayoutData.paymentIntentId || null,
             metadata: { productId, reason: 'delivery_confirmed_shippo', triggeredBy: 'shippo_webhook' },
           }, {
             idempotencyKey: `payout_${productId}`,
           });
-          console.log(`Seller payout (shippoWebhook): ${product.sellerReceivesCents} cents to ${product.sellerStripeAccountId} — transfer ${transfer.id}`);
+          console.log(`Seller payout (shippoWebhook): ${shippoPayoutReceivesCents} cents to ${shippoPayoutAccountId} — transfer ${transfer.id}`);
           await productDoc.ref.update({
             sellerPayoutTransferId: transfer.id,
             sellerPaidOut: true,
@@ -2385,13 +2484,14 @@ exports.shippoWebhook = onRequest(
         }
       }
 
-      // Send confirmation emails
+      // Send confirmation emails — use buyerId from orders, not the product doc
+      const webhookBuyerId = orderPayoutData.buyerId || null;
       try {
         emails.init(sendgridSecret.value());
         const [buyerEmail, sellerEmail, buyerRecord, sellerRecord] = await Promise.all([
-          getUserEmail(product.buyerId),
+          getUserEmail(webhookBuyerId),
           getUserEmail(product.userId),
-          product.buyerId ? admin.auth().getUser(product.buyerId).catch(() => null) : Promise.resolve(null),
+          webhookBuyerId ? admin.auth().getUser(webhookBuyerId).catch(() => null) : Promise.resolve(null),
           product.userId ? admin.auth().getUser(product.userId).catch(() => null) : Promise.resolve(null),
         ]);
         const buyerName = buyerRecord?.displayName || 'the buyer';
@@ -2418,7 +2518,7 @@ exports.shippoWebhook = onRequest(
           message: `Delivery confirmed! Payment for "${product.title || 'your item'}" is on its way.`,
           link: 'listings-manager.html',
         }, `${productId}_delivered_seller`),
-        createNotification(product.buyerId, {
+        createNotification(webhookBuyerId, {
           icon: '⭐',
           message: `Your "${product.title || 'item'}" was delivered! Don't forget to leave a review.`,
           link: 'my-orders.html',
@@ -2482,21 +2582,17 @@ exports.stripeWebhook = onRequest(
           const sellerStripeAccountId = paymentIntent.metadata.sellerStripeAccountId || null;
           const sellerReceivesCents   = parseInt(paymentIntent.metadata.sellerReceivesCents || 0);
           const savedRateObjectId     = paymentIntent.metadata.rateObjectId || null;
-          const prodPriceCents        = Math.round((prod.price || 0) * 100);
-          const taxCents              = parseInt(paymentIntent.metadata.taxAmountCents || 0);
-          const shippingCents         = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
+          const shippingCents         = parseInt(paymentIntent.metadata.shippingCents || '0', 10);
+          const txTaxAmountCents      = paymentIntent.automatic_tax?.amount_tax ?? 0;
 
+          // Only write public-safe fields to the product doc (allow read: if true).
+          // buyerId, soldOrderId, shippingCost, taxAmountCents live in the orders collection only.
           const updateData = {
             sold: true,
             soldAt: admin.firestore.FieldValue.serverTimestamp(),
             soldTimestamp: Date.now(),
-            soldOrderId: paymentIntent.id,
-            buyerId,
-            shippingCost: shippingCents / 100,
-            sellerStripeAccountId: sellerStripeAccountId || null,
-            sellerReceivesCents: sellerReceivesCents || 0,
+            sellerPaidOut: false, // explicit false so autoReleaseOrders query (sellerPaidOut == false) matches
           };
-          if (savedRateObjectId) updateData.rateObjectId = savedRateObjectId;
 
           t.update(productRef, updateData);
         });
@@ -2510,9 +2606,8 @@ exports.stripeWebhook = onRequest(
 
       console.log(`stripeWebhook: order completed for product ${productId}, buyer ${buyerId}`);
 
-      const prodPriceCents = Math.round((prod.price || 0) * 100);
-      const taxCents       = parseInt(paymentIntent.metadata.taxAmountCents || 0);
-      const shippingCents  = Math.max(0, paymentIntent.amount - prodPriceCents - taxCents);
+      const whShippingCents = parseInt(paymentIntent.metadata.shippingCents || '0', 10);
+      const whTaxAmountCents = paymentIntent.automatic_tax?.amount_tax ?? 0;
 
       // Save order record (source flag helps identify webhook-recovered orders in admin)
       try {
@@ -2525,7 +2620,9 @@ exports.stripeWebhook = onRequest(
           productPrice: prod.price || null,
           productImages: prod.images || [],
           productCondition: prod.condition || null,
-          shippingCost: shippingCents / 100,
+          shippingCost: whShippingCents / 100,
+          taxAmountCents: whTaxAmountCents,
+          taxStatus: paymentIntent.automatic_tax?.status || 'not_collected',
           sellerStripeAccountId: paymentIntent.metadata.sellerStripeAccountId || null,
           sellerReceivesCents: parseInt(paymentIntent.metadata.sellerReceivesCents || 0),
           rateObjectId: paymentIntent.metadata.rateObjectId || null,
@@ -2615,8 +2712,6 @@ exports.reactivateListing = onRequest(
         sold: false,
         active: true,
         cancelled: false,
-        buyerId: del,
-        soldOrderId: del,
         soldAt: del,
         soldTimestamp: del,
         shippingLabel: del,
@@ -2782,7 +2877,7 @@ exports.notifyNewMessage = onRequest(
         : 'Someone';
 
       const preview = String(messagePreview || '').slice(0, 120);
-      const convUrl = `https://grappletrade.web.app/messages.html?conv=${conversationId}`;
+      const convUrl = `https://grappletrade.com/messages.html?conv=${conversationId}`;
 
       await Promise.all([
         createNotification(recipientId, {
@@ -2823,24 +2918,25 @@ exports.selfDeleteAccount = onRequest(
 
     const uid = decodedToken.uid;
 
-    // Block deletion if seller has active unfulfilled orders
-    const activeSales = await db.collection('products')
-      .where('userId', '==', uid)
-      .where('sold', '==', true)
-      .where('shipped', '==', false)
-      .limit(1).get();
-    if (!activeSales.empty) {
+    // Block deletion if seller has active unfulfilled orders.
+    // Query orders (not products — products never had shipped:false explicitly set for new orders)
+    const sellerOrdersSnap = await db.collection('orders').where('sellerId', '==', uid).get();
+    const hasActiveSale = sellerOrdersSnap.docs.some(d => {
+      const od = d.data();
+      return !od.cancelled && !od.delivered;
+    });
+    if (hasActiveSale) {
       return res.status(400).json({ error: 'Cannot delete your account while you have active unfulfilled orders. Please wait for orders to be fulfilled or cancelled first.' });
     }
 
     // Block deletion if user has active orders as a buyer that haven't been delivered/cancelled
     // (prevents stranding in-flight purchases with no recourse for refund disputes)
-    const activePurchases = await db.collection('products')
-      .where('buyerId', '==', uid)
-      .where('sold', '==', true)
-      .where('delivered', '==', false)
-      .limit(1).get();
-    if (!activePurchases.empty) {
+    const buyerOrdersSnap = await db.collection('orders').where('buyerId', '==', uid).get();
+    const hasActivePurchase = buyerOrdersSnap.docs.some(d => {
+      const od = d.data();
+      return !od.cancelled && !od.delivered;
+    });
+    if (hasActivePurchase) {
       return res.status(400).json({ error: 'Cannot delete your account while you have an order in progress. Please wait for your order to be delivered or cancelled first.' });
     }
 
@@ -2987,7 +3083,7 @@ exports.checkAbandonedCarts = onSchedule(
           continue;
         }
         const buyerEmail = await getUserEmail(cart.userId);
-        const productUrl = `https://grappletrade.web.app/productdetail.html?id=${cart.productId}`;
+        const productUrl = `https://grappletrade.com/productdetail.html?id=${cart.productId}`;
         await emails.sendAbandonedCart(buyerEmail, {
           productName: cart.productTitle || 'an item',
           productUrl,
@@ -3053,9 +3149,7 @@ exports.autoReleaseOrders = onSchedule(
         !d.disputeOpened &&
         !d.refundRequested &&
         !d.autoReleaseBlocked &&
-        !d.payoutInitiated &&
-        d.sellerStripeAccountId &&
-        d.sellerReceivesCents > 0
+        !d.payoutInitiated
       );
     });
 
@@ -3065,6 +3159,14 @@ exports.autoReleaseOrders = onSchedule(
     for (const doc of candidates) {
       const productId = doc.id;
       const d = doc.data();
+
+      // Read payout info from orders — never from product doc (which is publicly readable)
+      const autoReleaseOrderSnap = await db.collection('orders').where('productId', '==', productId).limit(1).get();
+      if (autoReleaseOrderSnap.empty) { skipped++; continue; }
+      const autoReleaseOrderData = autoReleaseOrderSnap.docs[0].data();
+      const sellerStripeAccountId = autoReleaseOrderData.sellerStripeAccountId || null;
+      const sellerReceivesCents = autoReleaseOrderData.sellerReceivesCents || 0;
+      if (!sellerStripeAccountId || sellerReceivesCents <= 0) { skipped++; continue; }
 
       try {
         const deliveredTs  = toMs(d.deliveredTimestamp) || toMs(d.deliveredAt);
@@ -3127,7 +3229,7 @@ exports.autoReleaseOrders = onSchedule(
 
           // Verify seller account is still active before transferring
           try {
-            const sellerAccount = await stripe.accounts.retrieve(d.sellerStripeAccountId);
+            const sellerAccount = await stripe.accounts.retrieve(sellerStripeAccountId);
             if (!sellerAccount.payouts_enabled) {
               await doc.ref.update({ payoutInitiated: false });
               console.error(`autoRelease Phase 2: seller payouts disabled — ${productId}`);
@@ -3150,10 +3252,10 @@ exports.autoReleaseOrders = onSchedule(
           // Execute the Stripe transfer
           try {
             const transfer = await stripe.transfers.create({
-              amount: d.sellerReceivesCents,
+              amount: sellerReceivesCents,
               currency: 'usd',
-              destination: d.sellerStripeAccountId,
-              transfer_group: d.soldOrderId,
+              destination: sellerStripeAccountId,
+              transfer_group: autoReleaseOrderData.paymentIntentId || null,
               metadata: { productId, reason: 'auto_release', triggeredBy: 'system' },
             }, {
               idempotencyKey: `payout_${productId}`,
@@ -3194,7 +3296,7 @@ exports.autoReleaseOrders = onSchedule(
                 message: `Payment for "${d.title || 'your item'}" has been released. Check your Stripe dashboard.`,
                 link: 'listings-manager.html',
               }, `${productId}_autorelease_seller`),
-              createNotification(d.buyerId, {
+              createNotification(autoReleaseOrderData.buyerId, {
                 icon: '✅',
                 message: `Your order for "${d.title || 'your item'}" has been automatically completed.`,
                 link: 'my-orders.html',
@@ -3204,12 +3306,12 @@ exports.autoReleaseOrders = onSchedule(
             // Emails
             const [sellerEmail, buyerEmail] = await Promise.all([
               getUserEmail(d.userId),
-              getUserEmail(d.buyerId),
+              getUserEmail(autoReleaseOrderData.buyerId),
             ]);
             await Promise.all([
               emails.sendAutoReleasedSeller(sellerEmail, {
                 productName: d.title || 'your item',
-                amountDollars: (d.sellerReceivesCents / 100).toFixed(2),
+                amountDollars: (sellerReceivesCents / 100).toFixed(2),
               }),
               emails.sendAutoReleasedBuyer(buyerEmail, {
                 productName: d.title || 'your item',
@@ -3255,14 +3357,14 @@ exports.autoReleaseOrders = onSchedule(
           autoReleaseWarningTimestamp: now,
         });
 
-        const buyerEmail = await getUserEmail(d.buyerId);
+        const buyerEmail = await getUserEmail(autoReleaseOrderData.buyerId);
         await emails.sendAutoReleaseWarning(buyerEmail, {
           productName: d.title || 'your item',
           hoursRemaining: 24,
-          productUrl: 'https://grappletrade.web.app/my-orders.html',
+          productUrl: 'https://grappletrade.com/my-orders.html',
         });
 
-        await createNotification(d.buyerId, {
+        await createNotification(autoReleaseOrderData.buyerId, {
           icon: '⏰',
           message: `Your order for "${d.title || 'your item'}" will auto-complete in 24 hours. Report a problem now if needed.`,
           link: 'my-orders.html',
@@ -3344,6 +3446,80 @@ exports.killBillingOnBudgetAlert = onMessagePublished(
     } catch (err) {
       console.error('Failed to disable billing:', err.message);
       throw err; // Re-throw so Cloud Functions retries the message
+    }
+  }
+);
+
+// --- LISTING COUNT GUARD ---
+// Triggered whenever a new product document is created.
+// If a seller has > 50 active listings, the new document is deleted immediately
+// and the seller receives an in-app notification.
+exports.enforceLimitOnProductCreate = onDocumentCreated(
+  { document: 'products/{productId}', maxInstances: 10 },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const data = snap.data();
+    const sellerId = data.userId;
+    if (!sellerId) return;
+
+    const MAX_LISTINGS = 50;
+
+    const existingSnap = await db.collection('products')
+      .where('userId', '==', sellerId)
+      .where('active', '==', true)
+      .where('sold', '!=', true)
+      .get();
+
+    // existingSnap includes the document just created, so count > MAX means we're over
+    if (existingSnap.size > MAX_LISTINGS) {
+      await snap.ref.delete();
+      await createNotification(sellerId, {
+        icon: '⚠️',
+        message: `Listing removed: you have reached the ${MAX_LISTINGS}-listing limit. Delete an existing listing to add a new one.`,
+        link: 'listings-manager.html',
+      });
+      console.log(`enforceLimitOnProductCreate: deleted ${snap.id} — seller ${sellerId} exceeded ${MAX_LISTINGS} listings`);
+    }
+  }
+);
+
+// --- GET PUBLIC PROFILE ---
+// Returns only safe public fields for a user profile.
+// profile.html uses this for non-owner reads so the users collection can be
+// locked down (stripeAccountId, isAdmin, etc. are never exposed to other users).
+exports.getPublicProfile = onRequest(
+  { cors: ALLOWED_ORIGINS, maxInstances: 20 },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    const uid = req.query.uid;
+    if (!uid || typeof uid !== 'string' || uid.length > 128) {
+      return res.status(400).json({ error: 'uid is required' });
+    }
+
+    try {
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (!userDoc.exists) return res.status(404).json({ error: 'User not found' });
+
+      const d = userDoc.data();
+      return res.status(200).json({
+        displayName:     d.displayName     || null,
+        username:        d.username        || null,
+        photoURL:        d.photoURL        || null,
+        createdAt:       d.createdAt       || null,
+        sellerStrikes:   d.sellerCancellationCount || 0,
+        averageRating:   d.averageRating   || null,
+        bio:             d.bio             || null,
+        location:        d.location        || null,
+        verifiedSeller:  d.verifiedSeller  || false,
+        trustedTrader:   d.trustedTrader   || false,
+        sellerSuspended: d.sellerSuspended || false,
+      });
+    } catch (err) {
+      console.error('getPublicProfile error:', err.message);
+      return res.status(500).json({ error: 'Internal error' });
     }
   }
 );

@@ -40,6 +40,7 @@
                 <div class="search-box">
                     <input type="text" class="search-input" id="search-input"
                         placeholder="Search for wrestling shoes, singlets, gear..."
+                        aria-label="Search for wrestling gear"
                         onkeypress="if(event.key==='Enter') performSearch()">
                 </div>
                 <button class="search-btn" onclick="performSearch()">Search</button>
@@ -48,7 +49,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container">
+    <main class="container">
         <h1 class="page-title">Account Settings</h1>
         <p class="page-subtitle">Manage your account information and preferences</p>
 
@@ -69,7 +70,7 @@
         <div class="settings-section">
             <h2 class="section-title">Profile Settings</h2>
             <div class="success-message" id="profile-success">Profile updated successfully!</div>
-            <div class="error-message" id="profile-error"></div>
+            <div class="error-message" id="profile-error" role="alert" aria-live="polite"></div>
 
             <form id="profile-form">
                 <div class="form-group">
@@ -78,6 +79,20 @@
                         placeholder="Enter a unique username" style="text-transform:lowercase;" autocomplete="off">
                     <div id="username-status" style="font-size:12px;margin-top:5px;"></div>
                     <p class="helper-text">Your username is your only public name — lowercase letters, numbers, and underscores (3+ characters)</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Bio</label>
+                    <textarea class="form-input" id="user-bio" maxlength="200" rows="3"
+                        placeholder="Tell buyers a little about yourself..."></textarea>
+                    <p class="helper-text">Max 200 characters. Shown on your public profile.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" class="form-input" id="user-location"
+                        placeholder="e.g. Portland, OR" maxlength="100" autocomplete="off">
+                    <p class="helper-text">City and state shown on your public profile.</p>
                 </div>
 
                 <div class="button-group">
@@ -99,7 +114,7 @@
         <div class="settings-section">
             <h2 class="section-title">Seller Account</h2>
             <div class="success-message" id="seller-success">Settings saved!</div>
-            <div class="error-message" id="seller-error"></div>
+            <div class="error-message" id="seller-error" role="alert" aria-live="polite"></div>
 
             <!-- Not connected -->
             <div id="stripe-warning" class="warning-box" style="display:none;">
@@ -222,7 +237,7 @@
                 <button class="btn btn-danger" onclick="deleteAccount()">Delete Account</button>
             </div>
         </div>
-    </div>
+    </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -336,6 +351,8 @@
                     // Profile fields
                     document.getElementById('username').value = d.username || '';
                     currentUsername = d.username || '';
+                    document.getElementById('user-bio').value = d.bio || '';
+                    document.getElementById('user-location').value = d.location || '';
 
                     // Stripe — three states: not connected / connected but incomplete / fully set up
                     if (d.stripeAccountId && d.stripePayoutsEnabled) {
@@ -479,6 +496,8 @@
         document.getElementById('profile-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value.toLowerCase().trim();
+            const bio      = document.getElementById('user-bio').value.trim().slice(0, 200);
+            const location = document.getElementById('user-location').value.trim().slice(0, 100);
             const errorMsg = document.getElementById('profile-error');
             errorMsg.style.display = 'none';
 
@@ -508,6 +527,8 @@
                     username,
                     displayName: username,
                     email: currentUser.email,
+                    bio,
+                    location,
                     updatedAt: serverTimestamp()
                 }, { merge: true });
 
