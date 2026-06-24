@@ -128,8 +128,13 @@ async function loadAnnouncement() {
 
         let html = `<span>${colors.icon} ${escapeHtml(messageText)}</span>`;
         if (data.link) {
-            const linkText = data.linkText ? escapeHtml(data.linkText) : 'Learn more';
-            html += ` <a href="${escapeHtml(data.link)}" style="color:${colors.text}">${linkText}</a>`;
+            // Only allow https:// or root-relative / links — block javascript: and other schemes
+            const rawLink = String(data.link);
+            const safeLink = (rawLink.startsWith('https://') || rawLink.startsWith('/')) ? rawLink : null;
+            if (safeLink) {
+                const linkText = data.linkText ? escapeHtml(data.linkText) : 'Learn more';
+                html += ` <a href="${escapeHtml(safeLink)}" style="color:${colors.text}">${linkText}</a>`;
+            }
         }
         if (data.dismissible) {
             html += `<button id="site-notice-dismiss" title="Dismiss" style="color:${colors.text}">✕</button>`;

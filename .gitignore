@@ -20,3 +20,5 @@ my-next-app/
 auth-export.json
 wrestleswap/migrate.js
 wrestleswap/cleanup-seller-email.js
+.claude/
+wrestleswap/audit.json

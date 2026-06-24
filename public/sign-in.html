@@ -152,7 +152,9 @@
             const userData = {
                 uid: user.uid,
                 email: user.email || '',
-                displayName: user.displayName || '',
+                // Use generated username as displayName — avoids leaking Google real name publicly
+                // (getPublicProfile exposes displayName; username is the only public identity)
+                displayName: username,
                 username: username,
                 photoURL: user.photoURL || '',
                 createdAt: new Date().toISOString(),
