@@ -1157,6 +1157,7 @@ exports.completeOrder = onRequest(
           // buyerId, soldOrderId, shippingCost, taxAmountCents live in the orders collection only.
           const updateData = {
             sold: true,
+            active: false, // remove from marketplace; enforceLimitOnProductCreate counts active==true only
             soldAt: admin.firestore.FieldValue.serverTimestamp(),
             soldTimestamp: Date.now(),
             sellerPaidOut: false, // explicit false so autoReleaseOrders query (sellerPaidOut == false) matches
@@ -1647,7 +1648,7 @@ exports.checkOverdueOrders = onSchedule(
             }),
             emails.sendOverdueCancelledToSeller(sellerEmail2, {
               productName: productData.title || 'an item',
-              strikeCount: (sellerData2.sellerCancellationCount || 0) + 1,
+              strikeCount: sellerData2.sellerCancellationCount || 0,
               strikesRemaining: strikesRemaining2,
               suspended: suspended2,
             }),
@@ -2483,6 +2484,7 @@ exports.stripeWebhook = onRequest(
           // buyerId, soldOrderId, shippingCost, taxAmountCents live in the orders collection only.
           const updateData = {
             sold: true,
+            active: false, // remove from marketplace; enforceLimitOnProductCreate counts active==true only
             soldAt: admin.firestore.FieldValue.serverTimestamp(),
             soldTimestamp: Date.now(),
             sellerPaidOut: false, // explicit false so autoReleaseOrders query (sellerPaidOut == false) matches
@@ -3033,13 +3035,14 @@ exports.autoReleaseOrders = onSchedule(
       .where('sold', '==', true)
       .where('shipped', '==', true)
       .where('sellerPaidOut', '==', false)
-      .where('cancelled', '==', false)
       .get();
 
-    // Filter hard blocks in JS (Firestore can't compound-query boolean negations efficiently)
+    // Filter hard blocks in JS (Firestore can't compound-query boolean negations efficiently,
+    // and cancelled/disputeOpened/etc. may not exist on docs that were never in those states)
     const candidates = snapshot.docs.filter(doc => {
       const d = doc.data();
       return (
+        !d.cancelled &&
         !d.disputeOpened &&
         !d.refundRequested &&
         !d.autoReleaseBlocked &&
@@ -3362,7 +3365,6 @@ exports.enforceLimitOnProductCreate = onDocumentCreated(
     const existingSnap = await db.collection('products')
       .where('userId', '==', sellerId)
       .where('active', '==', true)
-      .where('sold', '!=', true)
       .get();
 
     // existingSnap includes the document just created, so count > MAX means we're over
