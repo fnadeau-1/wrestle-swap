@@ -110,7 +110,6 @@ const sendgridSecret = defineSecret("SENDGRID_API_KEY_TEST");
 const shippoWebhookSecret = defineSecret("SHIPPO_WEBHOOK_SECRET");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const stripeAccountWebhookSecret = defineSecret("STRIPE_ACCOUNT_WEBHOOK_SECRET");
-// const recaptchaApiKey = defineSecret("RECAPTCHA_API_KEY"); // Uncomment after setting secret
 
 const emails = require('./emails');
 
@@ -1069,111 +1068,6 @@ exports.checkSellerStatus = onRequest(
     }
   }
 );
-
-// --- RECAPTCHA ENTERPRISE: Verify Token ---
-// NOTE: Uncomment this function after setting RECAPTCHA_API_KEY secret:
-// firebase functions:secrets:set RECAPTCHA_API_KEY
-/*
-exports.verifyRecaptcha = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [recaptchaApiKey], maxInstances: 20 },
-  async (req, res) => {
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
-      return;
-    }
-
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method Not Allowed' });
-    }
-
-    try {
-      const apiKey = recaptchaApiKey.value();
-      const { token, expectedAction } = req.body;
-
-      if (!token) {
-        return res.status(400).json({ error: 'Missing reCAPTCHA token' });
-      }
-
-      console.log('Verifying reCAPTCHA token for action:', expectedAction);
-
-      // Call reCAPTCHA Enterprise API
-      const response = await fetch(
-        `https://recaptchaenterprise.googleapis.com/v1/projects/grappletrade/assessments?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            event: {
-              token: token,
-              expectedAction: expectedAction || 'LIST_ITEM',
-              siteKey: '6LcM51YsAAAAAJIK9J6ztDQhKET0FdHvOBZ9p9Ah'
-            }
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('reCAPTCHA API error:', errorData);
-        return res.status(response.status).json({
-          success: false,
-          error: errorData.error?.message || 'reCAPTCHA verification failed'
-        });
-      }
-
-      const data = await response.json();
-      console.log('reCAPTCHA assessment:', data);
-
-      // Check if token is valid
-      if (!data.tokenProperties?.valid) {
-        console.log('Invalid token:', data.tokenProperties?.invalidReason);
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid reCAPTCHA token',
-          reason: data.tokenProperties?.invalidReason
-        });
-      }
-
-      // Check if action matches
-      if (data.tokenProperties?.action !== (expectedAction || 'LIST_ITEM')) {
-        console.log('Action mismatch:', data.tokenProperties?.action);
-        return res.status(400).json({
-          success: false,
-          error: 'reCAPTCHA action mismatch'
-        });
-      }
-
-      // Get the risk score (0.0 = bot, 1.0 = human)
-      const score = data.riskAnalysis?.score || 0;
-      console.log('reCAPTCHA score:', score);
-
-      // Accept if score is above threshold (0.5 is a common threshold)
-      if (score < 0.5) {
-        return res.status(400).json({
-          success: false,
-          error: 'reCAPTCHA verification failed - suspected bot activity',
-          score: score
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        score: score
-      });
-
-    } catch (error) {
-      console.error('reCAPTCHA Error:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to verify reCAPTCHA',
-        details: error.message
-      });
-    }
-  }
-);
-*/
 
 // --- COMPLETE ORDER (marks product sold after server-verified payment) ---
 exports.completeOrder = onRequest(
