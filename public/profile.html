@@ -330,58 +330,6 @@
             }
         }
 
-        function displayProfile(userId, stats) {
-            // Legacy stub — profile rendering is now done inside loadUserProfile
-            void userId; void stats;
-
-            if (photoURL) {
-                const imgElement = document.createElement('img');
-                imgElement.src = photoURL;
-                imgElement.className = 'profile-image';
-                document.getElementById('profile-image').replaceWith(imgElement);
-            }
-
-            document.getElementById('items-sold').textContent = stats.itemsSold;
-            document.getElementById('active-listings').textContent = stats.activeListings;
-            document.getElementById('total-reviews').textContent = stats.totalReviews;
-
-            if (stats.totalReviews > 0) {
-                document.getElementById('rating-container').style.display = 'flex';
-                document.getElementById('rating-value').textContent = stats.averageRating.toFixed(1);
-                document.getElementById('rating-count').textContent = `(${stats.totalReviews} review${stats.totalReviews !== 1 ? 's' : ''})`;
-
-                const fullStars = Math.floor(stats.averageRating);
-                const hasHalfStar = stats.averageRating % 1 >= 0.5;
-                let starsHTML = '★'.repeat(fullStars);
-                if (hasHalfStar) starsHTML += '☆';
-                starsHTML += '☆'.repeat(5 - fullStars - (hasHalfStar ? 1 : 0));
-                document.getElementById('rating-stars').textContent = starsHTML;
-            }
-
-            const badgesContainer = document.getElementById('profile-badges');
-            badgesContainer.innerHTML = '';
-
-            if (userData.trustedTrader && !userData.sellerSuspended) {
-                badgesContainer.innerHTML += '<span class="badge trusted">🛡️ Trusted Trader</span>';
-            } else if (userData.verifiedSeller && !userData.sellerSuspended) {
-                badgesContainer.innerHTML += '<span class="badge verified">✓ Verified Seller</span>';
-            }
-            badgesContainer.innerHTML += '<span class="badge member-since">📅 Member since 2024</span>';
-
-            const actionButtons = document.getElementById('action-buttons');
-            if (isOwnProfile) {
-                actionButtons.innerHTML = `
-                    <a href="listings-manager.html" class="btn btn-primary">View My Listings</a>
-                    <a href="my-orders.html" class="btn btn-primary">View My orders</a>
-                    <a href="sell.html" class="btn btn-secondary">Add New Listing</a>
-                `;
-            } else {
-                actionButtons.innerHTML = `
-                    <button class="btn btn-primary" onclick="alert('Contact seller feature coming soon!')">📧 Contact Seller</button>
-                `;
-            }
-        }
-
         function esc(s) {
             return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }

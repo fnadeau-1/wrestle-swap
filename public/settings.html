@@ -246,7 +246,7 @@
                  reauthenticateWithCredential, signOut, deleteUser }
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp,
-                 collection, query, where, getDocs }
+                 collection, query, where, getDocs, writeBatch }
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -516,10 +516,13 @@
             }
 
             try {
-                // Update username reservation
+                // Update username reservation atomically — if the set fails (name taken),
+                // the delete is rolled back and the old username is preserved.
                 if (username !== currentUsername) {
-                    if (currentUsername) await deleteDoc(doc(db, 'usernames', currentUsername));
-                    await setDoc(doc(db, 'usernames', username), { userId: currentUser.uid, createdAt: serverTimestamp() });
+                    const batch = writeBatch(db);
+                    batch.set(doc(db, 'usernames', username), { userId: currentUser.uid, createdAt: serverTimestamp() });
+                    if (currentUsername) batch.delete(doc(db, 'usernames', currentUsername));
+                    await batch.commit();
                 }
 
                 // Username is the display name — one identity, no real name stored

@@ -180,8 +180,12 @@ service cloud.firestore {
           || (request.auth != null
             && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants);
         // Create only — editing or deleting existing messages is not permitted
+        // Rate-limited: 1 message per second per conversation (anti-spam).
+        // Repeated get() calls to the same path are cached within a single rule evaluation.
         allow create: if request.auth != null
-          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          && (get(/databases/$(database)/documents/conversations/$(conversationId)).data.get('lastMessageAt', null) == null
+              || request.time > get(/databases/$(database)/documents/conversations/$(conversationId)).data.lastMessageAt + duration.value(1, 's'));
       }
     }
 
