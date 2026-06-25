@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -423,12 +423,8 @@
                 return [];
             }
 
-            console.log('Fetching listings for user:', user.uid);
-
             const query = db.collection('products').where('userId', '==', user.uid);
-            const snapshot = await query.get();
-
-            console.log('Found', snapshot.size, 'listings for this user');
+            const snapshot = await query.get({ source: 'server' });
 
             if (snapshot.empty) {
                 return [];
@@ -437,8 +433,8 @@
             const listings = [];
             snapshot.forEach(doc => {
                 listings.push({
-                    id: doc.id,
-                    ...doc.data()
+                    ...doc.data(),
+                    id: doc.id
                 });
             });
 
@@ -468,17 +464,20 @@
             }
         }
 
-        async function toggleListingActive(listingId, currentStatus) {
-            try {
-                await db.collection('products').doc(listingId).update({
-                    active: !currentStatus,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                return { success: true, active: !currentStatus };
-            } catch (error) {
-                console.error('Error toggling listing:', error);
-                throw error;
-            }
+        const TOGGLE_LISTING_URL = 'https://us-central1-grappletrade.cloudfunctions.net/toggleListingActive';
+
+        async function toggleListingActive(listingId) {
+            const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+            if (!idToken) throw new Error('You must be signed in');
+
+            const response = await fetch(TOGGLE_LISTING_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+                body: JSON.stringify({ productId: listingId })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to toggle listing');
+            return data;
         }
 
         // ============================================
@@ -784,9 +783,9 @@
 
         async function toggleActive(listingId, currentStatus) {
             try {
-                await toggleListingActive(listingId, currentStatus);
+                const result = await toggleListingActive(listingId);
                 await renderListings();
-                showInfo(`Listing ${currentStatus ? 'deactivated' : 'activated'} successfully!`);
+                showInfo(`Listing ${result.active ? 'activated' : 'deactivated'} successfully!`);
             } catch (error) {
                 showError('Failed to toggle listing status: ' + error.message);
             }
@@ -1000,7 +999,6 @@
             const menuWrapper = document.getElementById('user-menu-wrapper');
 
             if (user) {
-                console.log('User authenticated:', user.uid);
 
                 // Update header with dropdown
                 const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];

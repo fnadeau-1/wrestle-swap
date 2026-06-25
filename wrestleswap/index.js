@@ -106,7 +106,7 @@ async function maybeAwardSellerBadges(sellerId) {
 // Define secrets
 const stripeSecret = defineSecret("STRIPE_SKEY");
 const shippoSecret = defineSecret("SHIPPO_API_KEY");
-const sendgridSecret = defineSecret("SENDGRID_API_KEY_TEST");
+const resendSecret = defineSecret("RESEND_API_KEY");
 const shippoWebhookSecret = defineSecret("SHIPPO_WEBHOOK_SECRET");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const stripeAccountWebhookSecret = defineSecret("STRIPE_ACCOUNT_WEBHOOK_SECRET");
@@ -195,8 +195,9 @@ exports.createPaymentIntent = onRequest(
 
     try {
       const stripe = require('stripe')(stripeSecret.value());
-      // Never trust amounts or sellerStripeAccountId from the frontend
-      const { currency = 'usd', productId, rateObjectId, buyerState, buyerZip } = req.body;
+      // Never trust amounts, currency, or sellerStripeAccountId from the frontend
+      const currency = 'usd'; // hardcoded — never trust client for currency
+      const { productId, rateObjectId, buyerState, buyerZip } = req.body;
 
       if (!productId) {
         return res.status(400).json({ error: 'productId is required' });
@@ -357,7 +358,7 @@ const CANCELLATION_FEE_PERCENT = 0.05;
 
 // --- CANCEL ORDER / REFUND ---
 exports.cancelOrder = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, shippoSecret, sendgridSecret], maxInstances: 10 },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, shippoSecret, resendSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -384,7 +385,6 @@ exports.cancelOrder = onRequest(
       const {
         paymentIntentId,
         productId,
-        shippoTransactionId = null
       } = req.body;
 
       if (!paymentIntentId || !productId) {
@@ -456,7 +456,12 @@ exports.cancelOrder = onRequest(
 
       console.log('Refund created:', refund.id);
 
-      // Try to void the Shippo shipping label if provided
+      // Read shippo transaction ID from order doc — never trust client-provided value
+      // (a malicious buyer could otherwise void an unrelated order's label)
+      const cancelOrderRecord = await getOrderByProductId(productId);
+      const shippoTransactionId = cancelOrderRecord?.shippoTransactionObjectId || null;
+
+      // Try to void the Shippo shipping label if one exists on record
       let labelVoided = false;
       if (shippoTransactionId) {
         try {
@@ -518,7 +523,7 @@ exports.cancelOrder = onRequest(
 
       // Email buyer (refund confirmation) and seller (order cancelled)
       try {
-        emails.init(sendgridSecret.value());
+        emails.init(resendSecret.value());
         const [buyerEmail, sellerEmail, buyerRecord] = await Promise.all([
           getUserEmail(decodedToken.uid),
           getUserEmail(productData.userId),
@@ -655,17 +660,44 @@ exports.createConnectedAccount = onRequest(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    if (!decodedToken.email_verified) {
+      return res.status(403).json({ error: 'Please verify your email address before setting up a seller account.' });
+    }
     try {
       const stripe = require('stripe')(stripeSecret.value());
-      const { userId, email, returnUrl, refreshUrl } = req.body;
+      const { userId, returnUrl, refreshUrl } = req.body;
 
-      if (!userId || !email) {
-        return res.status(400).json({ error: 'Missing userId or email' });
+      if (!userId) {
+        return res.status(400).json({ error: 'Missing userId' });
       }
 
       // Ensure the authenticated user can only create an account for themselves
       if (decodedToken.uid !== userId) {
         return res.status(403).json({ error: 'You can only create a Stripe account for your own user ID' });
+      }
+
+      // Always use the Firebase-verified email — never trust client-supplied email
+      const verifiedEmail = decodedToken.email;
+      if (!verifiedEmail) {
+        return res.status(400).json({ error: 'Account has no verified email address' });
+      }
+
+      // Validate redirect URLs — must be on grappletrade.com to prevent open redirect
+      const ALLOWED_ORIGINS_CONNECT = [
+        'https://grappletrade.com',
+        'https://www.grappletrade.com',
+        'https://grappletrade.web.app',
+        'https://grappletrade.firebaseapp.com',
+      ];
+      const isAllowedUrl = (url) => {
+        if (!url) return true; // null/undefined → falls back to hardcoded default
+        try {
+          const u = new URL(url);
+          return u.protocol === 'https:' && ALLOWED_ORIGINS_CONNECT.some(o => url.startsWith(o + '/'));
+        } catch (_) { return false; }
+      };
+      if (!isAllowedUrl(returnUrl) || !isAllowedUrl(refreshUrl)) {
+        return res.status(400).json({ error: 'Invalid redirect URL' });
       }
 
       console.log('Creating Stripe Connect account for user:', userId);
@@ -680,7 +712,7 @@ exports.createConnectedAccount = onRequest(
         const account = await stripe.accounts.create({
           type: 'express',
           country: 'US',
-          email: email,
+          email: verifiedEmail,
           capabilities: {
             card_payments: { requested: true },
             transfers: { requested: true },
@@ -693,7 +725,6 @@ exports.createConnectedAccount = onRequest(
 
         await db.collection('users').doc(userId).set({
           stripeAccountId: stripeAccountId,
-          email: email,
           createdAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
       }
@@ -849,7 +880,7 @@ exports.shippoGetRates = onRequest(
 
 // --- SHIPPO: Create Shipping Label ---
 exports.shippoCreateLabel = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret, sendgridSecret], maxInstances: 5 },
+  { cors: ALLOWED_ORIGINS, secrets: [shippoSecret, resendSecret], maxInstances: 5 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
@@ -870,7 +901,12 @@ exports.shippoCreateLabel = onRequest(
 
     try {
       const shippoKey = shippoSecret.value();
-      const { rateObjectId, labelFileType = 'PDF', async: asyncLabel = false, productId: labelProductId } = req.body;
+      const { rateObjectId, labelFileType: rawLabelFileType = 'PDF', async: rawAsyncLabel = false, productId: labelProductId } = req.body;
+
+      // Allowlist label file type — prevents arbitrary string injection into Shippo API
+      const ALLOWED_LABEL_TYPES = ['PDF', 'PDF_4x6', 'ZPLII', 'PNG'];
+      const labelFileType = ALLOWED_LABEL_TYPES.includes(rawLabelFileType) ? rawLabelFileType : 'PDF';
+      const asyncLabel = !!rawAsyncLabel;
 
       if (!rateObjectId) {
         return res.status(400).json({ error: 'Missing rateObjectId' });
@@ -898,11 +934,13 @@ exports.shippoCreateLabel = onRequest(
       console.log('Creating shipping label for rate:', rateObjectId);
 
       // Call Shippo API to create transaction (purchase label)
+      // Idempotency key prevents duplicate label charges if the request is retried
       const response = await fetch('https://api.goshippo.com/transactions/', {
         method: 'POST',
         headers: {
           'Authorization': `ShippoToken ${shippoKey}`,
           'Content-Type': 'application/json',
+          'X-Idempotency-Key': `label_${labelProductId}`,
         },
         body: JSON.stringify({
           rate: rateObjectId,
@@ -947,6 +985,8 @@ exports.shippoCreateLabel = onRequest(
           const orderTrackingUpdate = {
             ...productTrackingUpdate,
             shippingLabel: transaction.label_url || null,
+            // Store server-side so cancelOrder can void the label without trusting the client
+            shippoTransactionObjectId: transaction.object_id || null,
           };
 
           await db.collection('products').doc(labelProductId).update(productTrackingUpdate);
@@ -974,7 +1014,7 @@ exports.shippoCreateLabel = onRequest(
                   message: `Your "${labelProductTitle}" is being prepared for shipment. Tracking: ${transaction.tracking_number || 'pending'}`,
                   link: 'my-orders.html',
                 }, `${labelProductId}_label_created_buyer`);
-                emails.init(sendgridSecret.value());
+                emails.init(resendSecret.value());
                 const buyerEmail = await getUserEmail(labelBuyerId);
                 await emails.sendTrackingToBuyer(buyerEmail, {
                   productName: labelProductTitle,
@@ -1071,7 +1111,7 @@ exports.checkSellerStatus = onRequest(
 
 // --- COMPLETE ORDER (marks product sold after server-verified payment) ---
 exports.completeOrder = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret], maxInstances: 20 },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, resendSecret], maxInstances: 20 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -1096,7 +1136,7 @@ exports.completeOrder = onRequest(
 
     try {
       const stripe = require('stripe')(stripeSecret.value());
-      const { paymentIntentId, productId, shippingInfo, packageDimensions, buyerShippingAddress: rawBuyerAddress } = req.body;
+      const { paymentIntentId, productId, buyerShippingAddress: rawBuyerAddress } = req.body;
 
       // Sanitize buyer address before saving — never write raw client input to Firestore
       const buyerShippingAddress = (rawBuyerAddress && typeof rawBuyerAddress === 'object') ? {
@@ -1126,7 +1166,7 @@ exports.completeOrder = onRequest(
 
       // Verify the authenticated user is the buyer who created this payment intent
       // Prevents order hijacking if an attacker obtains the payment intent ID
-      if (paymentIntent.metadata.buyerId && paymentIntent.metadata.buyerId !== decodedToken.uid) {
+      if (paymentIntent.metadata.buyerId !== decodedToken.uid) {
         return res.status(403).json({ error: 'This payment was not made by your account' });
       }
 
@@ -1162,11 +1202,8 @@ exports.completeOrder = onRequest(
             soldTimestamp: Date.now(),
             sellerPaidOut: false, // explicit false so autoReleaseOrders query (sellerPaidOut == false) matches
           };
-          if (shippingInfo) {
-            updateData.trackingNumber = shippingInfo.tracking_number || null;
-            updateData.trackingUrl = shippingInfo.tracking_url_provider || null;
-          }
-          if (packageDimensions) updateData.packageDimensions = packageDimensions;
+          // Tracking info and package dimensions are set by the seller (markAsShipped / shippoCreateLabel)
+          // — the buyer has no role in providing these at checkout.
 
           t.update(productRef, updateData);
         });
@@ -1196,9 +1233,6 @@ exports.completeOrder = onRequest(
           sellerStripeAccountId: sellerStripeAccountId || null,
           sellerReceivesCents: sellerReceivesCents || 0,
           rateObjectId: savedRateObjectId || null,
-          shippingLabel: shippingInfo ? (shippingInfo.label_url || null) : null,
-          trackingNumber: shippingInfo ? (shippingInfo.tracking_number || null) : null,
-          trackingUrl: shippingInfo ? (shippingInfo.tracking_url_provider || null) : null,
           buyerShippingAddress: buyerShippingAddress || null,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           createdTimestamp: Date.now(),
@@ -1224,7 +1258,7 @@ exports.completeOrder = onRequest(
 
       // Email seller and buyer about the new order
       try {
-        emails.init(sendgridSecret.value());
+        emails.init(resendSecret.value());
         if (!prod) {
           const freshSnap = await db.collection('products').doc(productId).get();
           prod = freshSnap.data();
@@ -1256,7 +1290,7 @@ exports.completeOrder = onRequest(
 
       // Notify watchlist followers that this item sold
       try {
-        emails.init(sendgridSecret.value());
+        emails.init(resendSecret.value());
         const watchlistSnap = await db.collection('watchlists').get();
         const notifyPromises = [];
         watchlistSnap.forEach(watchDoc => {
@@ -1300,7 +1334,7 @@ exports.completeOrder = onRequest(
 
 // --- SELLER CANCEL ORDER (full refund to buyer, strike against seller) ---
 exports.sellerCancelOrder = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret], maxInstances: 10 },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, resendSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).send('');
@@ -1438,7 +1472,7 @@ exports.sellerCancelOrder = onRequest(
 
       // Email buyer (full refund) and seller (strike warning)
       try {
-        emails.init(sendgridSecret.value());
+        emails.init(resendSecret.value());
         const [buyerEmail, sellerEmail, sellerRecord] = await Promise.all([
           getUserEmail(cancelledBuyerId),
           getUserEmail(decodedToken.uid),
@@ -1482,10 +1516,10 @@ exports.sellerCancelOrder = onRequest(
 // --- CHECK OVERDUE ORDERS (runs daily — auto-cancels unshipped orders older than 10 days) ---
 // Note: requires a Firestore composite index on (sold ASC, soldTimestamp ASC)
 exports.checkOverdueOrders = onSchedule(
-  { schedule: 'every 24 hours', secrets: [stripeSecret, sendgridSecret], maxInstances: 1 },
+  { schedule: 'every 24 hours', secrets: [stripeSecret, resendSecret], maxInstances: 1 },
   async (event) => {
     const stripe = require('stripe')(stripeSecret.value());
-    emails.init(sendgridSecret.value());
+    emails.init(resendSecret.value());
 
     // ── PASS 1: 7-day ship reminders ─────────────────────────────────────────
     const sevenDaysAgo  = Date.now() - (7  * 24 * 60 * 60 * 1000);
@@ -1531,16 +1565,18 @@ exports.checkOverdueOrders = onSchedule(
       .where('soldTimestamp', '<=', tenDaysAgo)
       .get();
 
-    // Filter in JS: exclude already-cancelled and orders that haven't been marked shipped.
-    // Use d.shipped (set by markAsShipped) — not trackingNumber, which is saved when a label
-    // is purchased but before the item is actually handed to the carrier.
+    // Filter in JS: exclude already-cancelled, delivered, or paid-out orders.
+    // IMPORTANT: must check !d.delivered and !d.sellerPaidOut — a product can have
+    // shipped=false even after delivery (if the seller never called markAsShipped) and
+    // would otherwise be incorrectly auto-cancelled, issuing a double-refund on a
+    // completed paid-out order and costing the platform 2× the order value.
     const overdueOrders = snapshot.docs.filter(doc => {
       const d = doc.data();
-      return !d.cancelled && !d.cancelledAt && !d.shipped;
+      return !d.cancelled && !d.cancelledAt && !d.shipped && !d.delivered && !d.sellerPaidOut;
     });
 
     console.log(`Found ${overdueOrders.length} overdue unshipped orders`);
-    emails.init(sendgridSecret.value());
+    emails.init(resendSecret.value());
 
     let processed = 0;
     let errors = 0;
@@ -1785,10 +1821,10 @@ exports.adminIssueRefund = onRequest(
       const chargeId = paymentIntent.latest_charge;
       const originalAmount = paymentIntent.amount;
 
-      // Validate refund amount
-      const amountToRefund = refundAmount ? parseInt(refundAmount) : originalAmount;
-      if (isNaN(amountToRefund) || amountToRefund <= 0 || amountToRefund > originalAmount) {
-        return res.status(400).json({ error: `Refund amount must be between 1 and ${originalAmount} cents` });
+      // Validate refund amount — must be a whole number of cents
+      const amountToRefund = refundAmount != null ? Number(refundAmount) : originalAmount;
+      if (!Number.isInteger(amountToRefund) || amountToRefund <= 0 || amountToRefund > originalAmount) {
+        return res.status(400).json({ error: `Refund amount must be a whole number of cents between 1 and ${originalAmount}` });
       }
 
       // Escrow model: funds never left the platform, simple refund
@@ -1860,7 +1896,7 @@ exports.adminIssueRefund = onRequest(
 
 // --- MARK AS SHIPPED (seller confirms shipment, sends tracking email to buyer) ---
 exports.markAsShipped = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [sendgridSecret], maxInstances: 10 },
+  { cors: ALLOWED_ORIGINS, secrets: [resendSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -1872,7 +1908,8 @@ exports.markAsShipped = onRequest(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { productId, trackingNumber, trackingUrl, carrier: rawCarrier } = req.body;
+    const { productId, trackingNumber: rawTrackingNumber, trackingUrl, carrier: rawCarrier } = req.body;
+    const trackingNumber = sanitizeString(rawTrackingNumber, 64);
     if (!productId || !trackingNumber) {
       return res.status(400).json({ error: 'Missing productId or trackingNumber' });
     }
@@ -1960,7 +1997,7 @@ exports.markAsShipped = onRequest(
 
       // Send tracking email to buyer
       try {
-        emails.init(sendgridSecret.value());
+        emails.init(resendSecret.value());
         const buyerEmail = await getUserEmail(shippedBuyerId);
         await emails.sendTrackingToBuyer(buyerEmail, {
           productName: product.title || 'your item',
@@ -1982,7 +2019,7 @@ exports.markAsShipped = onRequest(
 
 // --- CONFIRM DELIVERY (buyer confirms receipt, enables review, notifies seller) ---
 exports.confirmDelivery = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, sendgridSecret], maxInstances: 10 },
+  { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, resendSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -2111,7 +2148,7 @@ exports.confirmDelivery = onRequest(
 
       // Send confirmation emails to buyer and seller
       try {
-        emails.init(sendgridSecret.value());
+        emails.init(resendSecret.value());
         const [buyerEmail, sellerEmail, buyerRecord, sellerRecord] = await Promise.all([
           getUserEmail(confirmBuyerId),
           getUserEmail(product.userId),
@@ -2223,7 +2260,7 @@ exports.trackShipment = onRequest(
 
 // --- SHIPPO WEBHOOK (auto-confirm delivery when carrier marks package delivered) ---
 exports.shippoWebhook = onRequest(
-  { cors: false, secrets: [shippoWebhookSecret, stripeSecret, sendgridSecret], maxInstances: 5 },
+  { cors: false, secrets: [shippoWebhookSecret, stripeSecret, resendSecret], maxInstances: 5 },
   async (req, res) => {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
@@ -2382,7 +2419,7 @@ exports.shippoWebhook = onRequest(
       // Send confirmation emails — use buyerId from orders, not the product doc
       const webhookBuyerId = orderPayoutData.buyerId || null;
       try {
-        emails.init(sendgridSecret.value());
+        emails.init(resendSecret.value());
         const [buyerEmail, sellerEmail, buyerRecord, sellerRecord] = await Promise.all([
           getUserEmail(webhookBuyerId),
           getUserEmail(product.userId),
@@ -2433,7 +2470,7 @@ exports.shippoWebhook = onRequest(
 // if completeOrder never ran (e.g. buyer closed the tab right after Stripe confirmed the charge).
 // Idempotent: silently skips if the product is already sold.
 exports.stripeWebhook = onRequest(
-  { cors: false, secrets: [stripeSecret, stripeWebhookSecret, sendgridSecret], maxInstances: 10 },
+  { cors: false, secrets: [stripeSecret, stripeWebhookSecret, resendSecret], maxInstances: 10 },
   async (req, res) => {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
@@ -2547,7 +2584,7 @@ exports.stripeWebhook = onRequest(
 
       // Emails
       try {
-        emails.init(sendgridSecret.value());
+        emails.init(resendSecret.value());
         const [sellerEmail, buyerEmail, buyerRecord, sellerRecord] = await Promise.all([
           getUserEmail(prod.userId),
           getUserEmail(buyerId),
@@ -2568,6 +2605,54 @@ exports.stripeWebhook = onRequest(
 
     } catch (err) {
       console.error('stripeWebhook processing error:', err);
+    }
+  }
+);
+
+// --- TOGGLE LISTING ACTIVE/INACTIVE (seller deactivates or reactivates an available listing) ---
+// Uses Admin SDK to bypass Firestore client rules which may incorrectly deny this write.
+exports.toggleListingActive = onRequest(
+  { cors: ALLOWED_ORIGINS, maxInstances: 10 },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { productId } = req.body;
+    if (!productId) return res.status(400).json({ error: 'Missing productId' });
+
+    try {
+      const productRef = db.collection('products').doc(productId);
+      const productSnap = await productRef.get();
+      if (!productSnap.exists) return res.status(404).json({ error: 'Product not found' });
+
+      const product = productSnap.data();
+      if (product.userId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'You are not the owner of this listing' });
+      }
+      if (product.sold) {
+        return res.status(400).json({ error: 'Cannot toggle a sold listing' });
+      }
+      if (product.cancelled) {
+        return res.status(400).json({ error: 'Cannot toggle a cancelled listing — use Relist instead' });
+      }
+
+      const newActive = !product.active;
+      await productRef.update({
+        active: newActive,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return res.status(200).json({ success: true, active: newActive });
+    } catch (error) {
+      console.error('toggleListingActive error:', error);
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
     }
   }
 );
@@ -2714,7 +2799,7 @@ exports.stripeAccountWebhook = onRequest(
 // Sends an email + in-app notification to the recipient if they haven't been
 // notified in the last 10 minutes for this conversation (rate-limited to avoid spam).
 exports.notifyNewMessage = onRequest(
-  { cors: ALLOWED_ORIGINS, secrets: [sendgridSecret], maxInstances: 20 },
+  { cors: ALLOWED_ORIGINS, secrets: [resendSecret], maxInstances: 20 },
   async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(204).send('');
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -2783,7 +2868,7 @@ exports.notifyNewMessage = onRequest(
         }),
         getUserEmail(recipientId).then(email => {
           if (!email) return;
-          emails.init(sendgridSecret.value());
+          emails.init(resendSecret.value());
           return emails.sendMessageNotification(email, { senderName, messagePreview: preview, conversationUrl: convUrl });
         }),
       ]);
@@ -2882,6 +2967,7 @@ exports.getPriceSuggestions = onRequest(
 
     const category = String(req.query.category || '').trim().toLowerCase();
     if (!category) return res.status(400).json({ error: 'category is required' });
+    if (category.length > 100) return res.status(400).json({ error: 'Invalid category' });
 
     try {
       const snap = await db.collection('products')
@@ -2954,9 +3040,9 @@ exports.recordAbandonedCart = onRequest(
 // --- CHECK ABANDONED CARTS ---
 // Runs every 6 hours. Sends a follow-up email for carts abandoned 24–48 hours ago.
 exports.checkAbandonedCarts = onSchedule(
-  { schedule: 'every 6 hours', secrets: [sendgridSecret], maxInstances: 1 },
+  { schedule: 'every 6 hours', secrets: [resendSecret], maxInstances: 1 },
   async () => {
-    emails.init(sendgridSecret.value());
+    emails.init(resendSecret.value());
     const now = Date.now();
     const twentyFourHoursAgo = now - ONE_DAY;
     const fortyEightHoursAgo = now - (2 * ONE_DAY);
@@ -3010,10 +3096,10 @@ exports.checkAbandonedCarts = onSchedule(
 // Idempotency: Firestore transaction sets payoutInitiated=true before Stripe call.
 //              Stripe idempotencyKey `payout_{productId}` deduplicates at the API level.
 exports.autoReleaseOrders = onSchedule(
-  { schedule: 'every 24 hours', secrets: [stripeSecret, sendgridSecret], maxInstances: 1 },
+  { schedule: 'every 24 hours', secrets: [stripeSecret, resendSecret], maxInstances: 1 },
   async () => {
     const stripe = require('stripe')(stripeSecret.value());
-    emails.init(sendgridSecret.value());
+    emails.init(resendSecret.value());
 
     const now = Date.now();
     const THREE_DAYS_MS    = 3  * 24 * 60 * 60 * 1000;
@@ -3247,13 +3333,7 @@ exports.autoReleaseOrders = onSchedule(
           continue;
         }
 
-        // Send 24h warning
-        await doc.ref.update({
-          autoReleaseWarned: true,
-          autoReleaseWarningAt: admin.firestore.FieldValue.serverTimestamp(),
-          autoReleaseWarningTimestamp: now,
-        });
-
+        // Send 24h warning -- email first, then persist flag so buyer is not skipped if email fails
         const buyerEmail = await getUserEmail(autoReleaseOrderData.buyerId);
         await emails.sendAutoReleaseWarning(buyerEmail, {
           productName: d.title || 'your item',
@@ -3266,6 +3346,12 @@ exports.autoReleaseOrders = onSchedule(
           message: `Your order for "${d.title || 'your item'}" will auto-complete in 24 hours. Report a problem now if needed.`,
           link: 'my-orders.html',
         }, `${productId}_autorelease_warning`);
+
+        await doc.ref.update({
+          autoReleaseWarned: true,
+          autoReleaseWarningAt: admin.firestore.FieldValue.serverTimestamp(),
+          autoReleaseWarningTimestamp: now,
+        });
 
         console.log(`autoRelease Phase 1 WARNING sent — ${productId}`);
         warned++;
