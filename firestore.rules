@@ -117,7 +117,17 @@ service cloud.firestore {
           ])
           // displayName must always equal username — no real-name leakage
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName', 'username'])
-              || request.resource.data.get('displayName', '') == request.resource.data.get('username', '')));
+              || request.resource.data.get('displayName', '') == request.resource.data.get('username', ''))
+          // Field length limits — only validate fields that are actually being changed
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['bio'])
+              || (request.resource.data.bio is string && request.resource.data.bio.size() <= 500))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['location'])
+              || (request.resource.data.location is string && request.resource.data.location.size() <= 200))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['username'])
+              || (request.resource.data.username is string
+                  && request.resource.data.username.size() >= 3
+                  && request.resource.data.username.size() <= 30
+                  && request.resource.data.username.matches('^[a-z0-9_]+$'))));
 
       allow delete: if isAdmin();
     }
@@ -127,10 +137,13 @@ service cloud.firestore {
     // -------------------------------------------------------------------------
     match /usernames/{username} {
       allow read: if true;
-      // Create: only if no document exists (prevents overwriting another user's reservation)
+      // Create: only if no document exists, username is 3–30 lowercase alphanumeric/underscore chars
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
-        && !exists(/databases/$(database)/documents/usernames/$(username));
+        && !exists(/databases/$(database)/documents/usernames/$(username))
+        && username.size() >= 3
+        && username.size() <= 30
+        && username.matches('^[a-z0-9_]+$');
       // Update: only the current owner can change their own reservation
       allow update: if request.auth != null
         && request.resource.data.userId == request.auth.uid

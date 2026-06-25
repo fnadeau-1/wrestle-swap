@@ -76,7 +76,7 @@
                 <div class="form-group">
                     <label class="form-label">Username / Display Name</label>
                     <input type="text" class="form-input" id="username"
-                        placeholder="Enter a unique username" style="text-transform:lowercase;" autocomplete="off">
+                        placeholder="Enter a unique username" style="text-transform:lowercase;" autocomplete="off" maxlength="30">
                     <div id="username-status" style="font-size:12px;margin-top:5px;"></div>
                     <p class="helper-text">Your username is your only public name — lowercase letters, numbers, and underscores (3+ characters)</p>
                 </div>
@@ -243,7 +243,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
         import { getAuth, onAuthStateChanged, updatePassword, updateProfile, EmailAuthProvider,
-                 reauthenticateWithCredential, signOut, deleteUser }
+                 reauthenticateWithCredential, signOut }
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp,
                  collection, query, where, getDocs, writeBatch }
@@ -501,8 +501,8 @@
             const errorMsg = document.getElementById('profile-error');
             errorMsg.style.display = 'none';
 
-            if (!username || username.length < 3 || !/^[a-z0-9_]+$/.test(username)) {
-                errorMsg.textContent = 'Please enter a valid username (3+ characters, letters/numbers/underscores)';
+            if (!username || username.length < 3 || username.length > 30 || !/^[a-z0-9_]+$/.test(username)) {
+                errorMsg.textContent = 'Please enter a valid username (3–30 characters, letters/numbers/underscores)';
                 errorMsg.style.display = 'block'; return;
             }
 
@@ -550,6 +550,7 @@
 
         // ── Notification preferences save ─────────────────────────────────
         document.getElementById('save-notif-btn').addEventListener('click', async () => {
+            if (!currentUser) return;
             const successMsg = document.getElementById('notif-success');
             try {
                 await setDoc(doc(db, 'users', currentUser.uid), {
