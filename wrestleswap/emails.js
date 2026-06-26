@@ -1,16 +1,17 @@
-// emails.js — SendGrid email helper for GrappleTrade
-// NOTE: Change FROM_EMAIL to a sender you've verified in your SendGrid account.
-// Either add it as a Single Sender or verify the full domain at:
-// https://app.sendgrid.com/settings/sender_auth
+// emails.js — Resend email helper for GrappleTrade
+// NOTE: Verify your sending domain (grappletrade.com) in the Resend dashboard at:
+// https://resend.com/domains
 
-const sgMail = require('@sendgrid/mail');
+const { Resend } = require('resend');
 
 const FROM_EMAIL = 'noreply@grappletrade.com';
 const FROM_NAME = 'GrappleTrade';
 const SITE_URL = 'https://grappletrade.com';
 
+let resend = null;
+
 function init(apiKey) {
-  sgMail.setApiKey(apiKey);
+  resend = new Resend(apiKey);
 }
 
 // Base HTML wrapper so all emails look consistent
@@ -65,10 +66,19 @@ function alertBox(color, borderColor, html) {
 async function send(to, subject, html) {
   if (!to) return;
   try {
-    await sgMail.send({ to, from: { email: FROM_EMAIL, name: FROM_NAME }, subject, html });
-    console.log(`Email sent | ${subject}`);
+    const { error } = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to,
+      subject,
+      html,
+    });
+    if (error) {
+      console.error(`Email failed | ${subject}:`, JSON.stringify(error));
+    } else {
+      console.log(`Email sent | ${subject}`);
+    }
   } catch (err) {
-    console.error(`Email failed | ${subject}:`, err.response ? JSON.stringify(err.response.body) : err.message);
+    console.error(`Email failed | ${subject}:`, err.message);
   }
 }
 

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/search.css">
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
+    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
 </head>
 <body>
     <!-- Top Bar -->
@@ -62,90 +64,110 @@
             <!-- Drawer header (mobile only) -->
             <div class="filter-drawer-header">
                 <strong>Filters</strong>
-                <button class="filter-drawer-close" onclick="closeFilters()">✕</button>
+                <button class="filter-drawer-close" onclick="closeFilters()">&#x2715;</button>
             </div>
+
+            <!-- Clear all -->
+            <div id="clear-filters-bar" style="display:none; padding: 6px 0 2px;">
+                <button class="clear-filters-btn" onclick="clearAllFilters()">&#x2715; Clear all filters</button>
+            </div>
+
             <div class="filter-section">
                 <div class="filter-title">Category</div>
                 <div class="filter-option">
-                    <input type="checkbox" id="shoes" onchange="filterProducts(); toggleSizeFilter()">
+                    <input type="checkbox" id="shoes" onchange="filterProducts(); updateSizeFilters()">
                     <label for="shoes">Wrestling Shoes</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="singlets" onchange="filterProducts()">
+                    <input type="checkbox" id="singlets" onchange="filterProducts(); updateSizeFilters()">
                     <label for="singlets">Singlets</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="warmups" onchange="filterProducts()">
+                    <input type="checkbox" id="warmups" onchange="filterProducts(); updateSizeFilters()">
                     <label for="warmups">Warm-ups</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="shirts" onchange="filterProducts()">
+                    <input type="checkbox" id="shirts" onchange="filterProducts(); updateSizeFilters()">
                     <label for="shirts">Shirts</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="bottoms" onchange="filterProducts()">
+                    <input type="checkbox" id="bottoms" onchange="filterProducts(); updateSizeFilters()">
                     <label for="bottoms">Shorts/Pants</label>
                 </div>
-            </div>
-
-            <!-- Shoe Size Filter -->
-            <div class="filter-section" id="size-filter" style="display: none;">
-                <div class="filter-title">Shoe Size</div>
-                <div class="size-grid">
-                    <div class="filter-option"><input type="checkbox" id="size-2" onchange="filterProducts()"><label for="size-2">2</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-2.5" onchange="filterProducts()"><label for="size-2.5">2.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-3" onchange="filterProducts()"><label for="size-3">3</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-3.5" onchange="filterProducts()"><label for="size-3.5">3.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-4" onchange="filterProducts()"><label for="size-4">4</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-4.5" onchange="filterProducts()"><label for="size-4.5">4.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-5" onchange="filterProducts()"><label for="size-5">5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-5.5" onchange="filterProducts()"><label for="size-5.5">5.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-6" onchange="filterProducts()"><label for="size-6">6</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-6.5" onchange="filterProducts()"><label for="size-6.5">6.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-7" onchange="filterProducts()"><label for="size-7">7</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-7.5" onchange="filterProducts()"><label for="size-7.5">7.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-8" onchange="filterProducts()"><label for="size-8">8</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-8.5" onchange="filterProducts()"><label for="size-8.5">8.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-9" onchange="filterProducts()"><label for="size-9">9</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-9.5" onchange="filterProducts()"><label for="size-9.5">9.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-10" onchange="filterProducts()"><label for="size-10">10</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-10.5" onchange="filterProducts()"><label for="size-10.5">10.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-11" onchange="filterProducts()"><label for="size-11">11</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-11.5" onchange="filterProducts()"><label for="size-11.5">11.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-12" onchange="filterProducts()"><label for="size-12">12</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-12.5" onchange="filterProducts()"><label for="size-12.5">12.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-13" onchange="filterProducts()"><label for="size-13">13</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-13.5" onchange="filterProducts()"><label for="size-13.5">13.5</label></div>
-                    <div class="filter-option"><input type="checkbox" id="size-14" onchange="filterProducts()"><label for="size-14">14</label></div>
+                <div class="filter-option">
+                    <input type="checkbox" id="accessories" onchange="filterProducts()">
+                    <label for="accessories">Accessories</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="other" onchange="filterProducts()">
+                    <label for="other">Other</label>
                 </div>
             </div>
 
-            <div class="filter-section">
-                <div class="filter-title">Size</div>
-                <div class="filter-option"><input type="checkbox" id="X-small" onchange="filterProducts()"><label for="X-small">X-Small</label></div>
-                <div class="filter-option"><input type="checkbox" id="small" onchange="filterProducts()"><label for="small">Small</label></div>
-                <div class="filter-option"><input type="checkbox" id="medium" onchange="filterProducts()"><label for="medium">Medium</label></div>
-                <div class="filter-option"><input type="checkbox" id="large" onchange="filterProducts()"><label for="large">Large</label></div>
-                <div class="filter-option"><input type="checkbox" id="X-large" onchange="filterProducts()"><label for="X-large">X-Large</label></div>
+            <!-- Shoe Size Filter (pill buttons) -->
+            <div class="filter-section" id="shoe-size-section" style="display:none;">
+                <div class="filter-title">Shoe Size</div>
+                <div class="size-pills">
+                    <button class="size-pill" data-size="2" onclick="toggleSizePill(this)">2</button>
+                    <button class="size-pill" data-size="2.5" onclick="toggleSizePill(this)">2.5</button>
+                    <button class="size-pill" data-size="3" onclick="toggleSizePill(this)">3</button>
+                    <button class="size-pill" data-size="3.5" onclick="toggleSizePill(this)">3.5</button>
+                    <button class="size-pill" data-size="4" onclick="toggleSizePill(this)">4</button>
+                    <button class="size-pill" data-size="4.5" onclick="toggleSizePill(this)">4.5</button>
+                    <button class="size-pill" data-size="5" onclick="toggleSizePill(this)">5</button>
+                    <button class="size-pill" data-size="5.5" onclick="toggleSizePill(this)">5.5</button>
+                    <button class="size-pill" data-size="6" onclick="toggleSizePill(this)">6</button>
+                    <button class="size-pill" data-size="6.5" onclick="toggleSizePill(this)">6.5</button>
+                    <button class="size-pill" data-size="7" onclick="toggleSizePill(this)">7</button>
+                    <button class="size-pill" data-size="7.5" onclick="toggleSizePill(this)">7.5</button>
+                    <button class="size-pill" data-size="8" onclick="toggleSizePill(this)">8</button>
+                    <button class="size-pill" data-size="8.5" onclick="toggleSizePill(this)">8.5</button>
+                    <button class="size-pill" data-size="9" onclick="toggleSizePill(this)">9</button>
+                    <button class="size-pill" data-size="9.5" onclick="toggleSizePill(this)">9.5</button>
+                    <button class="size-pill" data-size="10" onclick="toggleSizePill(this)">10</button>
+                    <button class="size-pill" data-size="10.5" onclick="toggleSizePill(this)">10.5</button>
+                    <button class="size-pill" data-size="11" onclick="toggleSizePill(this)">11</button>
+                    <button class="size-pill" data-size="11.5" onclick="toggleSizePill(this)">11.5</button>
+                    <button class="size-pill" data-size="12" onclick="toggleSizePill(this)">12</button>
+                    <button class="size-pill" data-size="12.5" onclick="toggleSizePill(this)">12.5</button>
+                    <button class="size-pill" data-size="13" onclick="toggleSizePill(this)">13</button>
+                    <button class="size-pill" data-size="13.5" onclick="toggleSizePill(this)">13.5</button>
+                    <button class="size-pill" data-size="14" onclick="toggleSizePill(this)">14</button>
+                </div>
+            </div>
+
+            <!-- Clothing Size Filter -->
+            <div class="filter-section" id="clothing-size-section">
+                <div class="filter-title">Clothing Size</div>
+                <div class="filter-option"><input type="checkbox" id="size-xs" onchange="filterProducts()"><label for="size-xs">X-Small</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-s" onchange="filterProducts()"><label for="size-s">Small</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-m" onchange="filterProducts()"><label for="size-m">Medium</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-l" onchange="filterProducts()"><label for="size-l">Large</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-xl" onchange="filterProducts()"><label for="size-xl">X-Large</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-xxl" onchange="filterProducts()"><label for="size-xxl">XX-Large</label></div>
             </div>
 
             <div class="filter-section">
                 <div class="filter-title">Condition</div>
-                <div class="filter-option"><input type="checkbox" id="new" onchange="filterProducts()"><label for="new">New</label></div>
-                <div class="filter-option"><input type="checkbox" id="likenew" onchange="filterProducts()"><label for="likenew">Used - Like New</label></div>
-                <div class="filter-option"><input type="checkbox" id="good" onchange="filterProducts()"><label for="good">Used - Good</label></div>
-                <div class="filter-option"><input type="checkbox" id="Fair" onchange="filterProducts()"><label for="Fair">Used - Fair</label></div>
+                <div class="filter-option"><input type="checkbox" id="cond-new" onchange="filterProducts()"><label for="cond-new">New</label></div>
+                <div class="filter-option"><input type="checkbox" id="cond-likenew" onchange="filterProducts()"><label for="cond-likenew">Like New</label></div>
+                <div class="filter-option"><input type="checkbox" id="cond-good" onchange="filterProducts()"><label for="cond-good">Used - Good</label></div>
+                <div class="filter-option"><input type="checkbox" id="cond-fair" onchange="filterProducts()"><label for="cond-fair">Used - Fair</label></div>
             </div>
 
             <div class="filter-section">
                 <div class="filter-title">Price</div>
-                <div class="price-slider-labels">
-                    <span id="price-min-label">$0</span>
-                    <span id="price-max-label">$500+</span>
+                <div class="price-inputs">
+                    <div class="price-input-group">
+                        <span class="price-symbol">$</span>
+                        <input type="number" id="price-min-input" placeholder="Min" min="0" oninput="filterProducts(); updateFilterCount()">
+                    </div>
+                    <span class="price-dash">&mdash;</span>
+                    <div class="price-input-group">
+                        <span class="price-symbol">$</span>
+                        <input type="number" id="price-max-input" placeholder="Max" min="0" oninput="filterProducts(); updateFilterCount()">
+                    </div>
                 </div>
-                <input type="range" id="price-slider" min="0" max="500" value="500" step="5" oninput="onPriceSlider(this.value)" aria-label="Maximum price filter" aria-valuemin="0" aria-valuemax="500">
-                <input type="hidden" id="price-min" value="0">
-                <input type="hidden" id="price-max" value="">
             </div>
 
             <div class="filter-section">
@@ -154,15 +176,22 @@
                 <div class="filter-option"><input type="checkbox" id="adidas" onchange="filterProducts()"><label for="adidas">Adidas</label></div>
                 <div class="filter-option"><input type="checkbox" id="nike" onchange="filterProducts()"><label for="nike">Nike</label></div>
                 <div class="filter-option"><input type="checkbox" id="rudis" onchange="filterProducts()"><label for="rudis">Rudis</label></div>
+                <div class="filter-option"><input type="checkbox" id="cliff_keen" onchange="filterProducts()"><label for="cliff_keen">Cliff Keen</label></div>
+                <div class="filter-option"><input type="checkbox" id="brute" onchange="filterProducts()"><label for="brute">Brute</label></div>
+                <div class="filter-option"><input type="checkbox" id="champion" onchange="filterProducts()"><label for="champion">Champion</label></div>
+                <div class="filter-option"><input type="checkbox" id="matman" onchange="filterProducts()"><label for="matman">Matman</label></div>
+                <div class="filter-option"><input type="checkbox" id="brand-other" onchange="filterProducts()"><label for="brand-other">Other</label></div>
             </div>
         </aside>
 
         <!-- Results Area -->
         <main class="results-area">
-            <!-- Mobile Filters Button (hidden on desktop via CSS) -->
+            <!-- Mobile Filters Button -->
             <div class="mobile-filter-bar">
-                <button class="filter-toggle-btn" onclick="openFilters()">
-                    ⚙ Filters
+                <button class="filter-toggle-btn" id="filter-toggle-btn" onclick="openFilters()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;display:block"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+                    Filters
+                    <span class="filter-count-badge" id="filter-count-badge" style="display:none;"></span>
                 </button>
             </div>
 
@@ -196,15 +225,15 @@
 
             <!-- No Results -->
             <div class="no-results" id="no-results" style="display: none;">
-                <div class="no-results-icon">🔍</div>
+                <div class="no-results-icon">&#x1F50D;</div>
                 <h2 class="no-results-title">No results found</h2>
                 <p class="no-results-text">We couldn't find any items matching "<span id="no-results-query"></span>"</p>
                 <div class="no-results-suggestions">
                     <strong>Try:</strong><br>
-                    • Checking your spelling<br>
-                    • Using fewer or different keywords<br>
-                    • Browsing our categories<br>
-                    • Searching for brands like ASICS, Adidas, Nike
+                    &bull; Checking your spelling<br>
+                    &bull; Using fewer or different keywords<br>
+                    &bull; Clearing some filters<br>
+                    &bull; Searching for brands like ASICS, Adidas, Nike
                 </div>
             </div>
         </main>
@@ -240,7 +269,6 @@
                 greeting.textContent = `Hi, ${firstName}!`;
                 greeting.href = 'profile.html';
                 window._currentUser = user;
-                // Load watchlist ids
                 try {
                     const wSnap = await getDocs(collection(db, 'users', user.uid, 'watchlist'));
                     wSnap.forEach(d => window.userWatchlist.add(d.id));
@@ -252,7 +280,7 @@
             }
         });
 
-        // Watchlist toggle (called from card buttons)
+        // Watchlist toggle
         window._toggleWatchlistFirestore = async (productId, add) => {
             const user = window._currentUser;
             if (!user) { window.location.href = 'sign-in.html'; return; }
@@ -264,14 +292,11 @@
             }
         };
 
-        // Make available globally
         window.firestoreDB = db;
         window.getDocs = getDocs;
         window.collection = collection;
         window.query = query;
         window.where = where;
-
-        console.log('Firebase initialized for search page');
     </script>
 
     <script>
@@ -296,13 +321,11 @@
             window._toggleWatchlistFirestore && window._toggleWatchlistFirestore(productId, !inWatchlist);
         }
 
-        // Get search query from URL
         function getSearchQuery() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('q') || '';
         }
 
-        // Pre-check category checkbox from URL ?category= param
         function applyCategoryFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             const cat = urlParams.get('category');
@@ -310,33 +333,21 @@
             const el = document.getElementById(cat);
             if (el) {
                 el.checked = true;
-                if (cat === 'shoes') toggleSizeFilter();
+                updateSizeFilters();
             }
         }
 
-        // Load products from Firestore
         async function loadProductsFromFirestore() {
             try {
-                console.log('Loading products from Firestore...');
-
-                // Get only active products
                 const q = window.query(
                     window.collection(window.firestoreDB, 'products'),
                     window.where('active', '==', true)
                 );
-
                 const querySnapshot = await window.getDocs(q);
-
                 allProducts = [];
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-
-                    // Skip sold products
-                    if (data.sold === true) {
-                        console.log('Skipping sold product:', data.title);
-                        return;
-                    }
-
+                    if (data.sold === true) return;
                     allProducts.push({
                         id: doc.id,
                         name: data.title,
@@ -354,16 +365,10 @@
                         sold: data.sold || false
                     });
                 });
-
-                console.log(`Loaded ${allProducts.length} available products from Firestore`);
                 currentProducts = [...allProducts];
-
-                // Hide loading, show content
                 document.getElementById('loading-state').style.display = 'none';
                 document.getElementById('results-header').style.display = 'flex';
-
                 filterProducts();
-
             } catch (error) {
                 console.error('Error loading products:', error);
                 document.getElementById('loading-state').innerHTML =
@@ -372,37 +377,25 @@
         }
 
         function getShippingDisplay(product) {
-            if (product.shippingMethod === 'free') {
-                return 'Free shipping';
-            } else {
-                const cost = product.shippingCost || 0;
-                return `+$${cost.toFixed(2)} shipping`;
-            }
+            if (product.shippingMethod === 'free') return 'Free shipping';
+            const cost = product.shippingCost || 0;
+            return `+$${cost.toFixed(2)} shipping`;
         }
 
         function getCategoryIcon(category) {
             const icons = {
-                'shoes': '👟',
-                'singlets': '🤼',
-                'warmups': '🧥',
-                'shirts': '👕',
-                'bottoms': '🩳',
-                'accessories': '🎒',
-                'other': '📦'
+                'shoes': '👟', 'singlets': '🤼', 'warmups': '🧥',
+                'shirts': '👕', 'bottoms': '🩳', 'accessories': '🎒', 'other': '📦'
             };
             return icons[category] || '📦';
         }
 
-        // Initialize page
         function initializePage() {
             searchQuery = getSearchQuery();
             document.getElementById('search-input').value = searchQuery;
             document.getElementById('search-query-breadcrumb').textContent = searchQuery ? `"${searchQuery}"` : 'All Items';
             document.getElementById('no-results-query').textContent = searchQuery;
-
             applyCategoryFromURL();
-
-            // Load products from Firestore
             loadProductsFromFirestore();
         }
 
@@ -419,133 +412,173 @@
             document.body.style.overflow = '';
         }
 
-        // Perform new search
         function performSearch() {
-            const query = document.getElementById('search-input').value.trim();
-            window.location.href = query ? 'search.html?q=' + encodeURIComponent(query) : 'search.html';
+            const q = document.getElementById('search-input').value.trim();
+            window.location.href = q ? 'search.html?q=' + encodeURIComponent(q) : 'search.html';
         }
 
-        // Toggle size filter visibility
-        function toggleSizeFilter() {
-            const shoesChecked = document.getElementById('shoes')?.checked;
-            const sizeFilter = document.getElementById('size-filter');
-
-            if (shoesChecked) {
-                sizeFilter.style.display = 'block';
-            } else {
-                sizeFilter.style.display = 'none';
-            }
-        }
-
-        // Enter key search
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('search-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    performSearch();
-                }
-            });
-            initializePage();
-        });
-
-        // Price slider handler
-        function onPriceSlider(value) {
-            const intVal = parseInt(value);
-            const maxEl = document.getElementById('price-max-label');
-            const maxInput = document.getElementById('price-max');
-            if (intVal >= 500) {
-                maxEl.textContent = '$500+';
-                maxInput.value = '';
-            } else {
-                maxEl.textContent = '$' + intVal;
-                maxInput.value = intVal;
-            }
+        // Shoe size pill toggle
+        function toggleSizePill(btn) {
+            btn.classList.toggle('selected');
             filterProducts();
+            updateFilterCount();
+        }
+
+        // Show/hide size filter sections based on selected categories
+        function updateSizeFilters() {
+            const shoesChecked = document.getElementById('shoes')?.checked;
+            const clothingCats = ['singlets', 'warmups', 'shirts', 'bottoms'];
+            const clothingChecked = clothingCats.some(c => document.getElementById(c)?.checked);
+            const noCatChecked = !shoesChecked && !clothingChecked;
+
+            document.getElementById('shoe-size-section').style.display =
+                (shoesChecked || noCatChecked) ? 'block' : 'none';
+            document.getElementById('clothing-size-section').style.display =
+                (clothingChecked || noCatChecked) ? 'block' : 'none';
+        }
+
+        // Count active filters and update the badge + clear button
+        function updateFilterCount() {
+            let count = 0;
+            ['shoes','singlets','warmups','shirts','bottoms','accessories','other'].forEach(id => {
+                if (document.getElementById(id)?.checked) count++;
+            });
+            document.querySelectorAll('.size-pill.selected').forEach(() => count++);
+            ['size-xs','size-s','size-m','size-l','size-xl','size-xxl'].forEach(id => {
+                if (document.getElementById(id)?.checked) count++;
+            });
+            ['cond-new','cond-likenew','cond-good','cond-fair'].forEach(id => {
+                if (document.getElementById(id)?.checked) count++;
+            });
+            ['asics','adidas','nike','rudis','cliff_keen','brute','champion','matman','brand-other'].forEach(id => {
+                if (document.getElementById(id)?.checked) count++;
+            });
+            const minP = parseFloat(document.getElementById('price-min-input')?.value);
+            const maxP = parseFloat(document.getElementById('price-max-input')?.value);
+            if (!isNaN(minP) && minP > 0) count++;
+            if (!isNaN(maxP) && maxP > 0) count++;
+
+            const badge = document.getElementById('filter-count-badge');
+            const clearBar = document.getElementById('clear-filters-bar');
+            if (count > 0) {
+                if (badge) { badge.textContent = count; badge.style.display = 'inline-flex'; }
+                if (clearBar) clearBar.style.display = 'block';
+            } else {
+                if (badge) badge.style.display = 'none';
+                if (clearBar) clearBar.style.display = 'none';
+            }
+        }
+
+        // Clear all filters
+        function clearAllFilters() {
+            ['shoes','singlets','warmups','shirts','bottoms','accessories','other',
+             'size-xs','size-s','size-m','size-l','size-xl','size-xxl',
+             'cond-new','cond-likenew','cond-good','cond-fair',
+             'asics','adidas','nike','rudis','cliff_keen','brute','champion','matman','brand-other'
+            ].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
+            document.querySelectorAll('.size-pill.selected').forEach(p => p.classList.remove('selected'));
+            const minEl = document.getElementById('price-min-input');
+            const maxEl = document.getElementById('price-max-input');
+            if (minEl) minEl.value = '';
+            if (maxEl) maxEl.value = '';
+            updateSizeFilters();
+            filterProducts();
+            updateFilterCount();
         }
 
         // Filter products
         function filterProducts() {
             let filtered = [...allProducts];
 
-            // Filter by search query
+            // Search query
             if (searchQuery) {
-                filtered = filtered.filter(p =>
-                    p.name.toLowerCase().includes(searchQuery.toLowerCase())
-                );
+                const q = searchQuery.toLowerCase();
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(q));
             }
 
-            // Filter by category
+            // Category
             const selectedCategories = [];
-            ['shoes', 'singlets', 'warmups', 'shirts', 'bottoms'].forEach(cat => {
-                if (document.getElementById(cat)?.checked) {
-                    selectedCategories.push(cat);
-                }
+            ['shoes','singlets','warmups','shirts','bottoms','accessories','other'].forEach(cat => {
+                if (document.getElementById(cat)?.checked) selectedCategories.push(cat);
             });
             if (selectedCategories.length > 0) {
                 filtered = filtered.filter(p => selectedCategories.includes(p.category));
             }
 
-            // Filter by shoe size
+            // Shoe size (pills)
             const selectedSizes = [];
-            ['size-2', 'size-2.5', 'size-3', 'size-3.5', 'size-4', 'size-4.5', 'size-5', 'size-5.5', 'size-6', 'size-6.5', 'size-7', 'size-7.5', 'size-8', 'size-8.5', 'size-9', 'size-9.5', 'size-10', 'size-10.5', 'size-11', 'size-11.5', 'size-12', 'size-12.5', 'size-13', 'size-13.5', 'size-14'].forEach(sizeId => {
-                if (document.getElementById(sizeId)?.checked) {
-                    const size = sizeId.replace('size-', '');
-                    selectedSizes.push(size);
-                }
-            });
-
+            document.querySelectorAll('.size-pill.selected').forEach(p => selectedSizes.push(p.dataset.size));
             if (selectedSizes.length > 0) {
                 filtered = filtered.filter(p => {
                     if (!p.size) return false;
-                    const productSize = p.size.toString().toLowerCase();
-                    return selectedSizes.some(s => productSize.includes(s));
+                    const ps = p.size.toString().toLowerCase();
+                    return selectedSizes.some(s => ps.includes(s));
                 });
             }
 
-            // Filter by condition
-            const selectedConditions = [];
-            [['new', 'new'], ['likenew', 'likenew'], ['good', 'good'], ['Fair', 'fair']].forEach(([id, val]) => {
-                if (document.getElementById(id)?.checked) {
-                    selectedConditions.push(val);
-                }
-            });
-            if (selectedConditions.length > 0) {
-                filtered = filtered.filter(p => selectedConditions.includes((p.condition || '').toLowerCase()));
+            // Clothing size
+            const clothingSizeMap = {
+                'size-xs': ['xs', 'x-small', 'xsmall', 'extra small'],
+                'size-s':  ['small', ' s ', '"s"'],
+                'size-m':  ['medium', ' m '],
+                'size-l':  ['large', ' l '],
+                'size-xl': ['xl', 'x-large', 'xlarge', 'extra large'],
+                'size-xxl':['xxl', 'xx-large', 'xxlarge', '2xl']
+            };
+            const selectedClothing = Object.entries(clothingSizeMap)
+                .filter(([id]) => document.getElementById(id)?.checked)
+                .map(([, vals]) => vals);
+            if (selectedClothing.length > 0) {
+                filtered = filtered.filter(p => {
+                    const ps = (p.size || '').toLowerCase();
+                    return selectedClothing.some(vals => vals.some(v => ps.includes(v)));
+                });
             }
 
-            // Filter by brand
-            const selectedBrands = [];
-            ['asics', 'adidas', 'nike', 'rudis'].forEach(brand => {
-                if (document.getElementById(brand)?.checked) {
-                    selectedBrands.push(brand);
-                }
-            });
+            // Condition
+            const condMap = {
+                'cond-new': 'new',
+                'cond-likenew': 'likenew',
+                'cond-good': 'good',
+                'cond-fair': 'fair'
+            };
+            const selectedConds = Object.entries(condMap)
+                .filter(([id]) => document.getElementById(id)?.checked)
+                .map(([, val]) => val);
+            if (selectedConds.length > 0) {
+                filtered = filtered.filter(p => selectedConds.includes((p.condition || '').toLowerCase()));
+            }
+
+            // Brand
+            const brandMap = {
+                'asics': 'asics', 'adidas': 'adidas', 'nike': 'nike', 'rudis': 'rudis',
+                'cliff_keen': 'cliff keen', 'brute': 'brute', 'champion': 'champion', 'matman': 'matman'
+            };
+            const selectedBrands = Object.entries(brandMap)
+                .filter(([id]) => document.getElementById(id)?.checked)
+                .map(([, val]) => val);
+            if (document.getElementById('brand-other')?.checked) selectedBrands.push('other');
             if (selectedBrands.length > 0) {
-                filtered = filtered.filter(p => selectedBrands.includes(p.brand));
+                filtered = filtered.filter(p => selectedBrands.includes((p.brand || 'other').toLowerCase()));
             }
 
-            // Filter by price
-            const minPrice = parseFloat(document.getElementById('price-min')?.value) || 0;
-            const maxPrice = parseFloat(document.getElementById('price-max')?.value) || Infinity;
+            // Price
+            const minPrice = parseFloat(document.getElementById('price-min-input')?.value) || 0;
+            const maxPrice = parseFloat(document.getElementById('price-max-input')?.value) || Infinity;
             filtered = filtered.filter(p => p.price >= minPrice && p.price <= maxPrice);
 
             currentProducts = filtered;
+            updateFilterCount();
             displayProducts();
         }
 
         // Sort products
         function sortProducts(sortType) {
             switch(sortType) {
-                case 'price-low':
-                    currentProducts.sort((a, b) => a.price - b.price);
-                    break;
-                case 'price-high':
-                    currentProducts.sort((a, b) => b.price - a.price);
-                    break;
-                case 'newest':
-                    currentProducts.reverse();
-                    break;
-                default:
-                    break;
+                case 'price-low':  currentProducts.sort((a, b) => a.price - b.price); break;
+                case 'price-high': currentProducts.sort((a, b) => b.price - a.price); break;
+                case 'newest':     currentProducts.reverse(); break;
+                default: break;
             }
             displayProducts();
         }
@@ -561,7 +594,7 @@
                 const inWatchlist = userWatchlist.has(product.id);
                 const heartHtml = `<button class="heart-btn" onclick="event.stopPropagation(); toggleWatchlistCard('${product.id}', this)" title="${inWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}">${inWatchlist ? '❤️' : '🤍'}</button>`;
                 const trustBadge = product.sellerRating >= 4.5 ? '<span class="trust-badge">Top Seller</span>' : '';
-                const locationText = product.zipCode ? `· Ships from ${esc(product.zipCode)}` : '';
+                const locationText = product.zipCode ? ` &middot; Ships from ${esc(product.zipCode)}` : '';
                 return `
                     <a class="product-item ${soldClass}" href="productdetail.html?id=${esc(product.id)}" style="text-decoration:none;color:inherit;">
                         ${soldBadge}
@@ -578,7 +611,6 @@
             }).join('');
         }
 
-        // Display products
         function displayProducts() {
             const container = document.getElementById('products-container');
             const noResults = document.getElementById('no-results');
@@ -594,10 +626,8 @@
                 container.style.display = 'grid';
                 noResults.style.display = 'none';
                 resultsCount.innerHTML = `<strong>${currentProducts.length} result${currentProducts.length !== 1 ? 's' : ''}</strong>`;
-
                 displayedCount = Math.min(SEARCH_PAGE_SIZE, currentProducts.length);
                 container.innerHTML = renderProductSlice(currentProducts.slice(0, displayedCount));
-
                 if (currentProducts.length > displayedCount) {
                     loadMoreWrapper.style.display = 'block';
                     document.getElementById('load-more-btn').textContent = 'Load More';
@@ -613,12 +643,9 @@
             const nextCount = Math.min(displayedCount + SEARCH_PAGE_SIZE, currentProducts.length);
             container.insertAdjacentHTML('beforeend', renderProductSlice(currentProducts.slice(displayedCount, nextCount)));
             displayedCount = nextCount;
-            if (displayedCount >= currentProducts.length) {
-                loadMoreWrapper.style.display = 'none';
-            }
+            if (displayedCount >= currentProducts.length) loadMoreWrapper.style.display = 'none';
         }
 
-        // Format condition text
         function esc(s) {
             return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
@@ -628,14 +655,16 @@
             return (u.startsWith('https://') || u.startsWith('http://')) ? u : '';
         }
         function formatCondition(condition) {
-            const conditions = {
-                'new': 'New',
-                'good': 'Used - Good',
-                'likenew': 'Like New',
-                'fair': 'Fair'
-            };
+            const conditions = { 'new': 'New', 'good': 'Used - Good', 'likenew': 'Like New', 'fair': 'Used - Fair' };
             return conditions[condition] || esc(condition);
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') performSearch();
+            });
+            initializePage();
+        });
     </script>
     <script type="module" src="js/site-notice.js"></script>
     <script type="module" src="js/notifications.js"></script>

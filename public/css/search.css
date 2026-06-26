@@ -3,46 +3,29 @@
     background-color: #f7f7f7;
 }
 
-.top-bar-btn {
-    background: #f7f7f7;
-}
-
-.top-bar-btn:hover {
-    background: #e5e5e5;
-}
-
 .container {
     display: flex;
     gap: 20px;
 }
 
-.size-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 16px;
-}
-
-.size-grid .filter-option {
-    margin: 4px 0;
-}
-
-/* Product item for search results */
+/* ── Product cards ── */
 .product-item {
     background: #fff;
     border: 1px solid #e5e5e5;
-    border-radius: 4px;
+    border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
-    transition: box-shadow 0.2s;
+    transition: box-shadow 0.2s, transform 0.15s;
     position: relative;
 }
 
 .product-item:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    transform: translateY(-1px);
 }
 
 .product-item.sold {
-    opacity: 0.7;
+    opacity: 0.65;
 }
 
 .product-img {
@@ -68,38 +51,28 @@
 
 .product-name {
     font-size: 14px;
-    color: #333;
-    margin-bottom: 8px;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin-bottom: 6px;
     height: 40px;
     overflow: hidden;
     line-height: 1.4;
 }
 
-.no-results-suggestions {
-    text-align: left;
-    max-width: 400px;
-    margin: 0 auto;
-    color: #707070;
-    font-size: 14px;
-    line-height: 1.8;
+.product-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: #c0392b;
+    margin-bottom: 3px;
 }
 
-/* Price slider */
-.price-slider-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: #555;
-    margin-bottom: 6px;
+.product-condition {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
 }
 
-#price-slider {
-    width: 100%;
-    accent-color: #c0392b;
-    cursor: pointer;
-}
-
-/* Trust signals */
+/* ── Trust / seller info ── */
 .seller-trust {
     display: flex;
     align-items: center;
@@ -118,16 +91,12 @@
     font-weight: 600;
 }
 
-/* Watchlist heart on cards */
-.product-item {
-    position: relative;
-}
-
+/* ── Watchlist heart ── */
 .heart-btn {
     position: absolute;
     top: 8px;
     right: 8px;
-    background: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.88);
     border: none;
     border-radius: 50%;
     width: 32px;
@@ -139,21 +108,155 @@
     font-size: 17px;
     z-index: 2;
     transition: transform 0.15s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
 }
 
-.heart-btn:hover {
-    transform: scale(1.15);
+.heart-btn:hover { transform: scale(1.18); }
+
+/* ── No results ── */
+.no-results-suggestions {
+    text-align: left;
+    max-width: 400px;
+    margin: 0 auto;
+    color: #707070;
+    font-size: 14px;
+    line-height: 1.8;
 }
 
-/* ── Mobile filter drawer ── */
+/* ── Clear all filters button ── */
+.clear-filters-btn {
+    background: none;
+    border: 1px solid #d1d1d1;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
+}
+
+.clear-filters-btn:hover {
+    background: #f5f5f5;
+    color: #222;
+}
+
+/* ── Shoe size pills ── */
+.size-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.size-pill {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 5px 9px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    background: #fff;
+    color: #333;
+    font-family: inherit;
+    transition: all 0.15s;
+    min-width: 38px;
+    text-align: center;
+    line-height: 1;
+}
+
+.size-pill:hover:not(.selected) {
+    border-color: #aaa;
+    background: #f5f5f5;
+}
+
+.size-pill.selected {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+}
+
+/* ── Price inputs ── */
+.price-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.price-input-group {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+    flex: 1;
+    background: #fff;
+    transition: border-color 0.15s;
+}
+
+.price-input-group:focus-within {
+    border-color: #c0392b;
+}
+
+.price-symbol {
+    padding: 0 6px;
+    font-size: 13px;
+    color: #777;
+    background: #f7f7f7;
+    border-right: 1px solid #ddd;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+}
+
+.price-input-group input[type="number"] {
+    border: none;
+    outline: none;
+    padding: 7px 8px;
+    font-size: 14px;
+    font-family: inherit;
+    width: 100%;
+    -moz-appearance: textfield;
+}
+
+.price-input-group input[type="number"]::-webkit-outer-spin-button,
+.price-input-group input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+.price-dash {
+    color: #aaa;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* ── Mobile filter button ── */
 .mobile-filter-bar {
-    display: none; /* hidden on desktop */
+    display: none;
 }
 
 .filter-toggle-btn {
     display: none;
 }
 
+/* ── Filter count badge ── */
+.filter-count-badge {
+    background: #c0392b;
+    color: #fff;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    font-weight: 700;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    margin-left: 2px;
+}
+
+/* ── Filter overlay ── */
 .filter-overlay {
     display: none;
     position: fixed;
@@ -170,12 +273,12 @@
     display: none;
 }
 
+/* ── Responsive ── */
 @media (max-width: 768px) {
     .container {
         flex-direction: column;
     }
 
-    /* Hide sidebar by default; shown as drawer when toggled */
     .sidebar {
         display: none;
         position: fixed;
@@ -183,12 +286,13 @@
         left: 0;
         right: 0;
         z-index: 999;
-        max-height: 78vh;
+        max-height: 80vh;
         overflow-y: auto;
         border-radius: 18px 18px 0 0;
         box-shadow: 0 -6px 32px rgba(0,0,0,0.18);
-        padding: 0 20px 80px;
+        padding: 0 20px 90px;
         width: 100%;
+        background: #fff;
     }
 
     .sidebar.drawer-open {

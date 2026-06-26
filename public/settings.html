@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/settings.css">
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
+    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
 </head>
 <body>
     <!-- Top Bar -->
@@ -354,19 +356,40 @@
                     document.getElementById('user-bio').value = d.bio || '';
                     document.getElementById('user-location').value = d.location || '';
 
-                    // Stripe — three states: not connected / connected but incomplete / fully set up
-                    if (d.stripeAccountId && d.stripePayoutsEnabled) {
-                        // Fully set up
-                        document.getElementById('stripe-status').innerHTML = '<span style="color:#28a745;">✓ Connected &amp; Active</span>';
-                        document.getElementById('stripe-manage-btn').style.display = 'inline-block';
-                        document.getElementById('payouts-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
-                        if (d.stripeChargesEnabled)
-                            document.getElementById('charges-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
-                    } else if (d.stripeAccountId) {
-                        // Account exists but setup not complete
-                        document.getElementById('stripe-status').innerHTML = '<span style="color:#f59e0b;">⚠ Setup Incomplete</span>';
-                        document.getElementById('stripe-incomplete-warning').style.display = 'block';
-                        document.getElementById('stripe-manage-btn').style.display = 'inline-block';
+                    // Stripe — always get live status from Stripe API so the display
+                    // reflects reality, not a stale Firestore cache.
+                    if (d.stripeAccountId) {
+                        document.getElementById('stripe-status').innerHTML = '<span style="color:#999;">Checking...</span>';
+                        try {
+                            const idToken = await user.getIdToken();
+                            const resp = await fetch('https://us-central1-grappletrade.cloudfunctions.net/checkSellerStatus', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                                body: JSON.stringify({ userId: user.uid }),
+                            });
+                            const status = resp.ok ? await resp.json() : null;
+                            if (status && status.payoutsEnabled) {
+                                document.getElementById('stripe-status').innerHTML = '<span style="color:#28a745;">✓ Connected &amp; Active</span>';
+                                document.getElementById('stripe-manage-btn').style.display = 'inline-block';
+                                document.getElementById('payouts-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
+                                if (status.chargesEnabled)
+                                    document.getElementById('charges-enabled').innerHTML = '<span style="color:#28a745;">✓ Yes</span>';
+                            } else {
+                                document.getElementById('stripe-status').innerHTML = '<span style="color:#f59e0b;">⚠ Setup Incomplete</span>';
+                                document.getElementById('stripe-incomplete-warning').style.display = 'block';
+                                document.getElementById('stripe-manage-btn').style.display = 'inline-block';
+                            }
+                        } catch (_) {
+                            // Fallback to cached Firestore value if the live check fails
+                            if (d.stripePayoutsEnabled) {
+                                document.getElementById('stripe-status').innerHTML = '<span style="color:#28a745;">✓ Connected &amp; Active</span>';
+                                document.getElementById('stripe-manage-btn').style.display = 'inline-block';
+                            } else {
+                                document.getElementById('stripe-status').innerHTML = '<span style="color:#f59e0b;">⚠ Setup Incomplete</span>';
+                                document.getElementById('stripe-incomplete-warning').style.display = 'block';
+                                document.getElementById('stripe-manage-btn').style.display = 'inline-block';
+                            }
+                        }
                     } else {
                         // Not connected at all
                         document.getElementById('stripe-connect-btn').style.display = 'inline-block';

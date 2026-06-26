@@ -14,30 +14,7 @@
  *   dismissible: boolean  — whether the ✕ button appears
  */
 
-// ── Sentry error monitoring ───────────────────────────────────────────────────
-// To enable: replace SENTRY_DSN_PLACEHOLDER with your real DSN from sentry.io
-//   1. Create a free Browser JavaScript project at https://sentry.io
-//   2. Copy the DSN (looks like https://abc123@o123456.ingest.sentry.io/789)
-//   3. Replace the value below and redeploy
-const SENTRY_DSN = 'SENTRY_DSN_PLACEHOLDER';
-
-(function initSentry() {
-    if (!SENTRY_DSN || SENTRY_DSN === 'SENTRY_DSN_PLACEHOLDER') return;
-    const script = document.createElement('script');
-    script.src = 'https://browser.sentry-cdn.com/8.38.0/bundle.tracing.min.js';
-    script.crossOrigin = 'anonymous';
-    script.onload = function () {
-        if (window.Sentry) {
-            window.Sentry.init({
-                dsn: SENTRY_DSN,
-                environment: 'production',
-                tracesSampleRate: 0.1,
-            });
-        }
-    };
-    document.head.appendChild(script);
-})();
-// ─────────────────────────────────────────────────────────────────────────────
+// Sentry is initialized via <script> tag in each HTML page's <head>
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";

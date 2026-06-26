@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +16,8 @@
     <link rel="stylesheet" href="css/layout.css">
     <script src="https://js.stripe.com/v3/"></script>
     <link rel="stylesheet" href="css/checkout.css">
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
+    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
 </head>
 <body>
     <!-- Auth required notice (shown when accessing checkout without signing in) -->
@@ -131,7 +133,6 @@
         // CLOUD FUNCTION URLS
         // ============================================
         const SHIPPO_GET_RATES_URL = 'https://us-central1-grappletrade.cloudfunctions.net/shippoGetRates';
-        const SHIPPO_CREATE_LABEL_URL = 'https://us-central1-grappletrade.cloudfunctions.net/shippoCreateLabel';
         const COMPLETE_ORDER_URL = 'https://us-central1-grappletrade.cloudfunctions.net/completeOrder';
         const RECORD_ABANDONED_CART_URL = 'https://us-central1-grappletrade.cloudfunctions.net/recordAbandonedCart';
         const STRIPE_PUBLISHABLE_KEY = 'pk_live_51SVksvGjf88NEQS10ZpIJ0zWBlJ13xbPRvosRWKIOZA10eHIH4p9s1NKrSkwshF9b1IDDS9Uz0w2bnDku3jbG0Jk00zpYZlCNk';
@@ -613,48 +614,6 @@
             }
         }
 
-        /**
-         * Create a shipping label after successful payment (via Cloud Function)
-         */
-        async function createShippingLabel() {
-            try {
-                // Get Firebase auth token (required by Cloud Function)
-                const idToken = await window.getIdToken();
-                if (!idToken) throw new Error('Not authenticated');
-
-                // Purchase the shipping label using Cloud Function
-                const response = await fetch(SHIPPO_CREATE_LABEL_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${idToken}`,
-                    },
-                    body: JSON.stringify({
-                        rateObjectId: selectedShippingRate.object_id,
-                        labelFileType: 'PDF',
-                        async: false,
-                        productId: checkoutProduct.id,
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `Server error: ${response.status}`);
-                }
-
-                const transaction = await response.json();
-
-                if (transaction.status === 'SUCCESS') {
-                    return transaction;
-                } else {
-                    throw new Error(transaction.messages?.[0]?.text || 'Failed to create shipping label');
-                }
-
-            } catch (error) {
-                console.error('Error creating shipping label:', error);
-                throw error;
-            }
-        }
 
         // ============================================
         // COMPLETE ORDER VIA CLOUD FUNCTION
@@ -876,22 +835,13 @@
 
                     if (paymentIntent && paymentIntent.status === 'succeeded') {
                         // Normal path — no redirect (cards, Apple Pay, Google Pay)
+                        // Note: shipping label is purchased by the seller from their fulfillment page,
+                        // not here — shippoCreateLabel requires seller auth.
 
-                        // Step 4: Create shipping label
-                        submitButton.textContent = 'Creating shipping label...';
-                        updatePaymentOverlay('Payment Confirmed!', 'Creating your shipping label — almost done, do not close this page.');
-
-                        let shippingInfo = null;
-                        try {
-                            shippingInfo = await createShippingLabel();
-                        } catch (labelError) {
-                            console.error('Failed to create shipping label:', labelError);
-                            alert('Payment successful! Note: Shipping label creation failed — we will create it manually and email it to you.');
-                        }
-
-                        // Step 5: Complete order (marks item sold, emails buyer & seller)
-                        updatePaymentOverlay('Finalizing Your Order', 'Your order is being confirmed — almost there!');
-                        const orderSuccess = await completeOrder(checkoutProduct.id, paymentIntent.id, shippingInfo);
+                        // Step 4: Complete order (marks item sold, emails buyer & seller)
+                        updatePaymentOverlay('Payment Confirmed!', 'Finalizing your order — almost there, do not close this page.');
+                        submitButton.textContent = 'Finalizing order...';
+                        const orderSuccess = await completeOrder(checkoutProduct.id, paymentIntent.id, null);
                         if (!orderSuccess) {
                             hidePaymentOverlay();
                             document.getElementById('card-errors').textContent =
@@ -901,12 +851,9 @@
                             return;
                         }
 
-                        // Step 6: Save receipt data and redirect
+                        // Step 5: Save receipt data and redirect
                         sessionStorage.setItem('orderInfo', JSON.stringify({
                             orderId: paymentIntent.id,
-                            trackingNumber: shippingInfo?.tracking_number,
-                            trackingUrl: shippingInfo?.tracking_url_provider,
-                            labelUrl: shippingInfo?.label_url,
                             shippingService: selectedShippingRate
                                 ? `${selectedShippingRate.provider} ${selectedShippingRate.servicelevel.name}`
                                 : 'Standard Shipping',
