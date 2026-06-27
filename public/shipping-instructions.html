@@ -14,19 +14,16 @@
     <link rel="stylesheet" href="css/base.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fraunces:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/shipping-instructions.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
-    <!-- MODAL OVERLAY: Dark background -->
     <div class="modal-overlay" id="modalOverlay">
         
-        <!-- MODAL CONTAINER: White popup box -->
         <div class="modal-container">
             
-            <!-- HEADER: Green section with title -->
             <div class="modal-header">
-                <button class="close-button" onclick="closeModal()" aria-label="Close modal">&times;</button>
+                <button class="close-button" data-onclick="closeModal" aria-label="Close modal">&times;</button>
                 <div class="header-content">
                     <div class="success-icon">🎉</div>
                     <h1>Seller Shipping Instructions</h1>
@@ -34,10 +31,8 @@
                 </div>
             </div>
 
-            <!-- MAIN CONTENT: All the instruction steps -->
             <div class="modal-content">
                 
-                <!-- STEP 1 -->
                 <div class="instruction-step">
                     <div class="step-header">
                         <span class="step-number">1</span>
@@ -53,7 +48,6 @@
                     </div>
                 </div>
 
-                <!-- STEP 2 -->
                 <div class="instruction-step">
                     <div class="step-header">
                         <span class="step-number">2</span>
@@ -69,7 +63,6 @@
                     </div>
                 </div>
 
-                <!-- STEP 3 -->
                 <div class="instruction-step">
                     <div class="step-header">
                         <span class="step-number">3</span>
@@ -89,7 +82,6 @@
                     </div>
                 </div>
 
-                <!-- STEP 4 -->
                 <div class="instruction-step">
                     <div class="step-header">
                         <span class="step-number">4</span>
@@ -105,7 +97,6 @@
                     </div>
                 </div>
 
-                <!-- STEP 5 -->
                 <div class="instruction-step">
                     <div class="step-header">
                         <span class="step-number">5</span>
@@ -121,7 +112,6 @@
                     </div>
                 </div>
 
-                <!-- STEP 6 -->
                 <div class="instruction-step">
                     <div class="step-header">
                         <span class="step-number">6</span>
@@ -137,7 +127,6 @@
                     </div>
                 </div>
 
-                <!-- STEP 7 -->
                 <div class="instruction-step">
                     <div class="step-header">
                         <span class="step-number">7</span>
@@ -154,71 +143,15 @@
 
             </div>
 
-            <!-- FOOTER: Action buttons -->
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="goToDashboard()">Go to Seller Dashboard</button>
-                <button class="btn btn-secondary" onclick="printInstructions()">Print These Instructions</button>
+                <button class="btn btn-primary" data-onclick="goToDashboard">Go to Seller Dashboard</button>
+                <button class="btn btn-secondary" data-onclick="printInstructions">Print These Instructions</button>
             </div>
 
         </div>
     </div>
 
-    <!-- ========================================
-         JAVASCRIPT
-         This makes the page interactive
-         ======================================== -->
-    <script>
-        // FUNCTION: Close the modal
-        // This redirects the user to index.html after a fade-out animation
-        function closeModal() {
-            // Add a fade-out animation
-            const overlay = document.getElementById('modalOverlay');
-            overlay.style.animation = 'fadeOut 0.3s ease-out';
-            
-            // Wait for animation to finish (300ms), then redirect
-            setTimeout(() => {
-                // Redirect to index.html
-                window.location.href = 'index.html';
-            }, 300);
-        }
-
-        // Add the fade-out animation to our stylesheet dynamically
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeOut {
-                from { opacity: 1; }
-                to { opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // FUNCTION: Go to seller dashboard
-        // Replace this URL with your actual dashboard URL
-        function goToDashboard() {
-            window.location.href = 'listings-manager.html';
-        }
-
-        // FUNCTION: Print the instructions
-        // Opens the browser's print dialog
-        function printInstructions() {
-            window.print();
-        }
-
-        // OPTIONAL: Close modal when clicking outside the white box
-        document.getElementById('modalOverlay').addEventListener('click', function(event) {
-            // Only close if the click was on the overlay itself, not the modal container
-            if (event.target === this) {
-                closeModal();
-            }
-        });
-
-        // OPTIONAL: Close modal when pressing Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeModal();
-            }
-        });
-    </script>
+    <script src="js/shipping-instructions.js"></script>
     <script type="module" src="js/site-notice.js"></script>
 </body>
 </html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dispute Management — GrappleTrade Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+  <script src="js/sentry-init.js"></script>
+  <style>
+    body { background: #f4f4f4; font-family: 'DM Sans', sans-serif; margin: 0; padding: 0; }
+    .admin-header {
+      background: #1a1a2e; color: white; padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .admin-header h1 { margin: 0; font-size: 20px; }
+    .admin-header .badge { background: #c41e3a; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+    .stats-row { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .stat-card { background: white; border-radius: 10px; padding: 20px 24px; flex: 1; min-width: 150px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .stat-card .num { font-size: 32px; font-weight: 700; color: #c41e3a; }
+    .stat-card .label { color: #666; font-size: 14px; margin-top: 4px; }
+    .filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .filter-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 14px; font-family: inherit; }
+    .filter-btn.active { background: #c41e3a; color: white; border-color: #c41e3a; }
+    .dispute-card {
+      background: white; border-radius: 10px; padding: 20px; margin-bottom: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-left: 4px solid #ccc;
+    }
+    .dispute-card.dispute { border-left-color: #c41e3a; }
+    .dispute-card.refund { border-left-color: #ff8f00; }
+    .dispute-card.flagged { border-left-color: #6c3483; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+    .card-title { font-weight: 600; font-size: 16px; color: #1a1a2e; }
+    .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-right: 6px; }
+    .tag.dispute { background: #fde8e8; color: #c41e3a; }
+    .tag.refund { background: #fff8e1; color: #e65100; }
+    .tag.flagged { background: #f3e5f5; color: #6c3483; }
+    .tag.delivered { background: #e8f5e9; color: #2e7d32; }
+    .tag.shipped { background: #e3f2fd; color: #1565c0; }
+    .tag.pending { background: #f5f5f5; color: #555; }
+    .card-meta { font-size: 13px; color: #666; line-height: 1.7; }
+    .card-meta strong { color: #333; }
+    .card-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; }
+    .btn-primary { background: #c41e3a; color: white; }
+    .btn-outline { background: white; color: #333; border: 1px solid #ddd; }
+    .btn-refund { background: #ff8f00; color: white; }
+    .btn:hover { opacity: 0.88; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #888; }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    #loading { text-align: center; padding: 60px; color: #888; }
+    #auth-wall { display: none; text-align: center; padding: 80px 20px; }
+    .search-bar { width: 100%; padding: 10px 16px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; font-family: inherit; margin-bottom: 20px; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+
+<div class="admin-header">
+  <h1>GrappleTrade Admin</h1>
+  <span class="badge">Dispute Management</span>
+</div>
+
+<div id="auth-wall">
+  <div style="font-size:48px;">🔒</div>
+  <h2>Admin Access Required</h2>
+  <p>You must be signed in as an administrator to view this page.</p>
+  <a href="sign-in.html" style="color:#c41e3a;">Sign In</a>
+</div>
+
+<div id="loading">Loading disputes...</div>
+
+<div class="container" id="main-content" style="display:none;">
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card">
+      <div class="num" id="stat-disputes">—</div>
+      <div class="label">Open Disputes</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="stat-refunds">—</div>
+      <div class="label">Refund Requests</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="stat-flagged">—</div>
+      <div class="label">Flagged Conversations</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="stat-total">—</div>
+      <div class="label">Total Action Items</div>
+    </div>
+  </div>
+
+  <input type="text" class="search-bar" id="search-bar" placeholder="Search by product name, order ID, or user ID...">
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="dispute">Disputes</button>
+    <button class="filter-btn" data-filter="refund">Refund Requests</button>
+    <button class="filter-btn" data-filter="flagged">Flagged Messages</button>
+  </div>
+
+  <div id="dispute-list"></div>
+</div>
+
+<script type="module" src="js/admin-disputes.js"></script>
+</body>
+</html>

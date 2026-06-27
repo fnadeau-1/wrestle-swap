@@ -1,6 +1,31 @@
 User-agent: *
+# Admin / internal tools
 Disallow: /fin.html
-Disallow: /admin.html
+Disallow: /admin-disputes.html
+Disallow: /data-export.html
+
+# Auth flows
+Disallow: /sign-in.html
+Disallow: /forgot.html
+
+# Checkout / transactional
 Disallow: /checkout.html
+Disallow: /cart.html
+Disallow: /order-confirmation.html
+Disallow: /stripe-express-prompt.html
+
+# User account pages
+Disallow: /settings.html
+Disallow: /my-orders.html
+Disallow: /listings-manager.html
+Disallow: /seller-order-fulfillment.html
+Disallow: /messages.html
+Disallow: /chat.html
+Disallow: /contactseller.html
+Disallow: /watchlist.html
+Disallow: /shipping-instructions.html
+Disallow: /track.html
+
+# Allow everything else (index, search, productdetail, profile, sell, help, legal, careers)
 
 Sitemap: https://grappletrade.com/sitemap.xml

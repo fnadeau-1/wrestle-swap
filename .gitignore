@@ -9,12 +9,12 @@ final_project/
 stripe_API/
 dataconnect/
 src/
-functions/sendgrid.env
 functions/
 public/functions/
 my-next-app/
 *.env
 *.key
+*.exe
 *.pem
 *-sa.json
 auth-export.json

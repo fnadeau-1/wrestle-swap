@@ -67,7 +67,11 @@ service cloud.firestore {
             && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.buyerId == request.auth.uid
             && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.productId == productId
             && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.delivered == true
-            && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.get('cancelled', false) != true)
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.get('cancelled', false) != true
+            // sellerRating must be a whole number 1–5 (mirrors sellerRatings collection validation)
+            && request.resource.data.get('sellerRating', 0) is number
+            && request.resource.data.get('sellerRating', 0) >= 1
+            && request.resource.data.get('sellerRating', 0) <= 5)
         // Buyer can flag a refund request or dispute on an active (sold, not cancelled, not yet delivered) order.
         // ordersDocId must be included in the update — buyerId not stored on product docs.
         || (request.auth != null
@@ -230,6 +234,15 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
+    // Buyer ratings — sellers rate buyers after delivered orders
+    // -------------------------------------------------------------------------
+    match /buyerRatings/{ratingId} {
+      allow read: if true;
+      // Written exclusively by Cloud Functions via Admin SDK (submitBuyerRating verifies seller identity)
+      allow create, update, delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
     // Community reports — anyone can file; only admins can read/manage
     // -------------------------------------------------------------------------
     match /reports/{reportId} {
@@ -246,7 +259,11 @@ service cloud.firestore {
         && request.resource.data.get('ordersDocId', '') != ''
         && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.buyerId == request.auth.uid
         && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.productId == request.resource.data.productId
-        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.get('cancelled', false) != true;
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.get('cancelled', false) != true
+        // Allowlist: buyers may only write these fields — blocks status, adminNotes, resolution, etc.
+        && request.resource.data.keys().hasOnly([
+            'buyerId', 'ordersDocId', 'productId', 'reason', 'createdAt', 'message'
+        ]);
       allow read: if isAdmin()
         || (request.auth != null && (
           resource.data.buyerId == request.auth.uid ||
@@ -284,7 +301,11 @@ service cloud.firestore {
         && request.resource.data.get('ordersDocId', '') != ''
         && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.buyerId == request.auth.uid
         && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.productId == request.resource.data.productId
-        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.get('cancelled', false) != true;
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.ordersDocId)).data.get('cancelled', false) != true
+        // Allowlist: buyers may only write these fields — blocks status, adminNotes, resolution, sellerId, etc.
+        && request.resource.data.keys().hasOnly([
+            'buyerId', 'ordersDocId', 'productId', 'reason', 'createdAt', 'description', 'evidence'
+        ]);
       allow read: if isAdmin()
         || (request.auth != null && (
           resource.data.buyerId == request.auth.uid ||

@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/stripe-express-prompt.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
         <a href="index.html" class="back-button">← Back to Home</a>
@@ -22,14 +22,12 @@
     <div class="container">
         <div class="icon">💳</div>
         
-        <!-- Fully set up -->
         <div id="already-connected-section" class="already-connected" style="display:none;">
             <h3>✅ You're all set!</h3>
             <p>Your payout account is connected and active. You'll receive your earnings automatically after each delivery is confirmed.</p>
             <a href="sell.html" class="btn btn-primary" style="margin-top: 15px; display: inline-block;">Go to Sell Page</a>
         </div>
 
-        <!-- Started but not finished -->
         <div id="resume-section" style="display:none;">
             <h1>Almost There!</h1>
             <p class="subtitle">You've started your payout setup but haven't finished yet. Your earnings are being held safely — finish in a few minutes to unlock withdrawals.</p>
@@ -102,171 +100,20 @@
             <div class="legal-notice">
                 Payments are processed securely by Stripe. By continuing, you agree to Stripe's terms of service.
             </div>
+            <div class="legal-notice" style="margin-top:10px;">
+                Sales through GrappleTrade may be reportable income. Stripe will request your tax information and issue a Form 1099-K if required by the IRS.
+            </div>
         </div>
     </div>
 
-    <!-- Firebase SDK (Compat version for easier global access) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" integrity="sha256-LQOLn5nNwoEZtOXCpO2G1WH8NsBR5RXvNRdrHKvngME=" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js" integrity="sha256-M0FuBDqc2f0eKvdsoNATi+Q/uIFA9Ocn6Xp9QDSTdWI=" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js" integrity="sha256-FFHhKF0aCe7WyfcbB7oB+wl63WawJNE+JFS6B9UKU8Y=" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js" integrity="sha256-IzSlf3hes4zhpv367VXswTNXNKX9FfJ2t2vytFdCQG8=" crossorigin="anonymous"></script>
 
-    <script>
-        // Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
-            authDomain: "grappletrade.firebaseapp.com",
-            projectId: "grappletrade",
-            storageBucket: "grappletrade.firebasestorage.app",
-            messagingSenderId: "119683736855",
-            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
-            measurementId: "G-987DNCH23C"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), true);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-    </script>
-
-    <script>
-        let currentUser = null;
-
-        // Check if user is logged in and if they already have a Stripe account
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-
-                // Enable the button since user is logged in
-                document.getElementById('createAccountBtn').disabled = false;
-
-                // Check if user already has a Stripe account connected
-                try {
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-
-                    if (userDoc.exists) {
-                        const userData = userDoc.data();
-
-                        if (userData.stripeAccountId) {
-                            // Get live status from Stripe API — Firestore cache may be stale
-                            // (stripePayoutsEnabled is only written by the webhook, which may not be set up yet)
-                            try {
-                                const idToken = await user.getIdToken();
-                                const resp = await fetch('https://us-central1-grappletrade.cloudfunctions.net/checkSellerStatus', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-                                    body: JSON.stringify({ userId: user.uid }),
-                                });
-                                const status = resp.ok ? await resp.json() : null;
-                                const payoutsEnabled = status ? status.payoutsEnabled : userData.stripePayoutsEnabled;
-
-                                if (payoutsEnabled) {
-                                    document.getElementById('onboarding-section').style.display = 'none';
-                                    document.getElementById('already-connected-section').style.display = 'block';
-                                } else {
-                                    document.getElementById('onboarding-section').style.display = 'none';
-                                    document.getElementById('resume-section').style.display = 'block';
-                                    document.getElementById('resumeAccountBtn').addEventListener('click', function() {
-                                        document.getElementById('createAccountBtn').click();
-                                        document.getElementById('resume-section').style.display = 'none';
-                                        document.getElementById('onboarding-section').style.display = 'block';
-                                    });
-                                }
-                            } catch (_) {
-                                // Fallback: use cached Firestore value
-                                if (userData.stripePayoutsEnabled) {
-                                    document.getElementById('onboarding-section').style.display = 'none';
-                                    document.getElementById('already-connected-section').style.display = 'block';
-                                } else {
-                                    document.getElementById('onboarding-section').style.display = 'none';
-                                    document.getElementById('resume-section').style.display = 'block';
-                                    document.getElementById('resumeAccountBtn').addEventListener('click', function() {
-                                        document.getElementById('createAccountBtn').click();
-                                        document.getElementById('resume-section').style.display = 'none';
-                                        document.getElementById('onboarding-section').style.display = 'block';
-                                    });
-                                }
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error checking user status:', error);
-                }
-            } else {
-                showError('Please sign in to become a seller');
-                document.getElementById('createAccountBtn').disabled = true;
-            }
-        });
-
-        // Button click handler
-        document.getElementById('createAccountBtn').addEventListener('click', async function() {
-            if (!currentUser) {
-                showError('Please sign in first');
-                return;
-            }
-
-            const button = this;
-            const loading = document.getElementById('loading');
-            const errorDiv = document.getElementById('error');
-
-            // Reset states
-            button.disabled = true;
-            button.textContent = 'Processing...';
-            loading.classList.add('active');
-            errorDiv.classList.remove('active');
-
-            try {
-                const CLOUD_FUNCTION_URL = 'https://us-central1-grappletrade.cloudfunctions.net/createConnectedAccount';
-                const requestBody = {
-                    userId: currentUser.uid,
-                    email: currentUser.email,
-                    returnUrl: window.location.origin + '/sell.html',
-                    refreshUrl: window.location.origin + '/stripe-express-prompt.html'
-                };
-                const idToken = await currentUser.getIdToken();
-                const response = await fetch(CLOUD_FUNCTION_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${idToken}`
-                    },
-                    body: JSON.stringify(requestBody),
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    let msg = 'Failed to create account';
-                    try { msg = JSON.parse(errorText).error || msg; } catch (_) {}
-                    throw new Error(msg);
-                }
-
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                if (!data.url) {
-                    throw new Error('No onboarding URL received from server');
-                }
-
-                // Redirect to Stripe Connect onboarding
-                window.location.href = data.url;
-
-            } catch (error) {
-                showError('Failed to connect: ' + error.message);
-                button.disabled = false;
-                button.textContent = 'Create Stripe Express Account';
-                loading.classList.remove('active');
-            }
-        });
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.classList.add('active');
-        }
-    </script>
+    <script src="js/stripe-express-prompt-init.js"></script>
+    <script src="js/stripe-express-prompt.js"></script>
     <script type="module" src="js/site-notice.js"></script>
+<script type="module" src="/js/session-timeout.js"></script>
 </body>
 </html>

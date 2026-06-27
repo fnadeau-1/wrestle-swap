@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/sign-in.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
     <div class="auth-container">
@@ -26,8 +26,7 @@
         <div class="error-banner" id="error-banner" role="alert" aria-live="polite"></div>
 
         <div class="social-buttons">
-            <!-- Google -->
-            <button class="social-btn btn-google" id="btn-google" onclick="socialLogin()">
+            <button class="social-btn btn-google" id="btn-google" data-onclick="socialLogin">
                 <svg class="btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -41,8 +40,8 @@
 
         <div class="terms-note">
             <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;text-align:left;">
-                <input type="checkbox" id="age-confirm" style="margin-top:3px;flex-shrink:0;" onchange="onAgeCheckChange()">
-                <span>I confirm I am 18 years of age or older.</span>
+                <input type="checkbox" id="age-confirm" style="margin-top:3px;flex-shrink:0;" data-onchange="onAgeCheckChange">
+                <span>I confirm I am 18 years of age or older. GrappleTrade is not intended for users under 18.</span>
             </label>
         </div>
         <div class="terms-note">
@@ -53,150 +52,8 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
-        import {
-            getAuth,
-            signInWithPopup,
-            GoogleAuthProvider
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
-            authDomain: "grappletrade.firebaseapp.com",
-            projectId: "grappletrade",
-            storageBucket: "grappletrade.firebasestorage.app",
-            messagingSenderId: "119683736855",
-            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
-            measurementId: "G-987DNCH23C"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        window.firebaseAuth = auth;
-        window.firebaseDb = db;
-        window.signInWithPopup = signInWithPopup;
-        window.GoogleAuthProvider = GoogleAuthProvider;
-        window.firestoreDoc = doc;
-        window.firestoreSetDoc = setDoc;
-        window.firestoreGetDoc = getDoc;
-    </script>
-
-    <script>
-        let popupInProgress = false;
-
-        // Disable sign-in until age gate is confirmed
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('btn-google').disabled = true;
-        });
-
-        function onAgeCheckChange() {
-            const checked = document.getElementById('age-confirm').checked;
-            if (!popupInProgress) document.getElementById('btn-google').disabled = !checked;
-        }
-
-        function showError(msg) {
-            const el = document.getElementById('error-banner');
-            el.textContent = msg;
-            el.style.display = 'block';
-        }
-
-        function hideError() {
-            document.getElementById('error-banner').style.display = 'none';
-        }
-
-        function setAllButtonsDisabled(disabled) {
-            document.getElementById('btn-google').disabled = disabled;
-        }
-
-        function getPostLoginRedirect() {
-            const params = new URLSearchParams(window.location.search);
-            const redirect = params.get('redirect');
-            if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) return redirect;
-            return 'index.html';
-        }
-
-        function generateUsername() {
-            const randomNum = Math.floor(10000 + Math.random() * 90000);
-            return `wrestler_${randomNum}`;
-        }
-
-        async function isUsernameUnique(username) {
-            try {
-                const snap = await window.firestoreGetDoc(window.firestoreDoc(window.firebaseDb, 'usernames', username));
-                return !snap.exists();
-            } catch {
-                return false;
-            }
-        }
-
-        async function generateUniqueUsername() {
-            for (let i = 0; i < 10; i++) {
-                const username = generateUsername();
-                if (await isUsernameUnique(username)) return username;
-            }
-            return `wrestler_${Date.now()}`;
-        }
-
-        async function ensureUserProfile(user) {
-            const userRef = window.firestoreDoc(window.firebaseDb, 'users', user.uid);
-            const snap = await window.firestoreGetDoc(userRef);
-            if (snap.exists()) return; // existing user, nothing to do
-
-            // New user — create profile
-            const username = await generateUniqueUsername();
-            const userData = {
-                uid: user.uid,
-                email: user.email || '',
-                // Use generated username as displayName — avoids leaking Google real name publicly
-                // (getPublicProfile exposes displayName; username is the only public identity)
-                displayName: username,
-                username: username,
-                photoURL: user.photoURL || '',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-
-            await window.firestoreSetDoc(userRef, userData);
-            await window.firestoreSetDoc(
-                window.firestoreDoc(window.firebaseDb, 'usernames', username),
-                { userId: user.uid, createdAt: new Date().toISOString() }
-            );
-        }
-
-        async function socialLogin() {
-            if (popupInProgress) return;
-            if (!document.getElementById('age-confirm').checked) {
-                showError('Please confirm you are 18 or older to continue.');
-                return;
-            }
-            hideError();
-            popupInProgress = true;
-            setAllButtonsDisabled(true);
-
-            try {
-                const authProvider = new window.GoogleAuthProvider();
-
-                const result = await window.signInWithPopup(window.firebaseAuth, authProvider);
-                await ensureUserProfile(result.user);
-                window.location.href = getPostLoginRedirect();
-            } catch (error) {
-                const ignored = ['auth/cancelled-popup-request', 'auth/popup-closed-by-user'];
-                if (!ignored.includes(error.code)) {
-                    showError(error.message || 'Sign in failed. Please try again.');
-                }
-            } finally {
-                setAllButtonsDisabled(false);
-                popupInProgress = false;
-            }
-        }
-    </script>
+    <script type="module" src="js/sign-in.js"></script>
+    <script src="js/sign-in-init.js"></script>
     <script type="module" src="js/site-notice.js"></script>
 </body>
 </html>

@@ -62,23 +62,30 @@ function alertBox(color, borderColor, html) {
   return `<div style="background:${color};border-left:4px solid ${borderColor};padding:14px 18px;margin:20px 0;border-radius:4px;">${html}</div>`;
 }
 
+// Strip CR/LF/tab from email subjects — prevents SMTP header injection.
+// Called inside send() so every outgoing email is covered automatically.
+function sanitizeSubject(subject) {
+  return String(subject || '').replace(/[\r\n\t]/g, ' ').trim();
+}
+
 // Low-level send — never throws; logs failures so they don't break the main flow
 async function send(to, subject, html) {
   if (!to) return;
+  const safeSubject = sanitizeSubject(subject);
   try {
     const { error } = await resend.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
-      subject,
+      subject: safeSubject,
       html,
     });
     if (error) {
-      console.error(`Email failed | ${subject}:`, JSON.stringify(error));
+      console.error(`Email failed | ${safeSubject}:`, JSON.stringify(error));
     } else {
-      console.log(`Email sent | ${subject}`);
+      console.log(`Email sent | ${safeSubject}`);
     }
   } catch (err) {
-    console.error(`Email failed | ${subject}:`, err.message);
+    console.error(`Email failed | ${safeSubject}:`, err.message);
   }
 }
 
@@ -107,25 +114,16 @@ async function sendOrderPlacedSeller(sellerEmail, { productName, buyerName }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // BUYER CANCELS — notify buyer (refund confirmation)
 // ─────────────────────────────────────────────────────────────────────────────
-async function sendBuyerCancelledToBuyer(buyerEmail, { productName, refundAmount, cancellationFee }) {
+async function sendBuyerCancelledToBuyer(buyerEmail, { productName, refundAmount }) {
   const html = wrap(`
     <h2 style="color:#333;margin-top:0;">Your order has been cancelled</h2>
     <p style="color:#555;font-size:15px;line-height:1.6;">
       Your order for <strong>${escHtml(productName)}</strong> has been cancelled as requested.
     </p>
-    <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:15px;">
-      <tr style="border-bottom:1px solid #e5e5e5;">
-        <td style="padding:10px 4px;color:#555;">Refund amount</td>
-        <td style="padding:10px 4px;text-align:right;font-weight:bold;color:#333;">$${refundAmount}</td>
-      </tr>
-      <tr>
-        <td style="padding:10px 4px;color:#555;">Cancellation fee (5%)</td>
-        <td style="padding:10px 4px;text-align:right;color:#dc3545;">-$${cancellationFee}</td>
-      </tr>
-    </table>
-    <p style="color:#555;font-size:14px;line-height:1.6;">
-      Your refund will appear on your original payment method within <strong>5–10 business days</strong>.
-    </p>
+    ${alertBox('#d4edda', '#28a745', `
+      <strong>Full refund of $${refundAmount}</strong> has been issued.<br>
+      It will appear on your original payment method within <strong>5–10 business days</strong>.
+    `)}
     ${btn(`${SITE_URL}/search.html`, 'Continue Shopping', '#3665f3')}
   `);
   await send(buyerEmail, `Order Cancelled: ${productName}`, html);
@@ -212,8 +210,13 @@ async function sendOrderPlacedBuyer(buyerEmail, { productName, orderId, sellerNa
       <strong>Sold by:</strong> ${escHtml(sellerName)}<br>
       The seller has up to <strong>10 days</strong> to ship. You will receive a tracking email once it ships.
     `)}
+    ${alertBox('#fff8e1', '#ff8f00', `
+      <strong>Buyer Protection:</strong> Once your item is delivered, you have <strong>7 days</strong> to confirm receipt
+      or report a problem in your Orders page. After 7 days, funds automatically release to the seller.
+      Pre-shipment cancellations receive a <strong>full refund</strong> at no charge.
+    `)}
     <p style="color:#555;font-size:14px;line-height:1.6;">
-      You can view your order or cancel it (subject to a 5% fee) from your Orders page.
+      You can view or cancel your order (free before it ships) from your Orders page.
     </p>
     ${btn(`${SITE_URL}/my-orders.html`, 'View Your Orders', '#3665f3')}
   `);
@@ -289,6 +292,11 @@ async function sendTrackingToBuyer(buyerEmail, { productName, trackingNumber, tr
     ${alertBox('#e3f2fd', '#2196f3', `
       <strong>Tracking Number:</strong> ${trackingBlock}<br>
       ${carrier ? `<strong>Carrier:</strong> ${escHtml(carrier)}` : ''}
+    `)}
+    ${alertBox('#fff8e1', '#ff8f00', `
+      Once you receive your item, please <strong>confirm delivery</strong> in your Orders page.
+      If there is a problem, open a dispute <strong>before confirming</strong>. You have <strong>7 days</strong>
+      after delivery to report an issue — after that, funds automatically release to the seller.
     `)}
     ${btn(`${SITE_URL}/my-orders.html`, 'View Your Orders', '#3665f3')}
   `);

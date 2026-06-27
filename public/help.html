@@ -15,68 +15,63 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/help.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
-    <!-- Top Bar -->
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
                 <span id="user-menu-wrapper">
-                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                    <button class="top-bar-btn" data-href="sign-in.html">Hi! Sign in</button>
                 </span>
-                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help &amp; Contact</button>
-                <button class="top-bar-btn" onclick="window.location.href='messages.html'">Chats</button>
+                <button class="top-bar-btn" data-href="help.html">Help &amp; Contact</button>
+                <button class="top-bar-btn" data-href="messages.html">Chats</button>
             </div>
             <div>
-                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
-                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
+                <button class="top-bar-btn" data-href="sell.html">Sell</button>
+                <button class="top-bar-btn" data-href="settings.html">Settings</button>
             </div>
         </div>
     </div>
 
-    <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
             <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
         </div>
     </div>
 
-    <!-- Hero -->
     <div class="hero">
         <h1 class="hero-title">How Can We Help?</h1>
         <p class="hero-subtitle">Find answers to common questions or get in touch with our support team</p>
     </div>
 
-    <!-- Main Content -->
     <div class="container">
 
-        <!-- Help Topics -->
         <div class="topics-section">
             <h2 class="section-title">Browse Help Topics</h2>
             <div class="topics-grid">
-                <div class="topic-card" onclick="scrollToFAQ('buying')">
+                <div class="topic-card" data-onclick-with-arg="scrollToFAQ,buying">
                     <div class="topic-icon">🛍️</div>
                     <div class="topic-title">Buying</div>
                     <div class="topic-description">How to search, purchase, and receive items</div>
                 </div>
-                <div class="topic-card" onclick="scrollToFAQ('selling')">
+                <div class="topic-card" data-onclick-with-arg="scrollToFAQ,selling">
                     <div class="topic-icon">💰</div>
                     <div class="topic-title">Selling</div>
                     <div class="topic-description">Listing items, shipping, and getting paid</div>
                 </div>
-                <div class="topic-card" onclick="scrollToFAQ('shipping')">
+                <div class="topic-card" data-onclick-with-arg="scrollToFAQ,shipping">
                     <div class="topic-icon">📦</div>
                     <div class="topic-title">Shipping</div>
                     <div class="topic-description">Shipping rates, tracking, and delivery</div>
                 </div>
-                <div class="topic-card" onclick="scrollToFAQ('refunds')">
+                <div class="topic-card" data-onclick-with-arg="scrollToFAQ,refunds">
                     <div class="topic-icon">↩️</div>
                     <div class="topic-title">Cancellations &amp; Refunds</div>
                     <div class="topic-description">How to cancel an order or request a refund</div>
                 </div>
-                <div class="topic-card" onclick="scrollToFAQ('account')">
+                <div class="topic-card" data-onclick-with-arg="scrollToFAQ,account">
                     <div class="topic-icon">👤</div>
                     <div class="topic-title">Account</div>
                     <div class="topic-description">Profile, settings, and security</div>
@@ -84,15 +79,12 @@
             </div>
         </div>
 
-        <!-- FAQ + Contact -->
         <div class="content-grid">
-            <!-- FAQ -->
             <div class="faq-section">
                 <h2 class="section-title">Frequently Asked Questions</h2>
 
-                <!-- BUYING -->
                 <div class="faq-item" data-category="buying">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>How do I purchase an item?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -102,7 +94,7 @@
                 </div>
 
                 <div class="faq-item" data-category="buying">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>What payment methods do you accept?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -112,7 +104,7 @@
                 </div>
 
                 <div class="faq-item" data-category="buying">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>How do I track my order?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -122,7 +114,7 @@
                 </div>
 
                 <div class="faq-item" data-category="buying">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>What if the item wasn't as described or never arrived?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -131,9 +123,8 @@
                     </div>
                 </div>
 
-                <!-- SELLING -->
                 <div class="faq-item" data-category="selling">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>How do I list an item for sale?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -143,7 +134,7 @@
                 </div>
 
                 <div class="faq-item" data-category="selling">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>What fees does GrappleTrade charge?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -153,7 +144,7 @@
                 </div>
 
                 <div class="faq-item" data-category="selling">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>How do I get paid for my sales?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -163,7 +154,7 @@
                 </div>
 
                 <div class="faq-item" data-category="selling">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>Are there rules about what I can sell?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -173,7 +164,7 @@
                 </div>
 
                 <div class="faq-item" data-category="selling">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>What happens if I cancel an order as a seller?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -182,9 +173,18 @@
                     </div>
                 </div>
 
-                <!-- SHIPPING -->
+                <div class="faq-item" data-category="selling">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
+                        <span>How do I appeal a seller suspension?</span>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        To appeal a suspension, email <a href="mailto:grappletrade@gmail.com" style="color:#3665f3;">grappletrade@gmail.com</a> with your username and the order details for each strike you are disputing. Appeals are reviewed within 5 business days.
+                    </div>
+                </div>
+
                 <div class="faq-item" data-category="shipping">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>How is shipping calculated?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -194,7 +194,7 @@
                 </div>
 
                 <div class="faq-item" data-category="shipping">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>How long does shipping take?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -204,7 +204,7 @@
                 </div>
 
                 <div class="faq-item" data-category="shipping">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>Do you ship to Hawaii or Alaska?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -213,19 +213,18 @@
                     </div>
                 </div>
 
-                <!-- REFUNDS -->
                 <div class="faq-item" data-category="refunds">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>Can I cancel my order?</span>
                         <span class="faq-toggle">+</span>
                     </div>
                     <div class="faq-answer">
-                        Yes — if the item has not yet shipped, you can cancel from <strong>My Orders</strong> by clicking the order and selecting <strong>Cancel Order</strong>. Cancellations are subject to a <strong>5% cancellation fee</strong> on the total order amount. Once an item has shipped it can no longer be cancelled, but you may request a refund.
+                        Yes — if the item has not yet shipped, you can cancel from <strong>My Orders</strong> by clicking the order and selecting <strong>Cancel Order</strong>. You will receive a full refund on the item price. Shipping costs are non-refundable once a label has been purchased. Once an item has shipped it can no longer be cancelled, but you may request a refund.
                     </div>
                 </div>
 
                 <div class="faq-item" data-category="refunds">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>How do I request a refund?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -234,9 +233,8 @@
                     </div>
                 </div>
 
-                <!-- ACCOUNT -->
                 <div class="faq-item" data-category="account">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>How do I reset my password?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -246,7 +244,7 @@
                 </div>
 
                 <div class="faq-item" data-category="account">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>How do I delete my account?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -256,7 +254,7 @@
                 </div>
 
                 <div class="faq-item" data-category="account">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
+                    <div class="faq-question" data-onclick-self="toggleFAQ">
                         <span>How do I message a seller?</span>
                         <span class="faq-toggle">+</span>
                     </div>
@@ -267,7 +265,6 @@
 
             </div>
 
-            <!-- Contact Card -->
             <div class="contact-card">
                 <h3 class="contact-title">Get In Touch</h3>
 
@@ -299,7 +296,6 @@
             </div>
         </div>
 
-        <!-- Contact Form -->
         <div class="contact-form-section">
             <h2 class="section-title">Send Us a Message</h2>
             <form action="https://formspree.io/f/xrbnkqva" method="POST">
@@ -333,75 +329,10 @@
             </form>
         </div>
 
-    </div><!-- /.container -->
+    </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
-            authDomain: "grappletrade.firebaseapp.com",
-            projectId: "grappletrade",
-            storageBucket: "grappletrade.firebasestorage.app",
-            messagingSenderId: "119683736855",
-            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
-            measurementId: "G-987DNCH23C"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
-        const auth = getAuth(app);
-
-        function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-
-        onAuthStateChanged(auth, (user) => {
-            const menuWrapper = document.getElementById('user-menu-wrapper');
-            if (user) {
-                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                menuWrapper.innerHTML = `
-                    <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${esc(firstName)}!</button>
-                        <div class="dropdown-menu">
-                            <a href="watchlist.html">Watchlist</a>
-                            <a href="my-orders.html">Your Orders</a>
-                            <a href="listings-manager.html">Your Listings</a>
-                            <a href="messages.html">Messages</a>
-                        </div>
-                    </div>`;
-            } else {
-                menuWrapper.innerHTML = `<button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>`;
-            }
-        });
-    </script>
-
-    <script>
-        function toggleFAQ(element) {
-            const answer = element.nextElementSibling;
-            const toggle = element.querySelector('.faq-toggle');
-            if (answer.classList.contains('active')) {
-                answer.classList.remove('active');
-                toggle.textContent = '+';
-            } else {
-                answer.classList.add('active');
-                toggle.textContent = '−';
-            }
-        }
-
-        function scrollToFAQ(category) {
-            const faqItem = document.querySelector('[data-category="' + category + '"]');
-            if (faqItem) {
-                faqItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                setTimeout(function() {
-                    const answer = faqItem.querySelector('.faq-answer');
-                    if (!answer.classList.contains('active')) {
-                        faqItem.querySelector('.faq-question').click();
-                    }
-                }, 400);
-            }
-        }
-    </script>
+    <script type="module" src="js/help.js"></script>
+    <script src="js/help-init.js"></script>
     <script type="module" src="js/site-notice.js"></script>
 </body>
 </html>

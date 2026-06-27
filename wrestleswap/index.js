@@ -27,6 +27,17 @@ function sanitizeString(val, maxLen = 200) {
   return String(val).trim().slice(0, maxLen);
 }
 
+// Escape HTML entities in user-supplied text before storage — prevents stored XSS
+// when comment fields are rendered in admin pages or profile pages.
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 // Verify Firebase ID token from Authorization header — returns decodedToken or throws
 async function verifyAuth(req) {
   const idToken = (req.headers.authorization || '').replace('Bearer ', '');
@@ -185,6 +196,22 @@ exports.createPaymentIntent = onRequest(
 
     if (!decodedToken.email_verified) {
       return res.status(403).json({ error: 'Please verify your email address before making a purchase.' });
+    }
+
+    // New account velocity check — flag accounts created within the last 24 hours
+    // and block if they've already attempted > 2 checkouts (fraud signal)
+    try {
+      const buyerRecord = await admin.auth().getUser(decodedToken.uid);
+      const accountAgeMs = Date.now() - new Date(buyerRecord.metadata.creationTime).getTime();
+      if (accountAgeMs < ONE_DAY) {
+        await checkRateLimit(decodedToken.uid, 'newAccountIntent', 2, ONE_DAY);
+      }
+    } catch (e) {
+      if (e.status === 429) {
+        return res.status(429).json({ error: 'New accounts are limited to 2 checkouts in the first 24 hours. Please try again tomorrow.' });
+      }
+      // Non-rate-limit errors: log but don't block (fail open — don't hurt real customers)
+      console.warn('New account velocity check error:', e.message);
     }
 
     try {
@@ -353,9 +380,6 @@ exports.createPaymentIntent = onRequest(
   }
 );
 
-// Cancellation fee percentage (5%)
-const CANCELLATION_FEE_PERCENT = 0.05;
-
 // --- CANCEL ORDER / REFUND ---
 exports.cancelOrder = onRequest(
   { cors: ALLOWED_ORIGINS, secrets: [stripeSecret, shippoSecret, resendSecret], maxInstances: 10 },
@@ -429,19 +453,15 @@ exports.cancelOrder = onRequest(
       const chargeId = paymentIntent.latest_charge;
       const originalAmount = paymentIntent.amount;
 
-      // Calculate 5% cancellation fee on product price only (not shipping or tax)
-      const productPriceCents = Math.round((productData.price || 0) * 100);
-      const cancellationFee = Math.round(productPriceCents * CANCELLATION_FEE_PERCENT);
-      const refundAmount = originalAmount - cancellationFee;
+      // Full refund for pre-shipment cancellations — no fee charged to buyer
+      const refundAmount = originalAmount;
 
-      console.log('Processing buyer cancellation:');
+      console.log('Processing buyer cancellation (full refund):');
       console.log('  Payment Intent:', paymentIntentId);
       console.log('  Product ID:', productId);
-      console.log('  Original amount:', originalAmount);
-      console.log('  Cancellation fee (5%):', cancellationFee);
       console.log('  Refund amount:', refundAmount);
 
-      // Create partial refund (minus 5% cancellation fee)
+      // Full refund — item has not shipped so buyer is made whole
       const refund = await stripe.refunds.create({
         charge: chargeId,
         amount: refundAmount,
@@ -449,8 +469,7 @@ exports.cancelOrder = onRequest(
         metadata: {
           productId,
           cancelledBy: 'buyer',
-          cancellationFee,
-          originalAmount
+          originalAmount,
         }
       });
 
@@ -534,7 +553,6 @@ exports.cancelOrder = onRequest(
           emails.sendBuyerCancelledToBuyer(buyerEmail, {
             productName: productData.title || 'your item',
             refundAmount: (refundAmount / 100).toFixed(2),
-            cancellationFee: (cancellationFee / 100).toFixed(2),
           }),
           emails.sendBuyerCancelledToSeller(sellerEmail, {
             productName: productData.title || 'an item',
@@ -549,9 +567,8 @@ exports.cancelOrder = onRequest(
         success: true,
         refundId: refund.id,
         refundAmount: refundAmount,
-        cancellationFee: cancellationFee,
         labelVoided: labelVoided,
-        message: `Order cancelled. Refunded $${(refundAmount / 100).toFixed(2)} (5% cancellation fee of $${(cancellationFee / 100).toFixed(2)} retained)`
+        message: `Order cancelled. Full refund of $${(refundAmount / 100).toFixed(2)} issued.`,
       });
 
     } catch (error) {
@@ -663,6 +680,13 @@ exports.createConnectedAccount = onRequest(
     if (!decodedToken.email_verified) {
       return res.status(403).json({ error: 'Please verify your email address before setting up a seller account.' });
     }
+
+    try {
+      await checkRateLimit(decodedToken.uid, 'createConnAccount', 5, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many account setup requests today. Please try again tomorrow.' });
+    }
+
     try {
       const stripe = require('stripe')(stripeSecret.value());
       const { userId, returnUrl, refreshUrl } = req.body;
@@ -900,6 +924,12 @@ exports.shippoCreateLabel = onRequest(
     }
 
     try {
+      await checkRateLimit(decodedToken.uid, 'labelCreate', 10, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many label creation requests today. Please try again tomorrow.' });
+    }
+
+    try {
       const shippoKey = shippoSecret.value();
       const { rateObjectId, labelFileType: rawLabelFileType = 'PDF', async: rawAsyncLabel = false, productId: labelProductId } = req.body;
 
@@ -929,6 +959,22 @@ exports.shippoCreateLabel = onRequest(
       }
       if (!productOwnerData.sold) {
         return res.status(400).json({ error: 'Product has not been sold yet' });
+      }
+
+      // Verify seller is not suspended before purchasing a label on their behalf
+      const sellerSnap = await db.collection('users').doc(decodedToken.uid).get();
+      if (sellerSnap.exists && sellerSnap.data().sellerSuspended) {
+        return res.status(403).json({ error: 'Your seller account is suspended and cannot create shipping labels' });
+      }
+
+      // Cross-check rateObjectId against the one recorded in the order at checkout.
+      // Prevents a seller from substituting a more expensive rate than the buyer paid for.
+      const labelOrder = await getOrderByProductId(labelProductId);
+      if (!labelOrder) {
+        return res.status(404).json({ error: 'Order record not found' });
+      }
+      if (labelOrder.rateObjectId && labelOrder.rateObjectId !== rateObjectId) {
+        return res.status(403).json({ error: 'Shipping rate does not match the rate selected at checkout' });
       }
 
       console.log('Creating shipping label for rate:', rateObjectId);
@@ -976,11 +1022,16 @@ exports.shippoCreateLabel = onRequest(
           }
 
           // Product doc only gets tracking info — shippingLabel (contains buyer address) goes to orders only
+          // shipped=true + shippedTimestamp are set here so checkOverdueOrders and autoReleaseOrders
+          // correctly recognize this order as shipped (same fields set by markAsShipped).
           const productTrackingUpdate = {
             trackingNumber: transaction.tracking_number || null,
             trackingUrl: transaction.tracking_url_provider || null,
             carrier: carrier || null,
             labelCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            shipped: true,
+            shippedAt: admin.firestore.FieldValue.serverTimestamp(),
+            shippedTimestamp: Date.now(),
           };
           const orderTrackingUpdate = {
             ...productTrackingUpdate,
@@ -1073,6 +1124,12 @@ exports.checkSellerStatus = onRequest(
 
       if (decodedToken.uid !== userId) {
         return res.status(403).json({ error: 'You can only check your own seller status' });
+      }
+
+      try {
+        await checkRateLimit(decodedToken.uid, 'checkSeller', 30, ONE_HOUR);
+      } catch (e) {
+        return res.status(429).json({ error: 'Too many requests. Please try again later.' });
       }
 
       const userDoc = await db.collection('users').doc(userId).get();
@@ -1172,7 +1229,7 @@ exports.completeOrder = onRequest(
 
       // Read escrow payout info from Stripe metadata (set server-side by createPaymentIntent)
       const sellerStripeAccountId = paymentIntent.metadata.sellerStripeAccountId || null;
-      const sellerReceivesCents = parseInt(paymentIntent.metadata.sellerReceivesCents || 0);
+      const sellerReceivesCents = parseInt(paymentIntent.metadata.sellerReceivesCents || 0, 10);
       const savedRateObjectId = paymentIntent.metadata.rateObjectId || null;
 
       const productRef = db.collection('products').doc(productId);
@@ -1727,6 +1784,12 @@ exports.adminDeleteUser = onRequest(
       return res.status(403).json({ error: 'Admin access required' });
     }
 
+    try {
+      await checkRateLimit(decodedToken.uid, 'adminDeleteUser', 20, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many admin operations today. Please try again tomorrow.' });
+    }
+
     const { userId } = req.body;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
     if (userId === decodedToken.uid) {
@@ -1748,6 +1811,30 @@ exports.adminDeleteUser = onRequest(
         const batch = db.batch();
         usernameSnap.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
+      }
+
+      // 4. Anonymize order records — strip PII while retaining records for disputes/legal
+      const [buyerOrdersAnon, sellerOrdersAnon] = await Promise.all([
+        db.collection('orders').where('buyerId', '==', userId).get(),
+        db.collection('orders').where('sellerId', '==', userId).get(),
+      ]);
+      const allOrderDocs = new Map();
+      buyerOrdersAnon.forEach(d => allOrderDocs.set(d.id, { ref: d.ref, data: d.data() }));
+      sellerOrdersAnon.forEach(d => allOrderDocs.set(d.id, { ref: d.ref, data: d.data() }));
+      if (allOrderDocs.size > 0) {
+        const anonBatch = db.batch();
+        allOrderDocs.forEach(({ ref, data }) => {
+          const update = {};
+          if (data.buyerId === userId) {
+            update.buyerId = 'deleted_user';
+            update.buyerShippingAddress = admin.firestore.FieldValue.delete();
+          }
+          if (data.sellerId === userId) {
+            update.sellerId = 'deleted_user';
+          }
+          anonBatch.update(ref, update);
+        });
+        await anonBatch.commit();
       }
 
       console.log(`Admin ${decodedToken.uid} deleted user ${userId}`);
@@ -1786,6 +1873,12 @@ exports.adminIssueRefund = onRequest(
     const adminDoc = await db.collection('users').doc(decodedToken.uid).get();
     if (!adminDoc.exists || adminDoc.data().isAdmin !== true) {
       return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    try {
+      await checkRateLimit(decodedToken.uid, 'adminRefund', 20, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many admin operations today. Please try again tomorrow.' });
     }
 
     const { productId, refundAmount, reason = 'requested_by_customer', relist = true } = req.body;
@@ -1906,6 +1999,12 @@ exports.markAsShipped = onRequest(
       decodedToken = await verifyAuth(req);
     } catch (e) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      await checkRateLimit(decodedToken.uid, 'markShipped', 20, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many shipment updates today. Please try again tomorrow.' });
     }
 
     const { productId, trackingNumber: rawTrackingNumber, trackingUrl, carrier: rawCarrier } = req.body;
@@ -2031,6 +2130,12 @@ exports.confirmDelivery = onRequest(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    try {
+      await checkRateLimit(decodedToken.uid, 'confirmDelivery', 10, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many delivery confirmations today. Please try again tomorrow.' });
+    }
+
     const { productId } = req.body;
     if (!productId) return res.status(400).json({ error: 'Missing productId' });
 
@@ -2091,7 +2196,7 @@ exports.confirmDelivery = onRequest(
       if (!skipPayout && confirmPaymentIntentId) {
         const pi = await stripe.paymentIntents.retrieve(confirmPaymentIntentId);
         payoutStripeAccountId = pi.metadata.sellerStripeAccountId || null;
-        payoutReceivesCents = parseInt(pi.metadata.sellerReceivesCents || 0);
+        payoutReceivesCents = parseInt(pi.metadata.sellerReceivesCents || 0, 10);
       }
 
       if (!skipPayout && payoutStripeAccountId && payoutReceivesCents > 0) {
@@ -2512,7 +2617,7 @@ exports.stripeWebhook = onRequest(
           prod = snap.data();
 
           const sellerStripeAccountId = paymentIntent.metadata.sellerStripeAccountId || null;
-          const sellerReceivesCents   = parseInt(paymentIntent.metadata.sellerReceivesCents || 0);
+          const sellerReceivesCents   = parseInt(paymentIntent.metadata.sellerReceivesCents || 0, 10);
           const savedRateObjectId     = paymentIntent.metadata.rateObjectId || null;
           const shippingCents         = parseInt(paymentIntent.metadata.shippingCents || '0', 10);
           const txTaxAmountCents      = paymentIntent.automatic_tax?.amount_tax ?? 0;
@@ -2557,7 +2662,7 @@ exports.stripeWebhook = onRequest(
           taxAmountCents: whTaxAmountCents,
           taxStatus: paymentIntent.automatic_tax?.status || 'not_collected',
           sellerStripeAccountId: paymentIntent.metadata.sellerStripeAccountId || null,
-          sellerReceivesCents: parseInt(paymentIntent.metadata.sellerReceivesCents || 0),
+          sellerReceivesCents: parseInt(paymentIntent.metadata.sellerReceivesCents || 0, 10),
           rateObjectId: paymentIntent.metadata.rateObjectId || null,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           createdTimestamp: Date.now(),
@@ -2624,6 +2729,12 @@ exports.toggleListingActive = onRequest(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    try {
+      await checkRateLimit(decodedToken.uid, 'toggleListing', 60, ONE_HOUR);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many toggle requests. Please wait before trying again.' });
+    }
+
     const { productId } = req.body;
     if (!productId) return res.status(400).json({ error: 'Missing productId' });
 
@@ -2672,6 +2783,12 @@ exports.reactivateListing = onRequest(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    try {
+      await checkRateLimit(decodedToken.uid, 'reactivateListing', 20, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many relist requests today. Please try again tomorrow.' });
+    }
+
     const { productId } = req.body;
     if (!productId) return res.status(400).json({ error: 'Missing productId' });
 
@@ -2686,6 +2803,11 @@ exports.reactivateListing = onRequest(
       }
       if (!product.cancelled) {
         return res.status(400).json({ error: 'This listing is not cancelled' });
+      }
+
+      // Block reactivation if a payout is mid-flight — clearing state here could allow double-payout
+      if (product.payoutInitiated) {
+        return res.status(409).json({ error: 'Cannot relist this item while a payout is in progress. Please try again in a few minutes.' });
       }
 
       const del = admin.firestore.FieldValue.delete();
@@ -2818,7 +2940,7 @@ exports.notifyNewMessage = onRequest(
       // Rate limit: max 30 message notifications per hour per sender
       await checkRateLimit(decodedToken.uid, 'msgNotify', 30, ONE_HOUR);
     } catch (e) {
-      return res.status(200).json({ skipped: 'rate_limit' }); // silent — don't break the send flow
+      return res.status(429).json({ error: 'rate_limit', message: 'Notification rate limit exceeded. Try again later.' });
     }
 
     try {
@@ -2843,7 +2965,7 @@ exports.notifyNewMessage = onRequest(
       const rlData = rlSnap.exists ? rlSnap.data() : {};
       const lastNotify = rlData[notifyKey] || 0;
       if (Date.now() - lastNotify < 10 * 60 * 1000) {
-        return res.status(200).json({ skipped: 'recently_notified' });
+        return res.status(429).json({ error: 'recently_notified', message: 'Recipient was recently notified for this conversation.' });
       }
 
       // Update the cooldown timestamp for this conversation
@@ -2860,6 +2982,31 @@ exports.notifyNewMessage = onRequest(
       const preview = String(messagePreview || '').slice(0, 120);
       const convUrl = `https://grappletrade.com/messages.html?conv=${conversationId}`;
 
+      // Scan for off-platform payment/contact solicitation
+      const OFF_PLATFORM_PATTERNS = [
+        /venmo/i, /zelle/i, /\bcash\s*app\b/i, /paypal\.me/i,
+        /\bbitcoin\b/i, /\bcrypto\b/i, /\betheum\b/i,
+        /text me/i, /\bwhatsapp\b/i, /\btelegram\b/i, /\bsignal\b/i,
+        /my number is/i, /call me at/i, /reach me at/i,
+        /outside.*platform/i, /off.*platform/i, /skip.*fee/i,
+        /\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b/, // US phone number
+      ];
+      const isOffPlatform = OFF_PLATFORM_PATTERNS.some(p => p.test(preview));
+      if (isOffPlatform) {
+        console.warn(`Off-platform solicitation detected — conv: ${conversationId}, sender: ${decodedToken.uid}`);
+        // Warn the sender via in-app notification
+        await createNotification(decodedToken.uid, {
+          icon: '⚠️',
+          message: 'Your message may contain off-platform payment or contact requests. All transactions must stay on GrappleTrade to be protected by Buyer Protection.',
+          link: `messages.html?conv=${conversationId}`,
+        }).catch(() => {});
+        // Flag conversation for admin review
+        await db.collection('conversations').doc(conversationId).set(
+          { flaggedForReview: true, flaggedAt: admin.firestore.FieldValue.serverTimestamp(), flagReason: 'off_platform_solicitation' },
+          { merge: true }
+        ).catch(() => {});
+      }
+
       await Promise.all([
         createNotification(recipientId, {
           icon: '💬',
@@ -2873,7 +3020,7 @@ exports.notifyNewMessage = onRequest(
         }),
       ]);
 
-      return res.status(200).json({ success: true });
+      return res.status(200).json({ success: true, warning: isOffPlatform ? 'off_platform_solicitation' : null });
     } catch (error) {
       console.error('notifyNewMessage error:', error.message);
       return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
@@ -2899,6 +3046,12 @@ exports.selfDeleteAccount = onRequest(
 
     const uid = decodedToken.uid;
 
+    try {
+      await checkRateLimit(uid, 'selfDelete', 3, ONE_HOUR);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
+    }
+
     // Block deletion if seller has active unfulfilled orders.
     // Query orders (not products — products never had shipped:false explicitly set for new orders)
     const sellerOrdersSnap = await db.collection('orders').where('sellerId', '==', uid).get();
@@ -2921,6 +3074,26 @@ exports.selfDeleteAccount = onRequest(
       return res.status(400).json({ error: 'Cannot delete your account while you have an order in progress. Please wait for your order to be delivered or cancelled first.' });
     }
 
+    // Block deletion if seller has open disputes or refund requests
+    const sellerDisputedSnap = await db.collection('orders').where('sellerId', '==', uid).where('disputeOpened', '==', true).get();
+    if (!sellerDisputedSnap.empty) {
+      return res.status(400).json({ error: 'Cannot delete your account while you have an open dispute as a seller. Please wait for it to be resolved.' });
+    }
+    const sellerRefundSnap = await db.collection('orders').where('sellerId', '==', uid).where('refundRequested', '==', true).get();
+    if (!sellerRefundSnap.empty) {
+      return res.status(400).json({ error: 'Cannot delete your account while you have an open refund request as a seller. Please wait for it to be processed.' });
+    }
+
+    // Block deletion if buyer has open disputes or refund requests
+    const buyerDisputedSnap = await db.collection('orders').where('buyerId', '==', uid).where('disputeOpened', '==', true).get();
+    if (!buyerDisputedSnap.empty) {
+      return res.status(400).json({ error: 'Cannot delete your account while you have an open dispute as a buyer. Please wait for it to be resolved.' });
+    }
+    const buyerRefundSnap = await db.collection('orders').where('buyerId', '==', uid).where('refundRequested', '==', true).get();
+    if (!buyerRefundSnap.empty) {
+      return res.status(400).json({ error: 'Cannot delete your account while you have an open refund request as a buyer. Please wait for it to be processed.' });
+    }
+
     try {
       // 1. Delete username reservation
       const usernameSnap = await db.collection('usernames').where('userId', '==', uid).get();
@@ -2931,7 +3104,30 @@ exports.selfDeleteAccount = onRequest(
       }
       // 2. Delete Firestore user doc
       await db.collection('users').doc(uid).delete().catch(() => {});
-      // 3. Delete Firebase Auth record (must be last — invalidates all tokens)
+      // 3. Anonymize order records — strip PII while retaining records for disputes/legal
+      const [buyerOrdersAnon, sellerOrdersAnon] = await Promise.all([
+        db.collection('orders').where('buyerId', '==', uid).get(),
+        db.collection('orders').where('sellerId', '==', uid).get(),
+      ]);
+      const allOrderDocs = new Map();
+      buyerOrdersAnon.forEach(d => allOrderDocs.set(d.id, { ref: d.ref, data: d.data() }));
+      sellerOrdersAnon.forEach(d => allOrderDocs.set(d.id, { ref: d.ref, data: d.data() }));
+      if (allOrderDocs.size > 0) {
+        const anonBatch = db.batch();
+        allOrderDocs.forEach(({ ref, data }) => {
+          const update = {};
+          if (data.buyerId === uid) {
+            update.buyerId = 'deleted_user';
+            update.buyerShippingAddress = admin.firestore.FieldValue.delete();
+          }
+          if (data.sellerId === uid) {
+            update.sellerId = 'deleted_user';
+          }
+          anonBatch.update(ref, update);
+        });
+        await anonBatch.commit();
+      }
+      // 4. Delete Firebase Auth record (must be last — invalidates all tokens)
       await admin.auth().deleteUser(uid);
 
       console.log('selfDeleteAccount: deleted user', uid);
@@ -3008,6 +3204,12 @@ exports.recordAbandonedCart = onRequest(
       decodedToken = await verifyAuth(req);
     } catch (e) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      await checkRateLimit(decodedToken.uid, 'abandonedCart', 30, ONE_HOUR);
+    } catch (e) {
+      return res.status(200).json({ skipped: 'rate_limit' });
     }
 
     const { productId } = req.body;
@@ -3087,7 +3289,7 @@ exports.checkAbandonedCarts = onSchedule(
 //   Phase 2 (RELEASE): Warning was sent 24h+ ago and no dispute filed → transfer funds to seller
 //
 // Release triggers (whichever comes first):
-//   A. delivered=true  AND  3+ days have elapsed since delivery  (Shippo confirmed)
+//   A. delivered=true  AND  7+ days have elapsed since delivery  (buyer dispute window)
 //   B. shipped=true    AND  21+ days have elapsed since shipping (time-based fallback)
 //
 // Hard blocks that permanently skip an order:
@@ -3102,7 +3304,7 @@ exports.autoReleaseOrders = onSchedule(
     emails.init(resendSecret.value());
 
     const now = Date.now();
-    const THREE_DAYS_MS    = 3  * 24 * 60 * 60 * 1000;
+    const THREE_DAYS_MS    = 7  * 24 * 60 * 60 * 1000; // 7-day buyer dispute window before auto-release
     const TWENTY_ONE_DAYS_MS = 21 * 24 * 60 * 60 * 1000;
     const ONE_DAY_MS       = 24 * 60 * 60 * 1000;
     const WARN_BEFORE_MS   = ONE_DAY_MS; // warn 24h before release fires
@@ -3366,6 +3568,162 @@ exports.autoReleaseOrders = onSchedule(
   }
 );
 
+// --- SUBMIT BUYER RATING ---
+// Sellers can rate buyers after a delivered order — bidirectional trust system.
+// Stored in buyerRatings/{orderId}_{sellerId} to prevent duplicate ratings.
+exports.submitBuyerRating = onRequest(
+  { cors: ALLOWED_ORIGINS, maxInstances: 10 },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { orderId, ordersDocId, rating, comment } = req.body;
+    if (!orderId || !ordersDocId) return res.status(400).json({ error: 'orderId and ordersDocId required' });
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'rating must be an integer between 1 and 5' });
+    }
+
+    try {
+      // Verify caller is the seller and order is delivered
+      const orderSnap = await db.collection('orders').doc(ordersDocId).get();
+      if (!orderSnap.exists) return res.status(404).json({ error: 'Order not found' });
+      const order = orderSnap.data();
+
+      if (order.sellerId !== decodedToken.uid) {
+        return res.status(403).json({ error: 'Only the seller can rate the buyer' });
+      }
+      if (order.productId !== orderId) {
+        return res.status(403).json({ error: 'Order does not match product' });
+      }
+      if (!order.delivered && !order.autoReleaseCompleted) {
+        return res.status(400).json({ error: 'Order must be delivered before rating the buyer' });
+      }
+      if (order.cancelled) {
+        return res.status(400).json({ error: 'Cannot rate a cancelled order' });
+      }
+
+      const ratingDocId = `${orderId}_${decodedToken.uid}`;
+      const ratingRef = db.collection('buyerRatings').doc(ratingDocId);
+
+      // Prevent duplicate ratings
+      const existing = await ratingRef.get();
+      if (existing.exists) {
+        return res.status(409).json({ error: 'You have already rated this buyer' });
+      }
+
+      await ratingRef.set({
+        orderId,
+        ordersDocId,
+        sellerId: decodedToken.uid,
+        buyerId: order.buyerId,
+        rating,
+        comment: sanitizeString(escapeHtml(comment || ''), 500),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      console.log(`Buyer rated by seller ${decodedToken.uid} for order ${orderId}: ${rating}/5`);
+      return res.status(200).json({ success: true });
+
+    } catch (error) {
+      console.error('submitBuyerRating error:', error.message);
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
+    }
+  }
+);
+
+// --- REQUEST DATA EXPORT (CCPA / GDPR) ---
+// Compiles all personal data for a user and emails it to their verified address.
+// Rate-limited to 1 export per 24 hours to prevent abuse.
+exports.requestDataExport = onRequest(
+  { cors: ALLOWED_ORIGINS, secrets: [resendSecret], maxInstances: 5 },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    let decodedToken;
+    try {
+      decodedToken = await verifyAuth(req);
+    } catch (e) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      await checkRateLimit(decodedToken.uid, 'dataExport', 1, ONE_DAY);
+    } catch (e) {
+      return res.status(429).json({ error: 'Data export already requested today. Please wait 24 hours.' });
+    }
+
+    try {
+      const uid = decodedToken.uid;
+      const userRecord = await admin.auth().getUser(uid);
+      const userEmail = userRecord.email;
+      if (!userEmail) return res.status(400).json({ error: 'No email address on file' });
+
+      // Collect user data from Firestore
+      const [userSnap, ordersSnap, listingsSnap, ratingsSnap] = await Promise.all([
+        db.collection('users').doc(uid).get(),
+        db.collection('orders').where('buyerId', '==', uid).get(),
+        db.collection('products').where('userId', '==', uid).get(),
+        db.collection('sellerRatings').where('buyerId', '==', uid).get(),
+      ]);
+
+      const userData = userSnap.exists ? userSnap.data() : {};
+      // Strip sensitive internal fields before export
+      delete userData.stripeAccountId;
+      delete userData.isAdmin;
+
+      const exportData = {
+        account: {
+          uid,
+          email: userEmail,
+          displayName: userRecord.displayName,
+          emailVerified: userRecord.emailVerified,
+          createdAt: userRecord.metadata.creationTime,
+          profile: userData,
+        },
+        orders: ordersSnap.docs.map(d => {
+          const o = d.data();
+          // Remove internal payment fields from export
+          return { id: d.id, productId: o.productId, productTitle: o.productTitle, status: o.status, createdAt: o.createdAt };
+        }),
+        listings: listingsSnap.docs.map(d => {
+          const p = d.data();
+          return { id: d.id, title: p.title, price: p.price, category: p.category, sold: p.sold, createdAt: p.createdAt };
+        }),
+        ratingsGiven: ratingsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+        exportedAt: new Date().toISOString(),
+        note: 'This export contains your personal data held by GrappleTrade as of the export date.',
+      };
+
+      const exportJson = JSON.stringify(exportData, null, 2);
+
+      emails.init(resendSecret.value());
+      const { Resend } = require('resend');
+      const resendClient = new Resend(resendSecret.value());
+      await resendClient.emails.send({
+        from: 'noreply@grappletrade.com',
+        to: userEmail,
+        subject: 'Your GrappleTrade Data Export',
+        text: `Your data export is attached. This file contains all personal data GrappleTrade holds for your account.\n\nIf you did not request this export, contact support@grappletrade.com immediately.\n\n--- DATA EXPORT ---\n\n${exportJson}`,
+      });
+
+      console.log(`Data export sent to ${userEmail} for uid ${uid}`);
+      return res.status(200).json({ success: true, message: 'Your data export has been sent to your email address.' });
+
+    } catch (error) {
+      console.error('requestDataExport error:', error.message);
+      return res.status(500).json({ error: 'An internal error occurred. Please try again.' });
+    }
+  }
+);
+
 // --- BILLING KILL SWITCH ---
 // Subscribes to the billing-alerts Pub/Sub topic.
 // When actual spend >= budget, disables billing on the project entirely.
@@ -3479,6 +3837,17 @@ exports.getPublicProfile = onRequest(
     const uid = req.query.uid;
     if (!uid || typeof uid !== 'string' || uid.length > 128) {
       return res.status(400).json({ error: 'uid is required' });
+    }
+
+    // Apply per-user rate limit when caller is authenticated; public callers are capped by maxInstances
+    try {
+      const authHeader = req.headers.authorization || '';
+      if (authHeader.startsWith('Bearer ')) {
+        const callerToken = await admin.auth().verifyIdToken(authHeader.replace('Bearer ', ''));
+        await checkRateLimit(callerToken.uid, 'publicProfile', 60, ONE_HOUR);
+      }
+    } catch (e) {
+      if (e.status === 429) return res.status(429).json({ error: 'Too many requests. Please try again later.' });
     }
 
     try {

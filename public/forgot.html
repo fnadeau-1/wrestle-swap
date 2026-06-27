@@ -14,52 +14,17 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/forgot.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
 <div class="reset-container">
     <h2>Reset Password</h2>
     <p style="margin-bottom: 20px; color: #707070;">Enter your email to receive a reset link</p>
 <input type="email" id="resetEmail" placeholder="Enter your email">
-<button onclick="resetPassword()">Reset Password</button>
+<button data-onclick="resetPassword">Reset Password</button>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
-  import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
-            authDomain: "grappletrade.firebaseapp.com",
-            projectId: "grappletrade",
-            storageBucket: "grappletrade.firebasestorage.app",
-            messagingSenderId: "119683736855",
-            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
-            measurementId: "G-987DNCH23C"
-        };
-
-  const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
-  const auth = getAuth(app);
-
-  window.resetPassword = function () {
-    const email = document.getElementById("resetEmail").value;
-
-    if (!email) {
-      alert("Please enter an email.");
-      return;
-    }
-
-    sendPasswordResetEmail(auth, email)
-      .then(() => {
-        alert("Password reset email sent! Check your inbox.");
-      })
-      .catch((error) => {
-        alert(error.message);
-      });
-  }
-</script>
+<script type="module" src="js/forgot.js"></script>
 </div>
     <script type="module" src="js/site-notice.js"></script>
 </body>

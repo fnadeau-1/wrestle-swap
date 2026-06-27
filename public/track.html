@@ -15,11 +15,10 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/track.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
-    <!-- Header -->
     <div class="main-header">
         <div class="header-content">
             <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
@@ -27,7 +26,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="container">
         <div class="tracking-card">
             <div class="tracking-icon">📦</div>
@@ -38,12 +36,10 @@
                 <p><strong>💡 Tip:</strong> You can find your tracking number in your order confirmation email or on your seller's profile page.</p>
             </div>
 
-            <!-- Carriers Section -->
             <div class="carriers-section">
                 <h2 class="section-title">Choose Your Carrier</h2>
                 
                 <div class="carrier-grid">
-                    <!-- USPS -->
                     <a href="https://tools.usps.com/go/TrackConfirmAction" target="_blank" class="carrier-btn">
                         <div class="carrier-icon">🇺🇸</div>
                         <div class="carrier-info">
@@ -53,7 +49,6 @@
                         <div class="arrow">→</div>
                     </a>
 
-                    <!-- UPS -->
                     <a href="https://www.ups.com/track?loc=en_US" target="_blank" class="carrier-btn">
                         <div class="carrier-icon">📦</div>
                         <div class="carrier-info">
@@ -63,7 +58,6 @@
                         <div class="arrow">→</div>
                     </a>
 
-                    <!-- FedEx -->
                     <a href="https://www.fedex.com/fedextrack/" target="_blank" class="carrier-btn">
                         <div class="carrier-icon">✈️</div>
                         <div class="carrier-info">
@@ -73,7 +67,6 @@
                         <div class="arrow">→</div>
                     </a>
 
-                    <!-- DHL -->
                     <a href="https://www.dhl.com/us-en/home/tracking.html" target="_blank" class="carrier-btn">
                         <div class="carrier-icon">🌍</div>
                         <div class="carrier-info">
@@ -83,7 +76,6 @@
                         <div class="arrow">→</div>
                     </a>
 
-                    <!-- Amazon Logistics -->
                     <a href="https://track.amazon.com/" target="_blank" class="carrier-btn">
                         <div class="carrier-icon">📮</div>
                         <div class="carrier-info">
@@ -97,7 +89,6 @@
 
             <hr class="divider">
 
-            <!-- Help Section -->
             <div class="help-section">
                 <div class="help-title">Need Help?</div>
                 <p class="help-text">

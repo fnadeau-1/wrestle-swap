@@ -15,11 +15,10 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/search.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
-    <!-- Top Bar -->
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
@@ -34,7 +33,6 @@
         </div>
     </div>
 
-    <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
             <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
@@ -42,117 +40,109 @@
                 <div class="search-box">
                     <input type="text" class="search-input" id="search-input" placeholder="Search for wrestling gear..." aria-label="Search for wrestling gear">
                 </div>
-                <button class="search-btn" onclick="performSearch()">Search</button>
+                <button class="search-btn" data-onclick="performSearch">Search</button>
             </div>
         </div>
     </div>
 
-    <!-- Breadcrumb -->
     <div class="breadcrumb">
         <div class="breadcrumb-content">
             <a href="index.html">Home</a> > <a href="search.html">All Categories</a> > <strong id="search-query-breadcrumb">Search Results</strong>
         </div>
     </div>
 
-    <!-- Filter overlay (mobile backdrop) -->
-    <div class="filter-overlay" id="filter-overlay" onclick="closeFilters()"></div>
+    <div class="filter-overlay" id="filter-overlay" data-onclick="closeFilters"></div>
 
-    <!-- Main Content -->
     <div class="container">
-        <!-- Sidebar Filters -->
         <aside class="sidebar" id="filter-sidebar">
-            <!-- Drawer header (mobile only) -->
             <div class="filter-drawer-header">
                 <strong>Filters</strong>
-                <button class="filter-drawer-close" onclick="closeFilters()">&#x2715;</button>
+                <button class="filter-drawer-close" data-onclick="closeFilters">&#x2715;</button>
             </div>
 
-            <!-- Clear all -->
             <div id="clear-filters-bar" style="display:none; padding: 6px 0 2px;">
-                <button class="clear-filters-btn" onclick="clearAllFilters()">&#x2715; Clear all filters</button>
+                <button class="clear-filters-btn" data-onclick="clearAllFilters">&#x2715; Clear all filters</button>
             </div>
 
             <div class="filter-section">
                 <div class="filter-title">Category</div>
                 <div class="filter-option">
-                    <input type="checkbox" id="shoes" onchange="filterProducts(); updateSizeFilters()">
+                    <input type="checkbox" id="shoes" data-onchange="filterProducts,updateSizeFilters">
                     <label for="shoes">Wrestling Shoes</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="singlets" onchange="filterProducts(); updateSizeFilters()">
+                    <input type="checkbox" id="singlets" data-onchange="filterProducts,updateSizeFilters">
                     <label for="singlets">Singlets</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="warmups" onchange="filterProducts(); updateSizeFilters()">
+                    <input type="checkbox" id="warmups" data-onchange="filterProducts,updateSizeFilters">
                     <label for="warmups">Warm-ups</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="shirts" onchange="filterProducts(); updateSizeFilters()">
+                    <input type="checkbox" id="shirts" data-onchange="filterProducts,updateSizeFilters">
                     <label for="shirts">Shirts</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="bottoms" onchange="filterProducts(); updateSizeFilters()">
+                    <input type="checkbox" id="bottoms" data-onchange="filterProducts,updateSizeFilters">
                     <label for="bottoms">Shorts/Pants</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="accessories" onchange="filterProducts()">
+                    <input type="checkbox" id="accessories" data-onchange="filterProducts">
                     <label for="accessories">Accessories</label>
                 </div>
                 <div class="filter-option">
-                    <input type="checkbox" id="other" onchange="filterProducts()">
+                    <input type="checkbox" id="other" data-onchange="filterProducts">
                     <label for="other">Other</label>
                 </div>
             </div>
 
-            <!-- Shoe Size Filter (pill buttons) -->
             <div class="filter-section" id="shoe-size-section" style="display:none;">
                 <div class="filter-title">Shoe Size</div>
                 <div class="size-pills">
-                    <button class="size-pill" data-size="2" onclick="toggleSizePill(this)">2</button>
-                    <button class="size-pill" data-size="2.5" onclick="toggleSizePill(this)">2.5</button>
-                    <button class="size-pill" data-size="3" onclick="toggleSizePill(this)">3</button>
-                    <button class="size-pill" data-size="3.5" onclick="toggleSizePill(this)">3.5</button>
-                    <button class="size-pill" data-size="4" onclick="toggleSizePill(this)">4</button>
-                    <button class="size-pill" data-size="4.5" onclick="toggleSizePill(this)">4.5</button>
-                    <button class="size-pill" data-size="5" onclick="toggleSizePill(this)">5</button>
-                    <button class="size-pill" data-size="5.5" onclick="toggleSizePill(this)">5.5</button>
-                    <button class="size-pill" data-size="6" onclick="toggleSizePill(this)">6</button>
-                    <button class="size-pill" data-size="6.5" onclick="toggleSizePill(this)">6.5</button>
-                    <button class="size-pill" data-size="7" onclick="toggleSizePill(this)">7</button>
-                    <button class="size-pill" data-size="7.5" onclick="toggleSizePill(this)">7.5</button>
-                    <button class="size-pill" data-size="8" onclick="toggleSizePill(this)">8</button>
-                    <button class="size-pill" data-size="8.5" onclick="toggleSizePill(this)">8.5</button>
-                    <button class="size-pill" data-size="9" onclick="toggleSizePill(this)">9</button>
-                    <button class="size-pill" data-size="9.5" onclick="toggleSizePill(this)">9.5</button>
-                    <button class="size-pill" data-size="10" onclick="toggleSizePill(this)">10</button>
-                    <button class="size-pill" data-size="10.5" onclick="toggleSizePill(this)">10.5</button>
-                    <button class="size-pill" data-size="11" onclick="toggleSizePill(this)">11</button>
-                    <button class="size-pill" data-size="11.5" onclick="toggleSizePill(this)">11.5</button>
-                    <button class="size-pill" data-size="12" onclick="toggleSizePill(this)">12</button>
-                    <button class="size-pill" data-size="12.5" onclick="toggleSizePill(this)">12.5</button>
-                    <button class="size-pill" data-size="13" onclick="toggleSizePill(this)">13</button>
-                    <button class="size-pill" data-size="13.5" onclick="toggleSizePill(this)">13.5</button>
-                    <button class="size-pill" data-size="14" onclick="toggleSizePill(this)">14</button>
+                    <button class="size-pill" data-size="2" data-onclick-self="toggleSizePill">2</button>
+                    <button class="size-pill" data-size="2.5" data-onclick-self="toggleSizePill">2.5</button>
+                    <button class="size-pill" data-size="3" data-onclick-self="toggleSizePill">3</button>
+                    <button class="size-pill" data-size="3.5" data-onclick-self="toggleSizePill">3.5</button>
+                    <button class="size-pill" data-size="4" data-onclick-self="toggleSizePill">4</button>
+                    <button class="size-pill" data-size="4.5" data-onclick-self="toggleSizePill">4.5</button>
+                    <button class="size-pill" data-size="5" data-onclick-self="toggleSizePill">5</button>
+                    <button class="size-pill" data-size="5.5" data-onclick-self="toggleSizePill">5.5</button>
+                    <button class="size-pill" data-size="6" data-onclick-self="toggleSizePill">6</button>
+                    <button class="size-pill" data-size="6.5" data-onclick-self="toggleSizePill">6.5</button>
+                    <button class="size-pill" data-size="7" data-onclick-self="toggleSizePill">7</button>
+                    <button class="size-pill" data-size="7.5" data-onclick-self="toggleSizePill">7.5</button>
+                    <button class="size-pill" data-size="8" data-onclick-self="toggleSizePill">8</button>
+                    <button class="size-pill" data-size="8.5" data-onclick-self="toggleSizePill">8.5</button>
+                    <button class="size-pill" data-size="9" data-onclick-self="toggleSizePill">9</button>
+                    <button class="size-pill" data-size="9.5" data-onclick-self="toggleSizePill">9.5</button>
+                    <button class="size-pill" data-size="10" data-onclick-self="toggleSizePill">10</button>
+                    <button class="size-pill" data-size="10.5" data-onclick-self="toggleSizePill">10.5</button>
+                    <button class="size-pill" data-size="11" data-onclick-self="toggleSizePill">11</button>
+                    <button class="size-pill" data-size="11.5" data-onclick-self="toggleSizePill">11.5</button>
+                    <button class="size-pill" data-size="12" data-onclick-self="toggleSizePill">12</button>
+                    <button class="size-pill" data-size="12.5" data-onclick-self="toggleSizePill">12.5</button>
+                    <button class="size-pill" data-size="13" data-onclick-self="toggleSizePill">13</button>
+                    <button class="size-pill" data-size="13.5" data-onclick-self="toggleSizePill">13.5</button>
+                    <button class="size-pill" data-size="14" data-onclick-self="toggleSizePill">14</button>
                 </div>
             </div>
 
-            <!-- Clothing Size Filter -->
             <div class="filter-section" id="clothing-size-section">
                 <div class="filter-title">Clothing Size</div>
-                <div class="filter-option"><input type="checkbox" id="size-xs" onchange="filterProducts()"><label for="size-xs">X-Small</label></div>
-                <div class="filter-option"><input type="checkbox" id="size-s" onchange="filterProducts()"><label for="size-s">Small</label></div>
-                <div class="filter-option"><input type="checkbox" id="size-m" onchange="filterProducts()"><label for="size-m">Medium</label></div>
-                <div class="filter-option"><input type="checkbox" id="size-l" onchange="filterProducts()"><label for="size-l">Large</label></div>
-                <div class="filter-option"><input type="checkbox" id="size-xl" onchange="filterProducts()"><label for="size-xl">X-Large</label></div>
-                <div class="filter-option"><input type="checkbox" id="size-xxl" onchange="filterProducts()"><label for="size-xxl">XX-Large</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-xs" data-onchange="filterProducts"><label for="size-xs">X-Small</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-s" data-onchange="filterProducts"><label for="size-s">Small</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-m" data-onchange="filterProducts"><label for="size-m">Medium</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-l" data-onchange="filterProducts"><label for="size-l">Large</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-xl" data-onchange="filterProducts"><label for="size-xl">X-Large</label></div>
+                <div class="filter-option"><input type="checkbox" id="size-xxl" data-onchange="filterProducts"><label for="size-xxl">XX-Large</label></div>
             </div>
 
             <div class="filter-section">
                 <div class="filter-title">Condition</div>
-                <div class="filter-option"><input type="checkbox" id="cond-new" onchange="filterProducts()"><label for="cond-new">New</label></div>
-                <div class="filter-option"><input type="checkbox" id="cond-likenew" onchange="filterProducts()"><label for="cond-likenew">Like New</label></div>
-                <div class="filter-option"><input type="checkbox" id="cond-good" onchange="filterProducts()"><label for="cond-good">Used - Good</label></div>
-                <div class="filter-option"><input type="checkbox" id="cond-fair" onchange="filterProducts()"><label for="cond-fair">Used - Fair</label></div>
+                <div class="filter-option"><input type="checkbox" id="cond-new" data-onchange="filterProducts"><label for="cond-new">New</label></div>
+                <div class="filter-option"><input type="checkbox" id="cond-likenew" data-onchange="filterProducts"><label for="cond-likenew">Like New</label></div>
+                <div class="filter-option"><input type="checkbox" id="cond-good" data-onchange="filterProducts"><label for="cond-good">Used - Good</label></div>
+                <div class="filter-option"><input type="checkbox" id="cond-fair" data-onchange="filterProducts"><label for="cond-fair">Used - Fair</label></div>
             </div>
 
             <div class="filter-section">
@@ -160,55 +150,51 @@
                 <div class="price-inputs">
                     <div class="price-input-group">
                         <span class="price-symbol">$</span>
-                        <input type="number" id="price-min-input" placeholder="Min" min="0" oninput="filterProducts(); updateFilterCount()">
+                        <input type="number" id="price-min-input" placeholder="Min" min="0" data-oninput="filterProducts,updateFilterCount">
                     </div>
                     <span class="price-dash">&mdash;</span>
                     <div class="price-input-group">
                         <span class="price-symbol">$</span>
-                        <input type="number" id="price-max-input" placeholder="Max" min="0" oninput="filterProducts(); updateFilterCount()">
+                        <input type="number" id="price-max-input" placeholder="Max" min="0" data-oninput="filterProducts,updateFilterCount">
                     </div>
                 </div>
             </div>
 
             <div class="filter-section">
                 <div class="filter-title">Brand</div>
-                <div class="filter-option"><input type="checkbox" id="asics" onchange="filterProducts()"><label for="asics">ASICS</label></div>
-                <div class="filter-option"><input type="checkbox" id="adidas" onchange="filterProducts()"><label for="adidas">Adidas</label></div>
-                <div class="filter-option"><input type="checkbox" id="nike" onchange="filterProducts()"><label for="nike">Nike</label></div>
-                <div class="filter-option"><input type="checkbox" id="rudis" onchange="filterProducts()"><label for="rudis">Rudis</label></div>
-                <div class="filter-option"><input type="checkbox" id="cliff_keen" onchange="filterProducts()"><label for="cliff_keen">Cliff Keen</label></div>
-                <div class="filter-option"><input type="checkbox" id="brute" onchange="filterProducts()"><label for="brute">Brute</label></div>
-                <div class="filter-option"><input type="checkbox" id="champion" onchange="filterProducts()"><label for="champion">Champion</label></div>
-                <div class="filter-option"><input type="checkbox" id="matman" onchange="filterProducts()"><label for="matman">Matman</label></div>
-                <div class="filter-option"><input type="checkbox" id="brand-other" onchange="filterProducts()"><label for="brand-other">Other</label></div>
+                <div class="filter-option"><input type="checkbox" id="asics" data-onchange="filterProducts"><label for="asics">ASICS</label></div>
+                <div class="filter-option"><input type="checkbox" id="adidas" data-onchange="filterProducts"><label for="adidas">Adidas</label></div>
+                <div class="filter-option"><input type="checkbox" id="nike" data-onchange="filterProducts"><label for="nike">Nike</label></div>
+                <div class="filter-option"><input type="checkbox" id="rudis" data-onchange="filterProducts"><label for="rudis">Rudis</label></div>
+                <div class="filter-option"><input type="checkbox" id="cliff_keen" data-onchange="filterProducts"><label for="cliff_keen">Cliff Keen</label></div>
+                <div class="filter-option"><input type="checkbox" id="brute" data-onchange="filterProducts"><label for="brute">Brute</label></div>
+                <div class="filter-option"><input type="checkbox" id="champion" data-onchange="filterProducts"><label for="champion">Champion</label></div>
+                <div class="filter-option"><input type="checkbox" id="matman" data-onchange="filterProducts"><label for="matman">Matman</label></div>
+                <div class="filter-option"><input type="checkbox" id="brand-other" data-onchange="filterProducts"><label for="brand-other">Other</label></div>
             </div>
         </aside>
 
-        <!-- Results Area -->
         <main class="results-area">
-            <!-- Mobile Filters Button -->
             <div class="mobile-filter-bar">
-                <button class="filter-toggle-btn" id="filter-toggle-btn" onclick="openFilters()">
+                <button class="filter-toggle-btn" id="filter-toggle-btn" data-onclick="openFilters">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;display:block"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
                     Filters
                     <span class="filter-count-badge" id="filter-count-badge" style="display:none;"></span>
                 </button>
             </div>
 
-            <!-- Loading State -->
             <div class="loading" id="loading-state">
                 <div class="loading-spinner"></div>
                 <p style="margin-top: 20px; color: #707070;">Loading products...</p>
             </div>
 
-            <!-- Results Header -->
             <div class="results-header" id="results-header" style="display: none;">
                 <div class="results-count" id="results-count">
                     <strong>0 results</strong>
                 </div>
                 <div class="sort-by">
                     <span>Sort:</span>
-                    <select onchange="sortProducts(this.value)">
+                    <select data-onchange-value="sortProducts">
                         <option value="best">Best Match</option>
                         <option value="price-low">Price: Low to High</option>
                         <option value="price-high">Price: High to Low</option>
@@ -217,13 +203,11 @@
                 </div>
             </div>
 
-            <!-- Products Grid -->
             <div class="products-grid" id="products-container"></div>
             <div style="text-align:center;margin:20px 0;display:none;" id="load-more-wrapper">
-                <button id="load-more-btn" onclick="showMoreProducts()" style="padding:12px 32px;background:#c41e3a;color:white;border:none;border-radius:6px;font-size:15px;cursor:pointer;font-weight:600;">Load More</button>
+                <button id="load-more-btn" data-onclick="showMoreProducts" style="padding:12px 32px;background:#c41e3a;color:white;border:none;border-radius:6px;font-size:15px;cursor:pointer;font-weight:600;">Load More</button>
             </div>
 
-            <!-- No Results -->
             <div class="no-results" id="no-results" style="display: none;">
                 <div class="no-results-icon">&#x1F50D;</div>
                 <h2 class="no-results-title">No results found</h2>
@@ -239,433 +223,8 @@
         </main>
     </div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, query, where, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
-            authDomain: "grappletrade.firebaseapp.com",
-            projectId: "grappletrade",
-            storageBucket: "grappletrade.firebasestorage.app",
-            messagingSenderId: "119683736855",
-            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
-            measurementId: "G-987DNCH23C"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // User greeting + load watchlist
-        onAuthStateChanged(auth, async (user) => {
-            const greeting = document.getElementById('user-greeting');
-            if (user) {
-                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                greeting.textContent = `Hi, ${firstName}!`;
-                greeting.href = 'profile.html';
-                window._currentUser = user;
-                try {
-                    const wSnap = await getDocs(collection(db, 'users', user.uid, 'watchlist'));
-                    wSnap.forEach(d => window.userWatchlist.add(d.id));
-                } catch(e) {}
-            } else {
-                greeting.textContent = 'Hi! Sign in';
-                greeting.href = 'sign-in.html';
-                window._currentUser = null;
-            }
-        });
-
-        // Watchlist toggle
-        window._toggleWatchlistFirestore = async (productId, add) => {
-            const user = window._currentUser;
-            if (!user) { window.location.href = 'sign-in.html'; return; }
-            const ref = doc(db, 'users', user.uid, 'watchlist', productId);
-            if (add) {
-                await setDoc(ref, { addedAt: new Date() });
-            } else {
-                await deleteDoc(ref);
-            }
-        };
-
-        window.firestoreDB = db;
-        window.getDocs = getDocs;
-        window.collection = collection;
-        window.query = query;
-        window.where = where;
-    </script>
-
-    <script>
-        let allProducts = [];
-        let currentProducts = [];
-        let searchQuery = '';
-        let displayedCount = 0;
-        const SEARCH_PAGE_SIZE = 24;
-        window.userWatchlist = new Set();
-
-        function toggleWatchlistCard(productId, btn) {
-            const inWatchlist = window.userWatchlist.has(productId);
-            if (inWatchlist) {
-                window.userWatchlist.delete(productId);
-                btn.textContent = '🤍';
-                btn.title = 'Add to watchlist';
-            } else {
-                window.userWatchlist.add(productId);
-                btn.textContent = '❤️';
-                btn.title = 'Remove from watchlist';
-            }
-            window._toggleWatchlistFirestore && window._toggleWatchlistFirestore(productId, !inWatchlist);
-        }
-
-        function getSearchQuery() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('q') || '';
-        }
-
-        function applyCategoryFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const cat = urlParams.get('category');
-            if (!cat) return;
-            const el = document.getElementById(cat);
-            if (el) {
-                el.checked = true;
-                updateSizeFilters();
-            }
-        }
-
-        async function loadProductsFromFirestore() {
-            try {
-                const q = window.query(
-                    window.collection(window.firestoreDB, 'products'),
-                    window.where('active', '==', true)
-                );
-                const querySnapshot = await window.getDocs(q);
-                allProducts = [];
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if (data.sold === true) return;
-                    allProducts.push({
-                        id: doc.id,
-                        name: data.title,
-                        price: data.price,
-                        category: data.category,
-                        brand: (data.brand || 'other').toLowerCase(),
-                        condition: data.condition,
-                        size: data.size,
-                        sellerName: data.sellerName || '',
-                        sellerRating: data.sellerRating || 0,
-                        zipCode: data.zipCode || '',
-                        shipping: getShippingDisplay(data),
-                        icon: getCategoryIcon(data.category),
-                        images: data.images || [],
-                        sold: data.sold || false
-                    });
-                });
-                currentProducts = [...allProducts];
-                document.getElementById('loading-state').style.display = 'none';
-                document.getElementById('results-header').style.display = 'flex';
-                filterProducts();
-            } catch (error) {
-                console.error('Error loading products:', error);
-                document.getElementById('loading-state').innerHTML =
-                    '<p style="color: #dc2626;">Error loading products. Please refresh the page.</p>';
-            }
-        }
-
-        function getShippingDisplay(product) {
-            if (product.shippingMethod === 'free') return 'Free shipping';
-            const cost = product.shippingCost || 0;
-            return `+$${cost.toFixed(2)} shipping`;
-        }
-
-        function getCategoryIcon(category) {
-            const icons = {
-                'shoes': '👟', 'singlets': '🤼', 'warmups': '🧥',
-                'shirts': '👕', 'bottoms': '🩳', 'accessories': '🎒', 'other': '📦'
-            };
-            return icons[category] || '📦';
-        }
-
-        function initializePage() {
-            searchQuery = getSearchQuery();
-            document.getElementById('search-input').value = searchQuery;
-            document.getElementById('search-query-breadcrumb').textContent = searchQuery ? `"${searchQuery}"` : 'All Items';
-            document.getElementById('no-results-query').textContent = searchQuery;
-            applyCategoryFromURL();
-            loadProductsFromFirestore();
-        }
-
-        // Mobile filter drawer
-        function openFilters() {
-            document.getElementById('filter-sidebar').classList.add('drawer-open');
-            document.getElementById('filter-overlay').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeFilters() {
-            document.getElementById('filter-sidebar').classList.remove('drawer-open');
-            document.getElementById('filter-overlay').classList.remove('active');
-            document.body.style.overflow = '';
-        }
-
-        function performSearch() {
-            const q = document.getElementById('search-input').value.trim();
-            window.location.href = q ? 'search.html?q=' + encodeURIComponent(q) : 'search.html';
-        }
-
-        // Shoe size pill toggle
-        function toggleSizePill(btn) {
-            btn.classList.toggle('selected');
-            filterProducts();
-            updateFilterCount();
-        }
-
-        // Show/hide size filter sections based on selected categories
-        function updateSizeFilters() {
-            const shoesChecked = document.getElementById('shoes')?.checked;
-            const clothingCats = ['singlets', 'warmups', 'shirts', 'bottoms'];
-            const clothingChecked = clothingCats.some(c => document.getElementById(c)?.checked);
-            const noCatChecked = !shoesChecked && !clothingChecked;
-
-            document.getElementById('shoe-size-section').style.display =
-                (shoesChecked || noCatChecked) ? 'block' : 'none';
-            document.getElementById('clothing-size-section').style.display =
-                (clothingChecked || noCatChecked) ? 'block' : 'none';
-        }
-
-        // Count active filters and update the badge + clear button
-        function updateFilterCount() {
-            let count = 0;
-            ['shoes','singlets','warmups','shirts','bottoms','accessories','other'].forEach(id => {
-                if (document.getElementById(id)?.checked) count++;
-            });
-            document.querySelectorAll('.size-pill.selected').forEach(() => count++);
-            ['size-xs','size-s','size-m','size-l','size-xl','size-xxl'].forEach(id => {
-                if (document.getElementById(id)?.checked) count++;
-            });
-            ['cond-new','cond-likenew','cond-good','cond-fair'].forEach(id => {
-                if (document.getElementById(id)?.checked) count++;
-            });
-            ['asics','adidas','nike','rudis','cliff_keen','brute','champion','matman','brand-other'].forEach(id => {
-                if (document.getElementById(id)?.checked) count++;
-            });
-            const minP = parseFloat(document.getElementById('price-min-input')?.value);
-            const maxP = parseFloat(document.getElementById('price-max-input')?.value);
-            if (!isNaN(minP) && minP > 0) count++;
-            if (!isNaN(maxP) && maxP > 0) count++;
-
-            const badge = document.getElementById('filter-count-badge');
-            const clearBar = document.getElementById('clear-filters-bar');
-            if (count > 0) {
-                if (badge) { badge.textContent = count; badge.style.display = 'inline-flex'; }
-                if (clearBar) clearBar.style.display = 'block';
-            } else {
-                if (badge) badge.style.display = 'none';
-                if (clearBar) clearBar.style.display = 'none';
-            }
-        }
-
-        // Clear all filters
-        function clearAllFilters() {
-            ['shoes','singlets','warmups','shirts','bottoms','accessories','other',
-             'size-xs','size-s','size-m','size-l','size-xl','size-xxl',
-             'cond-new','cond-likenew','cond-good','cond-fair',
-             'asics','adidas','nike','rudis','cliff_keen','brute','champion','matman','brand-other'
-            ].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
-            document.querySelectorAll('.size-pill.selected').forEach(p => p.classList.remove('selected'));
-            const minEl = document.getElementById('price-min-input');
-            const maxEl = document.getElementById('price-max-input');
-            if (minEl) minEl.value = '';
-            if (maxEl) maxEl.value = '';
-            updateSizeFilters();
-            filterProducts();
-            updateFilterCount();
-        }
-
-        // Filter products
-        function filterProducts() {
-            let filtered = [...allProducts];
-
-            // Search query
-            if (searchQuery) {
-                const q = searchQuery.toLowerCase();
-                filtered = filtered.filter(p => p.name.toLowerCase().includes(q));
-            }
-
-            // Category
-            const selectedCategories = [];
-            ['shoes','singlets','warmups','shirts','bottoms','accessories','other'].forEach(cat => {
-                if (document.getElementById(cat)?.checked) selectedCategories.push(cat);
-            });
-            if (selectedCategories.length > 0) {
-                filtered = filtered.filter(p => selectedCategories.includes(p.category));
-            }
-
-            // Shoe size (pills)
-            const selectedSizes = [];
-            document.querySelectorAll('.size-pill.selected').forEach(p => selectedSizes.push(p.dataset.size));
-            if (selectedSizes.length > 0) {
-                filtered = filtered.filter(p => {
-                    if (!p.size) return false;
-                    const ps = p.size.toString().toLowerCase();
-                    return selectedSizes.some(s => ps.includes(s));
-                });
-            }
-
-            // Clothing size
-            const clothingSizeMap = {
-                'size-xs': ['xs', 'x-small', 'xsmall', 'extra small'],
-                'size-s':  ['small', ' s ', '"s"'],
-                'size-m':  ['medium', ' m '],
-                'size-l':  ['large', ' l '],
-                'size-xl': ['xl', 'x-large', 'xlarge', 'extra large'],
-                'size-xxl':['xxl', 'xx-large', 'xxlarge', '2xl']
-            };
-            const selectedClothing = Object.entries(clothingSizeMap)
-                .filter(([id]) => document.getElementById(id)?.checked)
-                .map(([, vals]) => vals);
-            if (selectedClothing.length > 0) {
-                filtered = filtered.filter(p => {
-                    const ps = (p.size || '').toLowerCase();
-                    return selectedClothing.some(vals => vals.some(v => ps.includes(v)));
-                });
-            }
-
-            // Condition
-            const condMap = {
-                'cond-new': 'new',
-                'cond-likenew': 'likenew',
-                'cond-good': 'good',
-                'cond-fair': 'fair'
-            };
-            const selectedConds = Object.entries(condMap)
-                .filter(([id]) => document.getElementById(id)?.checked)
-                .map(([, val]) => val);
-            if (selectedConds.length > 0) {
-                filtered = filtered.filter(p => selectedConds.includes((p.condition || '').toLowerCase()));
-            }
-
-            // Brand
-            const brandMap = {
-                'asics': 'asics', 'adidas': 'adidas', 'nike': 'nike', 'rudis': 'rudis',
-                'cliff_keen': 'cliff keen', 'brute': 'brute', 'champion': 'champion', 'matman': 'matman'
-            };
-            const selectedBrands = Object.entries(brandMap)
-                .filter(([id]) => document.getElementById(id)?.checked)
-                .map(([, val]) => val);
-            if (document.getElementById('brand-other')?.checked) selectedBrands.push('other');
-            if (selectedBrands.length > 0) {
-                filtered = filtered.filter(p => selectedBrands.includes((p.brand || 'other').toLowerCase()));
-            }
-
-            // Price
-            const minPrice = parseFloat(document.getElementById('price-min-input')?.value) || 0;
-            const maxPrice = parseFloat(document.getElementById('price-max-input')?.value) || Infinity;
-            filtered = filtered.filter(p => p.price >= minPrice && p.price <= maxPrice);
-
-            currentProducts = filtered;
-            updateFilterCount();
-            displayProducts();
-        }
-
-        // Sort products
-        function sortProducts(sortType) {
-            switch(sortType) {
-                case 'price-low':  currentProducts.sort((a, b) => a.price - b.price); break;
-                case 'price-high': currentProducts.sort((a, b) => b.price - a.price); break;
-                case 'newest':     currentProducts.reverse(); break;
-                default: break;
-            }
-            displayProducts();
-        }
-
-        function renderProductSlice(products) {
-            return products.map(product => {
-                const imgSrc = safeUrl(product.images && product.images[0]);
-                const imageDisplay = imgSrc
-                    ? `<img src="${esc(imgSrc)}" alt="${esc(product.name)}" loading="lazy">`
-                    : esc(product.icon || '📦');
-                const soldClass = product.sold ? 'sold' : '';
-                const soldBadge = product.sold ? '<div class="sold-badge">SOLD</div>' : '';
-                const inWatchlist = userWatchlist.has(product.id);
-                const heartHtml = `<button class="heart-btn" onclick="event.stopPropagation(); toggleWatchlistCard('${product.id}', this)" title="${inWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}">${inWatchlist ? '❤️' : '🤍'}</button>`;
-                const trustBadge = product.sellerRating >= 4.5 ? '<span class="trust-badge">Top Seller</span>' : '';
-                const locationText = product.zipCode ? ` &middot; Ships from ${esc(product.zipCode)}` : '';
-                return `
-                    <a class="product-item ${soldClass}" href="productdetail.html?id=${esc(product.id)}" style="text-decoration:none;color:inherit;">
-                        ${soldBadge}
-                        ${heartHtml}
-                        <div class="product-img">${imageDisplay}</div>
-                        <div class="product-details">
-                            <div class="product-name">${esc(product.name)}</div>
-                            <div class="product-price">$${product.price.toFixed(2)}</div>
-                            <div class="product-condition">${formatCondition(product.condition)}</div>
-                            <div class="seller-trust">${trustBadge}<span>${esc(product.sellerName)}${locationText}</span></div>
-                        </div>
-                    </a>
-                `;
-            }).join('');
-        }
-
-        function displayProducts() {
-            const container = document.getElementById('products-container');
-            const noResults = document.getElementById('no-results');
-            const resultsCount = document.getElementById('results-count');
-            const loadMoreWrapper = document.getElementById('load-more-wrapper');
-
-            if (currentProducts.length === 0) {
-                container.style.display = 'none';
-                noResults.style.display = 'block';
-                resultsCount.innerHTML = `<strong>0 results</strong>`;
-                loadMoreWrapper.style.display = 'none';
-            } else {
-                container.style.display = 'grid';
-                noResults.style.display = 'none';
-                resultsCount.innerHTML = `<strong>${currentProducts.length} result${currentProducts.length !== 1 ? 's' : ''}</strong>`;
-                displayedCount = Math.min(SEARCH_PAGE_SIZE, currentProducts.length);
-                container.innerHTML = renderProductSlice(currentProducts.slice(0, displayedCount));
-                if (currentProducts.length > displayedCount) {
-                    loadMoreWrapper.style.display = 'block';
-                    document.getElementById('load-more-btn').textContent = 'Load More';
-                } else {
-                    loadMoreWrapper.style.display = 'none';
-                }
-            }
-        }
-
-        function showMoreProducts() {
-            const container = document.getElementById('products-container');
-            const loadMoreWrapper = document.getElementById('load-more-wrapper');
-            const nextCount = Math.min(displayedCount + SEARCH_PAGE_SIZE, currentProducts.length);
-            container.insertAdjacentHTML('beforeend', renderProductSlice(currentProducts.slice(displayedCount, nextCount)));
-            displayedCount = nextCount;
-            if (displayedCount >= currentProducts.length) loadMoreWrapper.style.display = 'none';
-        }
-
-        function esc(s) {
-            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-        function safeUrl(url) {
-            if (!url) return '';
-            const u = String(url);
-            return (u.startsWith('https://') || u.startsWith('http://')) ? u : '';
-        }
-        function formatCondition(condition) {
-            const conditions = { 'new': 'New', 'good': 'Used - Good', 'likenew': 'Like New', 'fair': 'Used - Fair' };
-            return conditions[condition] || esc(condition);
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('search-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') performSearch();
-            });
-            initializePage();
-        });
-    </script>
+    <script type="module" src="js/search.js"></script>
+    <script src="js/search-init.js"></script>
     <script type="module" src="js/site-notice.js"></script>
     <script type="module" src="js/notifications.js"></script>
     <script src="js/bottom-nav.js" data-active="search"></script>

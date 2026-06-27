@@ -17,32 +17,28 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/index.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
-    <!-- Top Bar -->
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <!-- User Menu Container - This will be updated by JavaScript -->
                 <span id="user-menu-wrapper">
-                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                    <button class="top-bar-btn" id="user-greeting" data-href="sign-in.html">Hi! Sign in</button>
                 </span>
-                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
-                <button class="top-bar-btn" onclick="window.location.href='messages.html'">Chats</button>
+                <button class="top-bar-btn" data-href="help.html">Help & Contact</button>
+                <button class="top-bar-btn" data-href="messages.html">Chats</button>
 
             </div>
             <div>
-                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
-                <button class="top-bar-btn" onclick="window.location.href='track.html'">Track Packages</button>
-                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
+                <button class="top-bar-btn" data-href="sell.html">Sell</button>
+                <button class="top-bar-btn" data-href="track.html">Track Packages</button>
+                <button class="top-bar-btn" data-href="settings.html">Settings</button>
             </div>
         </div>
     </div>
 
-
-    <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
             <a href="index.html" class="logo" aria-label="GrappleTrade home"></a>
@@ -54,16 +50,15 @@
                         id="search-input"
                         placeholder="Search for wrestling shoes, singlets, gear..."
                         aria-label="Search for wrestling gear"
-                        onkeypress="if(event.key==='Enter') performSearch()"
+                        data-onenter="performSearch"
                     >
                 </div>
-                <button class="search-btn" onclick="performSearch()">Search</button>
+                <button class="search-btn" data-onclick="performSearch">Search</button>
             </div>
 
         </div>
     </div>
 
-    <!-- Navigation -->
     <nav class="nav-bar" aria-label="Main navigation">
         <div class="nav-content">
             <a href="watchlist.html">Saved</a>
@@ -75,16 +70,13 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="container">
-        <!-- Banner -->
         <div class="banner">
             <h1>Buy & Sell Wrestling Gear</h1>
             <p>Find quality wrestling equipment at great prices</p>
-            <button class="banner-btn" onclick="window.location.href='search.html'">Shop Now</button>
+            <button class="banner-btn" data-href="search.html">Shop Now</button>
         </div>
 
-        <!-- Categories -->
         <h2 class="section-title">Explore Popular Categories</h2>
         <div class="categories">
             <a class="category-card" href="search.html?q=shoes" style="text-decoration:none;color:inherit;">
@@ -109,17 +101,15 @@
             </a>
         </div>
 
-        <!-- Products -->
         <h2 class="section-title">Today's Deals</h2>
 
         <div class="loading-products" id="loading-products">Loading products...</div>
         <div class="products" id="products-container"></div>
         <div style="text-align:center;margin:20px 0;display:none;" id="load-more-wrapper">
-            <button id="load-more-btn" onclick="loadMoreProducts()" style="padding:12px 32px;background:#c41e3a;color:white;border:none;border-radius:6px;font-size:15px;cursor:pointer;font-weight:600;">Load More</button>
+            <button id="load-more-btn" data-onclick="loadMoreProducts" style="padding:12px 32px;background:#c41e3a;color:white;border:none;border-radius:6px;font-size:15px;cursor:pointer;font-weight:600;">Load More</button>
         </div>
     </main>
 
-    <!-- Footer -->
     <div class="footer">
         <div class="footer-content">
             <div class="footer-links">
@@ -159,197 +149,8 @@
         </div>
     </div>
 
-    <!-- Firebase SDK for User Greeting and Products -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, orderBy, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
-            authDomain: "grappletrade.firebaseapp.com",
-            projectId: "grappletrade",
-            storageBucket: "grappletrade.firebasestorage.app",
-            messagingSenderId: "119683736855",
-            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
-            measurementId: "G-987DNCH23C"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), isTokenAutoRefreshEnabled: true });
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Handle user greeting with dropdown for signed-in users
-        onAuthStateChanged(auth, (user) => {
-            const menuWrapper = document.getElementById('user-menu-wrapper');
-
-            if (user) {
-                // User is signed in - show dropdown menu
-                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-
-                // Create the dropdown menu HTML
-                menuWrapper.innerHTML = `
-                    <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${esc(firstName)}!</button>
-                        <div class="dropdown-menu">
-                            <a href="watchlist.html">Watchlist</a>
-                            <a href="my-orders.html">Your Orders</a>
-                            <a href="listings-manager.html">Your Listings</a>
-                        </div>
-                    </div>
-                `;
-            } else {
-                // User is not signed in - show simple sign-in button
-                menuWrapper.innerHTML = `
-                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
-                `;
-            }
-        });
-
-        const PAGE_SIZE = 12;
-        let lastProductDoc = null;
-        let allLoaded = false;
-
-        function esc(s) {
-            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-        function safeUrl(url) {
-            if (!url) return '';
-            const u = String(url);
-            return (u.startsWith('https://') || u.startsWith('http://')) ? u : '';
-        }
-
-        function renderProducts(products, append) {
-            const container = document.getElementById('products-container');
-            const html = products.map(product => {
-                const imgSrc = safeUrl(product.images && product.images[0]);
-                const imageDisplay = imgSrc
-                    ? `<img src="${esc(imgSrc)}" alt="${esc(product.title)}" loading="lazy">`
-                    : '<span aria-hidden="true">📦</span>';
-                return `
-                    <a class="product-card" href="productdetail.html?id=${esc(product.id)}" style="text-decoration:none;color:inherit;">
-                        <div class="product-image">${imageDisplay}</div>
-                        <div class="product-info">
-                            <div class="product-title">${esc(product.title)}</div>
-                            <div class="product-price">$${product.price.toFixed(2)}</div>
-                            <div class="product-seller">${esc(product.sellerName)}</div>
-                        </div>
-                    </a>
-                `;
-            }).join('');
-            if (append) {
-                container.insertAdjacentHTML('beforeend', html);
-            } else {
-                container.innerHTML = html;
-            }
-        }
-
-        // Load products from Firestore
-        async function loadProducts(append) {
-            const container = document.getElementById('products-container');
-            const loading = document.getElementById('loading-products');
-            const loadMoreWrapper = document.getElementById('load-more-wrapper');
-            const loadMoreBtn = document.getElementById('load-more-btn');
-
-            if (loadMoreBtn) {
-                loadMoreBtn.disabled = true;
-                loadMoreBtn.textContent = 'Loading...';
-            }
-
-            try {
-                let q;
-                if (lastProductDoc) {
-                    q = query(
-                        collection(db, 'products'),
-                        where('active', '==', true),
-                        limit(PAGE_SIZE),
-                        startAfter(lastProductDoc)
-                    );
-                } else {
-                    q = query(
-                        collection(db, 'products'),
-                        where('active', '==', true),
-                        limit(PAGE_SIZE)
-                    );
-                }
-
-                const querySnapshot = await getDocs(q);
-                const products = [];
-
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if (data.sold === true) return;
-                    products.push({
-                        id: doc.id,
-                        title: data.title,
-                        price: data.price || 0,
-                        sellerName: data.sellerName || 'Unknown Seller',
-                        images: data.images || [],
-                        condition: data.condition || ''
-                    });
-                    lastProductDoc = doc;
-                });
-
-                loading.style.display = 'none';
-
-                if (!append && products.length === 0) {
-                    container.innerHTML = '<p style="text-align: center; color: #707070; padding: 40px;">No products available yet. Be the first to list!</p>';
-                    if (loadMoreWrapper) loadMoreWrapper.style.display = 'none';
-                    return;
-                }
-
-                renderProducts(products, append);
-
-                // Show/hide Load More button
-                if (querySnapshot.docs.length < PAGE_SIZE) {
-                    allLoaded = true;
-                    if (loadMoreWrapper) loadMoreWrapper.style.display = 'none';
-                } else {
-                    if (loadMoreWrapper) loadMoreWrapper.style.display = 'block';
-                    if (loadMoreBtn) {
-                        loadMoreBtn.disabled = false;
-                        loadMoreBtn.textContent = 'Load More';
-                    }
-                }
-
-            } catch (error) {
-                console.error('Error loading products:', error);
-                loading.textContent = 'Error loading products. Please refresh.';
-                if (loadMoreBtn) {
-                    loadMoreBtn.disabled = false;
-                    loadMoreBtn.textContent = 'Load More';
-                }
-            }
-        }
-
-        window.loadMoreProducts = function() {
-            if (!allLoaded) loadProducts(true);
-        };
-
-        // Load products when page loads
-        loadProducts(false);
-    </script>
-
-    <!-- Search Function -->
-    <script>
-        function performSearch() {
-            const searchTerm = document.getElementById('search-input').value;
-
-            let url = 'search.html?';
-
-            if (searchTerm) {
-                url += 'q=' + encodeURIComponent(searchTerm);
-            }
-
-            if (!searchTerm) {
-                url = 'search.html';
-            }
-
-            window.location.href = url;
-        }
-    </script>
+    <script type="module" src="js/index.js"></script>
+    <script src="js/index-init.js"></script>
     <script type="module" src="js/site-notice.js"></script>
     <script type="module" src="js/notifications.js"></script>
     <script src="js/bottom-nav.js" data-active="home"></script>

@@ -71,17 +71,17 @@
         }
         .btn-secondary:hover { border-color: #c0392b; color: #c0392b; }
     </style>
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
-                <button class="top-bar-btn" onclick="window.location.href='/help.html'">Help &amp; Contact</button>
+                <button class="top-bar-btn" data-href="/help.html">Help &amp; Contact</button>
             </div>
             <div>
-                <button class="top-bar-btn" onclick="window.location.href='/sell.html'">Sell</button>
+                <button class="top-bar-btn" data-href="/sell.html">Sell</button>
             </div>
         </div>
     </div>

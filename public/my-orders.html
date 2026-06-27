@@ -14,28 +14,26 @@
     <link rel="stylesheet" href="css/base.css">
 
     <link rel="stylesheet" href="css/my-orders.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
-    <!-- Top Bar -->
     <div class="top-bar">
         <div class="top-bar-content">
             <div>
                 <span id="user-menu-wrapper">
-                    <button class="top-bar-btn" id="user-greeting" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
+                    <button class="top-bar-btn" id="user-greeting" data-href="sign-in.html">Hi! Sign in</button>
                 </span>
-                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help & Contact</button>
-                <button class="top-bar-btn" onclick="window.location.href='messages.html'">Chats</button>
+                <button class="top-bar-btn" data-href="help.html">Help & Contact</button>
+                <button class="top-bar-btn" data-href="messages.html">Chats</button>
             </div>
             <div>
-                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
-                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
+                <button class="top-bar-btn" data-href="sell.html">Sell</button>
+                <button class="top-bar-btn" data-href="settings.html">Settings</button>
             </div>
         </div>
     </div>
 
-    <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
             <a href="index.html" class="logo"></a>
@@ -48,7 +46,7 @@
                 <h1>My Orders</h1>
                 <p class="subtitle">Track and manage your purchases</p>
             </div>
-            <button class="home-btn" onclick="window.location.href='index.html'">Home</button>
+            <button class="home-btn" data-href="index.html">Home</button>
         </header>
 
         <div class="stats-bar">
@@ -85,34 +83,31 @@
         </div>
     </main>
 
-    <!-- Order Details Modal -->
     <div class="modal" id="orderModal">
         <div class="modal-content">
             <div class="modal-header">
-                <span class="modal-close" onclick="closeOrderModal()">&times;</span>
+                <span class="modal-close" data-onclick="closeOrderModal">&times;</span>
                 <h2 class="modal-title">Order Details</h2>
             </div>
             
             <div id="modalContent">
-                <!-- Content will be dynamically loaded -->
             </div>
         </div>
     </div>
 
-    <!-- Cancel Order Modal -->
     <div class="modal" id="cancelModal">
         <div class="modal-content">
             <div class="modal-header">
-                <span class="modal-close" onclick="closeCancelModal()">&times;</span>
+                <span class="modal-close" data-onclick="closeCancelModal">&times;</span>
                 <h2 class="modal-title">Cancel Order</h2>
             </div>
 
             <p style="margin-bottom: 16px;">Are you sure you want to cancel this order? This action cannot be undone.</p>
 
-            <div class="alert-box" style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
-                <strong style="color: #dc2626;">5% Cancellation Fee</strong>
+            <div class="alert-box" style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
+                <strong style="color: #16a34a;">Full Refund</strong>
                 <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">
-                    A 5% cancellation fee will be deducted from your refund to cover processing costs.
+                    You will receive a full refund on the item price. Shipping is non-refundable if a label has already been purchased.
                 </p>
                 <p id="cancelFeeDetails" style="margin: 8px 0 0 0; color: #333; font-size: 14px; font-weight: 600;"></p>
             </div>
@@ -122,17 +117,16 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-danger" id="confirmCancelBtn" onclick="confirmCancelOrder()">Yes, Cancel Order</button>
-                <button class="btn btn-secondary" onclick="closeCancelModal()">Keep Order</button>
+                <button class="btn btn-danger" id="confirmCancelBtn" data-onclick="confirmCancelOrder">Yes, Cancel Order</button>
+                <button class="btn btn-secondary" data-onclick="closeCancelModal">Keep Order</button>
             </div>
         </div>
     </div>
 
-    <!-- Refund Request Modal (for shipped items) -->
     <div class="modal" id="refundRequestModal">
         <div class="modal-content">
             <div class="modal-header">
-                <span class="modal-close" onclick="closeRefundRequestModal()">&times;</span>
+                <span class="modal-close" data-onclick="closeRefundRequestModal">&times;</span>
                 <h2 class="modal-title">Request Refund</h2>
             </div>
 
@@ -144,16 +138,8 @@
                     <li>Submit your refund request with a reason</li>
                     <li>Seller will review and approve/deny within 48 hours</li>
                     <li>If approved, return the item to the seller</li>
-                    <li>Once seller receives item, refund is processed (minus 5% fee)</li>
+                    <li>Once seller receives item, refund is processed</li>
                 </ol>
-            </div>
-
-            <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin-bottom: 16px; border-radius: 4px;">
-                <strong style="color: #dc2626;">5% Refund Fee</strong>
-                <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">
-                    A 5% fee will be deducted from your refund to cover processing costs.
-                </p>
-                <p id="refundFeeDetails" style="margin: 8px 0 0 0; color: #333; font-size: 14px; font-weight: 600;"></p>
             </div>
 
             <div class="form-group" style="margin-bottom: 16px;">
@@ -175,17 +161,16 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-primary" id="submitRefundRequestBtn" onclick="submitRefundRequest()">Submit Refund Request</button>
-                <button class="btn btn-secondary" onclick="closeRefundRequestModal()">Cancel</button>
+                <button class="btn btn-primary" id="submitRefundRequestBtn" data-onclick="submitRefundRequest">Submit Refund Request</button>
+                <button class="btn btn-secondary" data-onclick="closeRefundRequestModal">Cancel</button>
             </div>
         </div>
     </div>
 
-    <!-- Dispute / Report a Problem Modal -->
     <div class="modal" id="disputeModal">
         <div class="modal-content">
             <div class="modal-header">
-                <span class="modal-close" onclick="closeDisputeModal()">&times;</span>
+                <span class="modal-close" data-onclick="closeDisputeModal">&times;</span>
                 <h2 class="modal-title">Report a Problem</h2>
             </div>
 
@@ -214,1160 +199,21 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-primary" id="submitDisputeBtn" onclick="submitDispute()">Submit Report</button>
-                <button class="btn btn-secondary" onclick="closeDisputeModal()">Cancel</button>
+                <button class="btn btn-primary" id="submitDisputeBtn" data-onclick="submitDispute">Submit Report</button>
+                <button class="btn btn-secondary" data-onclick="closeDisputeModal">Cancel</button>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
-    <script>
-        // ============================================
-        // FIREBASE CONFIGURATION
-        // ============================================
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
-            authDomain: "grappletrade.firebaseapp.com",
-            projectId: "grappletrade",
-            storageBucket: "grappletrade.firebasestorage.app",
-            messagingSenderId: "119683736855",
-            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
-            measurementId: "G-987DNCH23C"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), true);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-
-        // HTML escape helper — prevents XSS when inserting user-controlled strings into innerHTML
-        function esc(s) {
-            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-
-        // ============================================
-        // FETCH USER ORDERS
-        // ============================================
-        
-        async function fetchUserOrders() {
-            const user = auth.currentUser;
-
-            if (!user) {
-                showError('Please sign in to view your orders');
-                return [];
-            }
-
-            // Query the orders collection — source of truth for all buyer orders.
-            // (Sensitive fields like buyerId, paymentIntentId, shippingCost are stored
-            //  here rather than the publicly-readable products collection.)
-            const allSnapshot = await db.collection('orders')
-                .where('buyerId', '==', user.uid)
-                .get();
-
-            const orders = [];
-            allSnapshot.forEach(doc => {
-                const d = doc.data();
-                orders.push({
-                    id: d.productId,          // product ID so cancel/review ops still work
-                    _ordersDocId: doc.id,
-                    sellerId: d.sellerId || null,
-                    title: d.productTitle || 'Order',
-                    price: d.productPrice || 0,
-                    images: d.productImages || [],
-                    condition: d.productCondition || null,
-                    shippingCost: d.shippingCost || 0,
-                    soldTimestamp: d.createdTimestamp || 0,
-                    soldOrderId: d.paymentIntentId || null,
-                    cancelled: d.cancelled || false,
-                    cancelledAt: d.cancelledAt || null,
-                    cancelledBy: d.cancelledBy || null,
-                    refundId: d.refundId || null,
-                    trackingNumber: d.trackingNumber || null,
-                    trackingUrl: d.trackingUrl || null,
-                    delivered: d.delivered || false,
-                    refundRequested: d.refundRequested || false,
-                });
-            });
-
-            // Sort by date (newest first)
-            orders.sort((a, b) => (b.soldTimestamp || 0) - (a.soldTimestamp || 0));
-
-            return orders;
-        }
-
-        // ============================================
-        // RENDERING FUNCTIONS
-        // ============================================
-
-        function getOrderStatus(order) {
-            if (order.cancelled) {
-                return { class: 'status-cancelled', text: 'Cancelled' };
-            }
-            if (order.delivered) {
-                return { class: 'status-delivered', text: 'Delivered' };
-            }
-            if (order.trackingNumber) {
-                return { class: 'status-shipped', text: 'Shipped' };
-            }
-            return { class: 'status-processing', text: 'Processing' };
-        }
-
-        function createOrderCard(order) {
-            const status = getOrderStatus(order);
-            
-            const _imgSrc0 = order.images && order.images.length > 0 ? String(order.images[0]) : '';
-            const _safeSrc0 = (_imgSrc0.startsWith('https://') || _imgSrc0.startsWith('http://')) ? _imgSrc0 : '';
-            const imageDisplay = _safeSrc0
-                ? `<img src="${esc(_safeSrc0)}" alt="${esc(order.title)}">`
-                : '<span>📦 No Image</span>';
-
-            const orderDate = order.soldTimestamp 
-                ? new Date(order.soldTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                : 'Unknown date';
-
-            const orderId = order.soldOrderId || order.id;
-
-            return `
-                <div class="order-card" onclick="openOrderModal('${order.id}')">
-                    <div class="order-header">
-                        <div class="order-id">Order #${orderId.substring(0, 12)}...</div>
-                        <div class="order-date">${orderDate}</div>
-                    </div>
-
-                    <div class="order-image">
-                        ${imageDisplay}
-                        <span class="status-badge ${status.class}">${status.text}</span>
-                    </div>
-
-                    <div class="order-content">
-                        <h3 class="order-title">${esc(order.title) || 'Untitled'}</h3>
-                        <div class="order-price">$${parseFloat(order.price || 0).toFixed(2)}</div>
-
-                        <div class="order-details">
-                            <div class="detail-row">
-                                <span class="detail-label">Shipping:</span>
-                                <span>${esc(order.shippingMethod) || 'Standard'}</span>
-                            </div>
-                            ${order.trackingNumber ? `
-                                <div class="tracking-info">
-                                    <div style="font-weight: 600; margin-bottom: 4px;">Tracking Number</div>
-                                    <div class="tracking-number">${esc(order.trackingNumber)}</div>
-                                </div>
-                            ` : ''}
-                        </div>
-
-                        <div class="order-actions" onclick="event.stopPropagation()">
-                            <button class="btn btn-primary" onclick="openOrderModal('${order.id}')">
-                                View Details
-                            </button>
-                            ${(() => {
-                                // Determine which button to show based on order status
-                                const isShipped = order.trackingNumber || order.shipped || order.labelCreated;
-                                const isCancelled = order.cancelled;
-                                const isDelivered = order.delivered;
-                                const hasRefundRequest = order.refundRequested;
-
-                                if (isCancelled) {
-                                    return '<span style="color: #dc2626; font-size: 12px;">Cancelled</span>';
-                                } else if (hasRefundRequest) {
-                                    return '<span style="color: #f59e0b; font-size: 12px;">Refund Requested</span>';
-                                } else if (isDelivered) {
-                                    // Delivered - can contact support if item wasn't as expected
-                                    return `<button class="btn btn-secondary" onclick="window.location.href='help.html?subject=Order Issue&orderId=${order.id}'">Contact Support</button>`;
-                                } else if (isShipped) {
-                                    // Shipped but not delivered - can confirm delivery or request refund
-                                    return `<button class="btn btn-primary" onclick="confirmDelivery('${order.id}')">I Received This</button>`;
-                                } else {
-                                    // Not shipped yet - can cancel
-                                    return `<button class="btn btn-danger" onclick="openCancelModal('${order.id}')">Cancel Order</button>`;
-                                }
-                            })()}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        async function renderOrders() {
-            const loadingSpinner = document.getElementById('loading-state');
-            const grid = document.getElementById('ordersGrid');
-            const emptyState = document.getElementById('emptyState');
-            const errorState = document.getElementById('errorState');
-
-            // Show loading, hide everything else
-            loadingSpinner.style.display = 'block';
-            grid.style.display = 'none';
-            emptyState.style.display = 'none';
-            errorState.style.display = 'none';
-
-            let orders;
-            try {
-                orders = await fetchUserOrders();
-            } catch (error) {
-                console.error('Error fetching orders:', error);
-                loadingSpinner.style.display = 'none';
-                errorState.style.display = 'block';
-                return;
-            }
-
-            loadingSpinner.style.display = 'none';
-
-            if (orders.length === 0) {
-                emptyState.style.display = 'block';
-                updateStatsDisplay({ totalOrders: 0, inTransit: 0, totalSpent: 0 });
-                return;
-            }
-
-            grid.style.display = 'grid';
-            grid.innerHTML = orders.map(order => createOrderCard(order)).join('');
-
-            // Calculate stats
-            const stats = {
-                totalOrders: orders.length,
-                inTransit: orders.filter(o => !o.cancelled && !o.delivered && o.trackingNumber).length,
-                totalSpent: orders.filter(o => !o.cancelled).reduce((sum, o) => sum + (o.price || 0), 0)
-            };
-            updateStatsDisplay(stats);
-        }
-
-        function updateStatsDisplay(stats) {
-            document.getElementById('totalOrders').textContent = stats.totalOrders;
-            document.getElementById('inTransit').textContent = stats.inTransit;
-            document.getElementById('totalSpent').textContent = `$${parseFloat(stats.totalSpent).toFixed(2)}`;
-        }
-
-        // ============================================
-        // ORDER DETAILS MODAL
-        // ============================================
-
-        let currentOrderId = null;
-        let currentOrder = null;
-        let currentOrdersDocId = null;
-
-        async function openOrderModal(orderId) {
-            currentOrderId = orderId;
-
-            try {
-                const [doc, orderSnap] = await Promise.all([
-                    db.collection('products').doc(orderId).get(),
-                    db.collection('orders').where('productId', '==', orderId).where('buyerId', '==', auth.currentUser.uid).limit(1).get(),
-                ]);
-
-                if (!doc.exists) {
-                    showError('Order not found');
-                    return;
-                }
-
-                const order = doc.data();
-                currentOrder = order;
-                currentOrdersDocId = orderSnap.empty ? null : orderSnap.docs[0].id;
-
-                // Overlay financial data from the orders collection (more reliable source for what was actually charged)
-                if (!orderSnap.empty) {
-                    const od = orderSnap.docs[0].data();
-                    if (od.shippingCost != null) order.shippingCost = od.shippingCost;
-                    if (od.trackingNumber && !order.trackingNumber) order.trackingNumber = od.trackingNumber;
-                    if (od.trackingUrl && !order.trackingUrl) order.trackingUrl = od.trackingUrl;
-                    if (od.paymentIntentId && !order.soldOrderId) order.soldOrderId = od.paymentIntentId;
-                }
-
-                const status = getOrderStatus(order);
-                
-                const _imgSrcModal = order.images && order.images.length > 0 ? String(order.images[0]) : '';
-                const _safeSrcModal = (_imgSrcModal.startsWith('https://') || _imgSrcModal.startsWith('http://')) ? _imgSrcModal : '';
-                const imageDisplay = _safeSrcModal
-                    ? `<img src="${esc(_safeSrcModal)}" alt="${esc(order.title)}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin-bottom: 20px;">`
-                    : '<div style="text-align: center; font-size: 60px; padding: 40px;">📦</div>';
-
-                const orderDate = order.soldTimestamp 
-                    ? new Date(order.soldTimestamp).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-                    : 'Unknown date';
-
-                const fullOrderId = order.soldOrderId || orderId;
-
-                let modalHTML = `
-                    ${imageDisplay}
-                    
-                    <div class="alert-box ${status.class === 'status-delivered' ? 'success' : status.class === 'status-cancelled' ? 'warning' : 'info'}">
-                        <strong>Status:</strong> ${status.text}
-                    </div>
-
-                    <div class="info-section">
-                        <h3 class="info-title">${esc(order.title) || 'Product'}</h3>
-                        <div style="font-size: 1.75rem; font-weight: 700; color: var(--color-accent); margin-bottom: 20px;">
-                            $${parseFloat(order.price || 0).toFixed(2)}
-                        </div>
-                    </div>
-
-                    <div class="info-section">
-                        <h3 class="info-title">Order Information</h3>
-                        <div class="info-grid">
-                            <div class="info-box">
-                                <div class="info-label">Order ID</div>
-                                <div class="info-value">${fullOrderId}</div>
-                            </div>
-                            <div class="info-box">
-                                <div class="info-label">Order Date</div>
-                                <div class="info-value">${orderDate}</div>
-                            </div>
-                            <div class="info-box">
-                                <div class="info-label">Shipping Method</div>
-                                <div class="info-value">${esc(order.shippingMethod || 'Standard Shipping')}</div>
-                            </div>
-                            <div class="info-box">
-                                <div class="info-label">Quantity</div>
-                                <div class="info-value">${order.quantity || 1}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    ${order.trackingNumber ? `
-                        <div class="info-section">
-                            <h3 class="info-title">Tracking Information</h3>
-                            <div class="alert-box info">
-                                <div style="margin-bottom: 8px;"><strong>Tracking Number:</strong></div>
-                                <div style="font-family: monospace; font-size: 1.1rem; font-weight: 600; margin-bottom: 12px;">
-                                    ${esc(order.trackingNumber)}
-                                </div>
-                                <div id="tracking-timeline" style="margin-top:4px;">
-                                    <button onclick="loadTracking('${orderId}')"
-                                        style="background:#3b82f6;color:white;border:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;">
-                                        Load Live Tracking
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ` : `
-                        <div class="alert-box info">
-                            <strong>Shipping Status:</strong> Your order is being prepared for shipment. You'll receive tracking information once it ships.
-                        </div>
-                    `}
-
-                    ${order.description ? `
-                        <div class="info-section">
-                            <h3 class="info-title">Product Description</h3>
-                            <p style="color: var(--color-text-muted); line-height: 1.6;">${esc(order.description)}</p>
-                        </div>
-                    ` : ''}
-
-                    <!-- Review Section -->
-                    ${order.delivered && !order.cancelled ? `
-                        <div class="info-section">
-                            <h3 class="info-title">Leave a Review</h3>
-                            ${order.review ? `
-                                <div class="alert-box success">
-                                    <div style="margin-bottom: 8px;">
-                                        <strong>Your Rating:</strong> ${'⭐'.repeat(order.review.rating)}${'☆'.repeat(5 - order.review.rating)}
-                                    </div>
-                                    <div style="margin-bottom: 8px;">
-                                        <strong>Your Review:</strong>
-                                    </div>
-                                    <p style="margin-top: 8px;">${esc(order.review.text)}</p>
-                                    <div style="margin-top: 8px; font-size: 0.875rem; color: var(--color-text-muted);">
-                                        Reviewed on ${new Date(order.review.createdAt).toLocaleDateString()}
-                                    </div>
-                                </div>
-                            ` : `
-                                <div class="review-form">
-                                    <div style="margin-bottom: 16px;">
-                                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Rating</label>
-                                        <div class="star-rating" id="starRating">
-                                            <span class="star" data-rating="1">☆</span>
-                                            <span class="star" data-rating="2">☆</span>
-                                            <span class="star" data-rating="3">☆</span>
-                                            <span class="star" data-rating="4">☆</span>
-                                            <span class="star" data-rating="5">☆</span>
-                                        </div>
-                                    </div>
-                                    <div style="margin-bottom: 16px;">
-                                        <label for="reviewText" style="display: block; margin-bottom: 8px; font-weight: 600;">Your Review</label>
-                                        <textarea 
-                                            id="reviewText" 
-                                            rows="4" 
-                                            style="width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: 6px; font-family: 'DM Sans', sans-serif; resize: vertical;"
-                                            placeholder="Share your experience with this product..."
-                                        ></textarea>
-                                    </div>
-                                    <button class="btn btn-primary" onclick="submitReview('${orderId}')" id="submitReviewBtn">
-                                        Submit Review
-                                    </button>
-                                </div>
-                            `}
-                        </div>
-
-                        <!-- Seller Rating Section -->
-                        <div class="info-section">
-                            <h3 class="info-title">Rate the Seller</h3>
-                            ${order.sellerRating ? `
-                                <div class="alert-box success">
-                                    <div style="margin-bottom: 8px;">
-                                        <strong>Your Seller Rating:</strong> ${'⭐'.repeat(order.sellerRating.rating)}${'☆'.repeat(5 - order.sellerRating.rating)}
-                                    </div>
-                                    <div style="margin-bottom: 8px;">
-                                        <strong>Your Feedback:</strong>
-                                    </div>
-                                    <p style="margin-top: 8px;">${esc(order.sellerRating.text)}</p>
-                                    <div style="margin-top: 8px; font-size: 0.875rem; color: var(--color-text-muted);">
-                                        Rated on ${new Date(order.sellerRating.createdAt).toLocaleDateString()}
-                                    </div>
-                                </div>
-                            ` : `
-                                <div class="review-form">
-                                    <div style="margin-bottom: 12px; padding: 12px; background: #f0f9ff; border-radius: 6px; font-size: 0.875rem;">
-                                        <strong>💡 Tip:</strong> Rate the seller based on communication, shipping speed, item accuracy, and overall experience.
-                                    </div>
-                                    <div style="margin-bottom: 16px;">
-                                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Seller Rating</label>
-                                        <div class="star-rating" id="sellerStarRating">
-                                            <span class="seller-star" data-rating="1">☆</span>
-                                            <span class="seller-star" data-rating="2">☆</span>
-                                            <span class="seller-star" data-rating="3">☆</span>
-                                            <span class="seller-star" data-rating="4">☆</span>
-                                            <span class="seller-star" data-rating="5">☆</span>
-                                        </div>
-                                    </div>
-                                    <div style="margin-bottom: 16px;">
-                                        <label for="sellerReviewText" style="display: block; margin-bottom: 8px; font-weight: 600;">Feedback (Optional)</label>
-                                        <textarea 
-                                            id="sellerReviewText" 
-                                            rows="3" 
-                                            style="width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: 6px; font-family: 'DM Sans', sans-serif; resize: vertical;"
-                                            placeholder="How was your experience with this seller?"
-                                        ></textarea>
-                                    </div>
-                                    <button class="btn btn-primary" onclick="submitSellerRating('${orderId}', '${order.userId}')" id="submitSellerRatingBtn">
-                                        Submit Seller Rating
-                                    </button>
-                                </div>
-                            `}
-                        </div>
-                    ` : ''}
-
-                    <div class="info-section">
-                        <h3 class="info-title">Order Summary</h3>
-                        <div style="background: #f9fafb; padding: 16px; border-radius: 8px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span>Subtotal:</span>
-                                <span>$${parseFloat(order.price || 0).toFixed(2)}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span>Shipping:</span>
-                                <span>${order.shippingCost != null && parseFloat(order.shippingCost) > 0 ? '$' + parseFloat(order.shippingCost).toFixed(2) : 'FREE'}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span>Tax (8%):</span>
-                                <span>$${(parseFloat(order.price || 0) * 0.08).toFixed(2)}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 2px solid var(--color-border); font-size: 1.2rem; font-weight: 700;">
-                                <span>Total:</span>
-                                <span>$${(parseFloat(order.price || 0) + parseFloat(order.shippingCost || 0) + (parseFloat(order.price || 0) * 0.08)).toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-actions">
-                        ${(() => {
-                            const isShipped = order.trackingNumber || order.shipped || order.labelCreated;
-                            if (order.cancelled) {
-                                return ''; // No actions for cancelled orders
-                            } else if (order.delivered) {
-                                // Delivered - show contact support option
-                                return `<a href="help.html?subject=Order Issue&orderId=${orderId}" class="btn btn-secondary">Contact Support</a>`;
-                            } else if (isShipped) {
-                                // Shipped but not delivered - can confirm delivery or request refund
-                                if (order.refundRequested) {
-                                    return '<span style="color: #d97706; font-size: 14px; font-weight: 500;">Refund Requested</span>';
-                                }
-                                return `<button class="btn btn-primary" onclick="closeOrderModal(); confirmDelivery('${orderId}')">I Received This</button>
-                                        <button class="btn btn-secondary" onclick="closeOrderModal(); openRefundRequestModal('${orderId}')">Request Refund</button>`;
-                            } else {
-                                // Not shipped - can cancel
-                                return `<button class="btn btn-danger" onclick="openCancelModal('${orderId}')">Cancel Order</button>`;
-                            }
-                        })()}
-                        <button class="btn btn-secondary" id="modal-msg-seller-btn">
-                            Message Seller
-                        </button>
-                        <button class="btn btn-secondary" onclick="closeOrderModal()">
-                            Close
-                        </button>
-                        ${order.trackingUrl ? `
-                            <a href="${esc(order.trackingUrl)}" target="_blank" class="btn btn-primary">
-                                Track Package
-                            </a>
-                        ` : ''}
-                        ${!order.cancelled && !order.disputeOpened ? `
-                            <button class="btn btn-secondary" id="modal-dispute-btn" style="color:#c0392b; border-color:#c0392b; flex-basis:100%; margin-top:4px;">
-                                Report a Problem
-                            </button>
-                        ` : order.disputeOpened ? `<span style="color:#d97706;font-size:13px;font-weight:500;flex-basis:100%;margin-top:4px;">Dispute Opened</span>` : ''}
-                    </div>
-                `;
-
-                document.getElementById('modalContent').innerHTML = modalHTML;
-                document.getElementById('orderModal').classList.add('active');
-
-                // Attach event listeners for buttons with user-controlled data (avoids onclick XSS)
-                const msgBtn = document.getElementById('modal-msg-seller-btn');
-                if (msgBtn) {
-                    msgBtn.addEventListener('click', () => messageSeller(
-                        orderId,
-                        order.userId || '',
-                        order.sellerName || 'Seller',
-                        order.title || 'Order Item'
-                    ));
-                }
-                const disputeBtn = document.getElementById('modal-dispute-btn');
-                if (disputeBtn) {
-                    disputeBtn.addEventListener('click', () => openDisputeModal(orderId, order.userId || ''));
-                }
-
-                // Initialize star rating after modal is shown
-                setTimeout(() => {
-                    initializeStarRating();
-                }, 100);
-                
-            } catch (error) {
-                console.error('Error loading order details:', error);
-                showError('Failed to load order details: ' + error.message);
-            }
-        }
-
-        function closeOrderModal() {
-            document.getElementById('orderModal').classList.remove('active');
-            currentOrderId = null;
-            selectedRating = 0; // Reset rating when closing modal
-            selectedSellerRating = 0; // Reset seller rating when closing modal
-        }
-
-        // ============================================
-        // CONFIRM DELIVERY
-        // ============================================
-
-        async function confirmDelivery(productId) {
-            if (!confirm('Confirm that you received this item? This will complete the transaction.')) return;
-            try {
-                if (!auth.currentUser) throw new Error('You must be signed in.');
-                const idToken = await auth.currentUser.getIdToken();
-                const response = await fetch(CONFIRM_DELIVERY_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${idToken}`,
-                    },
-                    body: JSON.stringify({ productId }),
-                });
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    throw new Error(err.error || `Error ${response.status}`);
-                }
-                await renderOrders();
-                // Auto-open the order modal so review form appears immediately
-                openOrderModal(productId);
-            } catch (err) {
-                console.error('confirmDelivery error:', err);
-                alert('Failed to confirm delivery: ' + err.message);
-            }
-        }
-
-        // ============================================
-        // CANCEL ORDER FUNCTIONALITY
-        // ============================================
-
-        const CANCEL_ORDER_URL = 'https://us-central1-grappletrade.cloudfunctions.net/cancelOrder';
-        const CONFIRM_DELIVERY_URL = 'https://us-central1-grappletrade.cloudfunctions.net/confirmDelivery';
-        const TRACK_SHIPMENT_URL = 'https://us-central1-grappletrade.cloudfunctions.net/trackShipment';
-
-        async function loadTracking(productId) {
-            const container = document.getElementById('tracking-timeline');
-            if (!container) return;
-            container.innerHTML = '<span style="color:#555;font-size:14px;">Loading tracking...</span>';
-            try {
-                const idToken = await auth.currentUser.getIdToken();
-                const res = await fetch(TRACK_SHIPMENT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-                    body: JSON.stringify({ productId }),
-                });
-                if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Error ${res.status}`);
-                const data = await res.json();
-
-                const events = data.tracking_history || [];
-                const current = data.tracking_status;
-
-                if (!current && events.length === 0) {
-                    container.innerHTML = '<p style="color:#555;font-size:14px;">No tracking events yet. Check back after the carrier scans the package.</p>';
-                    return;
-                }
-
-                const statusColors = { DELIVERED: '#059669', TRANSIT: '#3b82f6', FAILURE: '#dc2626', RETURNED: '#f59e0b', UNKNOWN: '#6b7280' };
-                const statusLabel = current ? (current.status || 'UNKNOWN') : 'UNKNOWN';
-                const statusColor = statusColors[statusLabel] || '#6b7280';
-
-                let html = `<div style="margin-bottom:12px;padding:10px 14px;background:#f0f9ff;border-radius:6px;border-left:4px solid ${statusColor};">
-                    <strong style="color:${statusColor};">${statusLabel}</strong>
-                    ${current ? `<span style="color:#555;font-size:13px;margin-left:8px;">${current.status_details || ''}</span>` : ''}
-                </div>
-                <div style="border-left:2px solid #e5e7eb;margin-left:8px;padding-left:16px;">`;
-
-                const sorted = [...events].sort((a, b) => new Date(b.object_created || 0) - new Date(a.object_created || 0));
-                for (const ev of sorted) {
-                    const date = ev.object_created ? new Date(ev.object_created).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
-                    const loc = ev.location ? [ev.location.city, ev.location.state].filter(Boolean).join(', ') : '';
-                    html += `<div style="margin-bottom:12px;position:relative;">
-                        <div style="width:8px;height:8px;background:#3b82f6;border-radius:50%;position:absolute;left:-20px;top:5px;"></div>
-                        <div style="font-size:13px;font-weight:600;color:#1a1a1a;">${ev.status_details || ev.status || ''}</div>
-                        <div style="font-size:12px;color:#6b7280;margin-top:2px;">${date}${loc ? ' · ' + loc : ''}</div>
-                    </div>`;
-                }
-
-                html += '</div>';
-                container.innerHTML = html;
-            } catch (err) {
-                container.innerHTML = `<p style="color:#c62828;font-size:14px;">Could not load tracking: ${esc(err.message)}</p>`;
-            }
-        }
-        let orderToCancel = null;
-        let orderToCancelData = null;
-
-        async function openCancelModal(orderId) {
-            orderToCancel = orderId;
-            closeOrderModal(); // Close details modal if open
-
-            // Fetch order details to calculate fee
-            try {
-                const orderDoc = await db.collection('products').doc(orderId).get();
-                if (orderDoc.exists) {
-                    orderToCancelData = orderDoc.data();
-                    const orderTotal = parseFloat(orderToCancelData.price || 0);
-                    const cancellationFee = (orderTotal * 0.05).toFixed(2);
-                    const refundAmount = (orderTotal * 0.95).toFixed(2);
-
-                    document.getElementById('cancelFeeDetails').innerHTML = `
-                        Order Total: $${orderTotal.toFixed(2)}<br>
-                        Cancellation Fee (5%): -$${cancellationFee}<br>
-                        <span style="color: #059669;">You'll receive: $${refundAmount}</span>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error fetching order details:', error);
-            }
-
-            document.getElementById('cancelModal').classList.add('active');
-        }
-
-        function closeCancelModal() {
-            orderToCancel = null;
-            orderToCancelData = null;
-            document.getElementById('cancelModal').classList.remove('active');
-        }
-
-        async function confirmCancelOrder() {
-            if (!orderToCancel || !orderToCancelData) return;
-
-            const cancelBtn = document.getElementById('confirmCancelBtn');
-            const originalText = cancelBtn.textContent;
-            cancelBtn.textContent = 'Processing refund...';
-            cancelBtn.disabled = true;
-
-            try {
-                if (!auth.currentUser) throw new Error('You must be signed in to cancel an order.');
-                // Get Firebase ID token to prove identity to the Cloud Function
-                const idToken = await auth.currentUser.getIdToken();
-
-                const response = await fetch(CANCEL_ORDER_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${idToken}`
-                    },
-                    body: JSON.stringify({
-                        paymentIntentId: orderToCancelData.soldOrderId,
-                        productId: orderToCancel
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'Failed to process cancellation');
-                }
-
-                // Firestore update is handled by the Cloud Function via Admin SDK
-                closeCancelModal();
-                await renderOrders();
-                showInfo(result.message || 'Order cancelled successfully! Refund will be processed within 5-7 business days.');
-            } catch (error) {
-                showError('Failed to cancel order: ' + error.message);
-                cancelBtn.textContent = originalText;
-                cancelBtn.disabled = false;
-            }
-        }
-
-        // ============================================
-        // REFUND REQUEST FUNCTIONALITY (for shipped items)
-        // ============================================
-
-        let orderToRefund = null;
-        let orderToRefundData = null;
-
-        async function openRefundRequestModal(orderId) {
-            orderToRefund = orderId;
-            closeOrderModal(); // Close details modal if open
-
-            // Fetch order details to calculate fee
-            try {
-                const orderDoc = await db.collection('products').doc(orderId).get();
-                if (orderDoc.exists) {
-                    orderToRefundData = orderDoc.data();
-                    const orderTotal = parseFloat(orderToRefundData.price || 0);
-                    const refundFee = (orderTotal * 0.05).toFixed(2);
-                    const refundAmount = (orderTotal * 0.95).toFixed(2);
-
-                    document.getElementById('refundFeeDetails').innerHTML = `
-                        Order Total: $${orderTotal.toFixed(2)}<br>
-                        Refund Fee (5%): -$${refundFee}<br>
-                        <span style="color: #059669;">You'll receive: $${refundAmount}</span>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error fetching order details:', error);
-            }
-
-            // Reset form
-            document.getElementById('refundReason').value = '';
-            document.getElementById('refundDetails').value = '';
-            document.getElementById('refundRequestModal').classList.add('active');
-        }
-
-        function closeRefundRequestModal() {
-            orderToRefund = null;
-            orderToRefundData = null;
-            document.getElementById('refundRequestModal').classList.remove('active');
-        }
-
-        async function messageSeller(productId, sellerId, sellerName, productName) {
-            const user = auth.currentUser;
-            if (!user) { window.location.href = 'sign-in.html'; return; }
-
-            const convId = `${productId}_${user.uid}`;
-            try {
-                await db.collection('conversations').doc(convId).set({
-                    productId: productId,
-                    productName: productName || 'Order Item',
-                    buyerId: user.uid,
-                    buyerName: user.displayName || user.email.split('@')[0],
-                    sellerId: sellerId,
-                    sellerName: sellerName || 'Seller',
-                    participants: [user.uid, sellerId],
-                    lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastMessage: null,
-                    unreadBuyer: 0,
-                    unreadSeller: 0
-                }, { merge: true });
-            } catch (e) {
-                console.warn('Could not init conversation:', e);
-            }
-            window.location.href = `messages.html?conv=${convId}`;
-        }
-
-        let disputeOrderId = null;
-        let disputeSellerId = null;
-
-        function openDisputeModal(orderId, sellerId) {
-            disputeOrderId = orderId;
-            disputeSellerId = sellerId || null;
-            document.getElementById('disputeType').value = '';
-            document.getElementById('disputeDescription').value = '';
-            document.getElementById('disputeModal').classList.add('active');
-        }
-
-        function closeDisputeModal() {
-            disputeOrderId = null;
-            disputeSellerId = null;
-            document.getElementById('disputeModal').classList.remove('active');
-        }
-
-        async function submitDispute() {
-            const issueType = document.getElementById('disputeType').value;
-            const description = document.getElementById('disputeDescription').value.trim();
-
-            if (!issueType) { showError('Please select an issue type.'); return; }
-            if (!description) { showError('Please describe the problem.'); return; }
-
-            const btn = document.getElementById('submitDisputeBtn');
-            btn.textContent = 'Submitting...';
-            btn.disabled = true;
-
-            try {
-                const user = auth.currentUser;
-                if (!user) throw new Error('Sign in required.');
-
-                await db.collection('disputes').add({
-                    productId: disputeOrderId,
-                    sellerId: disputeSellerId,
-                    buyerId: user.uid,
-                    buyerEmail: user.email,
-                    ordersDocId: currentOrdersDocId,
-                    issueType,
-                    description,
-                    status: 'open',
-                    createdAt: new Date()
-                });
-
-                await db.collection('products').doc(disputeOrderId).update({ disputeOpened: true, ordersDocId: currentOrdersDocId });
-
-                closeDisputeModal();
-                showSuccess('Your report has been submitted. We\'ll follow up via email within 24 hours.');
-            } catch (err) {
-                showError('Failed to submit report: ' + err.message);
-            } finally {
-                btn.textContent = 'Submit Report';
-                btn.disabled = false;
-            }
-        }
-
-        async function submitRefundRequest() {
-            if (!orderToRefund || !orderToRefundData) return;
-
-            const reason = document.getElementById('refundReason').value;
-            const details = document.getElementById('refundDetails').value;
-
-            if (!reason) {
-                showError('Please select a reason for your refund request');
-                return;
-            }
-
-            const submitBtn = document.getElementById('submitRefundRequestBtn');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Submitting...';
-            submitBtn.disabled = true;
-
-            try {
-                const user = auth.currentUser;
-                if (!user) throw new Error('You must be signed in to submit a refund request.');
-
-                // Create refund request in Firestore
-                await db.collection('refundRequests').add({
-                    productId: orderToRefund,
-                    orderId: orderToRefundData.soldOrderId,
-                    buyerId: user.uid,
-                    buyerEmail: user.email,
-                    sellerId: orderToRefundData.userId,
-                    productTitle: orderToRefundData.title,
-                    productPrice: orderToRefundData.price,
-                    ordersDocId: currentOrdersDocId,
-                    reason: reason,
-                    details: details,
-                    status: 'pending',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    trackingNumber: orderToRefundData.trackingNumber || null
-                });
-
-                // Update product to mark refund as requested
-                await db.collection('products').doc(orderToRefund).update({
-                    refundRequested: true,
-                    refundRequestedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    refundReason: reason,
-                    ordersDocId: currentOrdersDocId
-                });
-
-                closeRefundRequestModal();
-                await renderOrders();
-                showInfo('Refund request submitted! The seller will review your request within 48 hours.');
-            } catch (error) {
-                showError('Failed to submit refund request: ' + error.message);
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        }
-
-        // ============================================
-        // UTILITY FUNCTIONS
-        // ============================================
-
-        let selectedRating = 0;
-        let selectedSellerRating = 0;
-
-        function initializeStarRating() {
-            const stars = document.querySelectorAll('.star');
-            
-            stars.forEach(star => {
-                star.addEventListener('click', function() {
-                    selectedRating = parseInt(this.getAttribute('data-rating'));
-                    updateStars(selectedRating);
-                });
-
-                star.addEventListener('mouseenter', function() {
-                    const rating = parseInt(this.getAttribute('data-rating'));
-                    updateStars(rating, true);
-                });
-            });
-
-            const starRating = document.getElementById('starRating');
-            if (starRating) {
-                starRating.addEventListener('mouseleave', function() {
-                    updateStars(selectedRating);
-                });
-            }
-
-            // Initialize seller star rating
-            const sellerStars = document.querySelectorAll('.seller-star');
-            
-            sellerStars.forEach(star => {
-                star.addEventListener('click', function() {
-                    selectedSellerRating = parseInt(this.getAttribute('data-rating'));
-                    updateSellerStars(selectedSellerRating);
-                });
-
-                star.addEventListener('mouseenter', function() {
-                    const rating = parseInt(this.getAttribute('data-rating'));
-                    updateSellerStars(rating, true);
-                });
-            });
-
-            const sellerStarRating = document.getElementById('sellerStarRating');
-            if (sellerStarRating) {
-                sellerStarRating.addEventListener('mouseleave', function() {
-                    updateSellerStars(selectedSellerRating);
-                });
-            }
-        }
-
-        function updateStars(rating, isHover = false) {
-            const stars = document.querySelectorAll('.star');
-            stars.forEach((star, index) => {
-                const starRating = index + 1;
-                if (starRating <= rating) {
-                    star.textContent = '⭐';
-                    if (!isHover) {
-                        star.classList.add('filled');
-                    }
-                } else {
-                    star.textContent = '☆';
-                    if (!isHover) {
-                        star.classList.remove('filled');
-                    }
-                }
-            });
-        }
-
-        function updateSellerStars(rating, isHover = false) {
-            const stars = document.querySelectorAll('.seller-star');
-            stars.forEach((star, index) => {
-                const starRating = index + 1;
-                if (starRating <= rating) {
-                    star.textContent = '⭐';
-                    if (!isHover) {
-                        star.classList.add('filled');
-                    }
-                } else {
-                    star.textContent = '☆';
-                    if (!isHover) {
-                        star.classList.remove('filled');
-                    }
-                }
-            });
-        }
-
-        async function submitReview(orderId) {
-            const reviewText = document.getElementById('reviewText').value.trim();
-            
-            if (selectedRating === 0) {
-                showError('Please select a rating');
-                return;
-            }
-
-            if (!reviewText) {
-                showError('Please write a review');
-                return;
-            }
-
-            const submitBtn = document.getElementById('submitReviewBtn');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Submitting...';
-            submitBtn.disabled = true;
-
-            try {
-                const user = auth.currentUser;
-                if (!user) throw new Error('You must be signed in to submit a review.');
-
-                await db.collection('products').doc(orderId).update({
-                    review: {
-                        rating: selectedRating,
-                        text: reviewText,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        userId: user.uid,
-                        userName: user.displayName || user.email || 'Anonymous'
-                    },
-                    ordersDocId: currentOrdersDocId,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                showInfo('Review submitted successfully! Thank you for your feedback.');
-                closeOrderModal();
-                await renderOrders();
-                
-            } catch (error) {
-                console.error('Error submitting review:', error);
-                showError('Failed to submit review: ' + error.message);
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        }
-
-        async function submitSellerRating(orderId, sellerId) {
-            if (selectedSellerRating === 0) {
-                showError('Please select a seller rating');
-                return;
-            }
-
-            const sellerReviewText = document.getElementById('sellerReviewText').value.trim();
-
-            const submitBtn = document.getElementById('submitSellerRatingBtn');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Submitting...';
-            submitBtn.disabled = true;
-
-            try {
-                const user = auth.currentUser;
-                
-                // Create a unique ID for this seller rating
-                const ratingId = `${orderId}_${user.uid}`;
-                
-                // Save seller rating to a separate collection
-                await db.collection('sellerRatings').doc(ratingId).set({
-                    sellerId: sellerId,
-                    buyerId: user.uid,
-                    buyerName: user.displayName || user.email || 'Anonymous',
-                    orderId: orderId,
-                    ordersDocId: currentOrdersDocId,
-                    rating: selectedSellerRating,
-                    text: sellerReviewText || '',
-                    createdAt: Date.now(),
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                // Also save to the product for easy access (ordersDocId enables Firestore rule verification)
-                await db.collection('products').doc(orderId).update({
-                    sellerRating: {
-                        rating: selectedSellerRating,
-                        text: sellerReviewText || '',
-                        createdAt: Date.now(),
-                        userId: user.uid,
-                        userName: user.displayName || user.email || 'Anonymous'
-                    },
-                    ordersDocId: currentOrdersDocId,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                showInfo('Seller rating submitted successfully! This will help other buyers.');
-                closeOrderModal();
-                await renderOrders();
-                
-            } catch (error) {
-                console.error('Error submitting seller rating:', error);
-                showError('Failed to submit seller rating: ' + error.message);
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        }
-
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.style.display = 'block';
-            errorDiv.textContent = message;
-
-            const container = document.querySelector('.container');
-            container.insertBefore(errorDiv, container.firstChild);
-
-            setTimeout(() => errorDiv.remove(), 5000);
-        }
-
-        function showSuccess(message) {
-            const div = document.createElement('div');
-            div.style.cssText = 'display:block;background:#ecfdf5;color:#065f46;padding:12px 16px;border-radius:10px;border-left:4px solid #10b981;margin-bottom:20px;font-size:14px;';
-            div.textContent = message;
-            const container = document.querySelector('.container');
-            container.insertBefore(div, container.firstChild);
-            setTimeout(() => div.remove(), 6000);
-        }
-
-        function showInfo(message) {
-            const infoDiv = document.createElement('div');
-            infoDiv.className = 'info-message';
-            infoDiv.style.cssText = 'display:block;background:#ecf4ff;color:#1d4ed8;padding:12px 16px;border-radius:10px;border-left:4px solid #3665f3;margin-bottom:20px;font-size:14px;';
-            infoDiv.textContent = message;
-
-            const container = document.querySelector('.container');
-            container.insertBefore(infoDiv, container.firstChild);
-
-            setTimeout(() => infoDiv.remove(), 5000);
-        }
-
-        // ============================================
-        // INITIALIZATION
-        // ============================================
-
-        auth.onAuthStateChanged(async (user) => {
-            const menuWrapper = document.getElementById('user-menu-wrapper');
-
-            if (user) {
-                // Update header with dropdown
-                const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                menuWrapper.innerHTML = `
-                    <div class="user-menu-container">
-                        <button class="top-bar-btn" onclick="window.location.href='profile.html'">Hi, ${esc(firstName)}!</button>
-                        <div class="dropdown-menu">
-                            <a href="watchlist.html">Watchlist</a>
-                            <a href="my-orders.html">Your Orders</a>
-                            <a href="listings-manager.html">Your Listings</a>
-                            <a href="messages.html">Messages</a>
-                        </div>
-                    </div>
-                `;
-
-                await renderOrders();
-            } else {
-                // Update header for signed out user
-                menuWrapper.innerHTML = `
-                    <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
-                `;
-
-                document.getElementById('loading-state').style.display = 'none';
-                document.getElementById('emptyState').style.display = 'block';
-                document.getElementById('emptyState').innerHTML = `
-                    <div class="empty-state-icon">🔒</div>
-                    <h2 class="empty-state-title">Sign In Required</h2>
-                    <p class="empty-state-text">Please sign in to view your orders</p>
-                    <a href="sign-in.html" class="btn btn-primary">Sign In</a>
-                `;
-            }
-        });
-
-        // Close modals when clicking outside
-        document.getElementById('orderModal').addEventListener('click', function(e) {
-            if (e.target === this) closeOrderModal();
-        });
-
-        document.getElementById('cancelModal').addEventListener('click', function(e) {
-            if (e.target === this) closeCancelModal();
-        });
-
-        document.getElementById('refundRequestModal').addEventListener('click', function(e) {
-            if (e.target === this) closeRefundRequestModal();
-        });
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" integrity="sha256-LQOLn5nNwoEZtOXCpO2G1WH8NsBR5RXvNRdrHKvngME=" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js" integrity="sha256-M0FuBDqc2f0eKvdsoNATi+Q/uIFA9Ocn6Xp9QDSTdWI=" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js" integrity="sha256-IzSlf3hes4zhpv367VXswTNXNKX9FfJ2t2vytFdCQG8=" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js" integrity="sha256-FFHhKF0aCe7WyfcbB7oB+wl63WawJNE+JFS6B9UKU8Y=" crossorigin="anonymous"></script>
+
+    <script src="js/my-orders.js"></script>
     <script type="module" src="js/site-notice.js"></script>
     <script type="module" src="js/notifications.js"></script>
     <script src="js/bottom-nav.js" data-active="orders"></script>
+<script type="module" src="/js/session-timeout.js"></script>
 </body>
 </html>

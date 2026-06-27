@@ -15,258 +15,214 @@
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/layout.css">
     <link rel="stylesheet" href="../css/legal/terms-of-service.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
+    <style>
+        .container { max-width:800px; margin:40px auto; padding:0 24px 60px; }
+        .main-header { background:#fff; border-bottom:1px solid #e8e8e8; padding:0 24px; }
+        .header-content { max-width:900px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:60px; }
+        .logo { font-size:1.4rem; font-weight:700; color:#c41e3a; text-decoration:none; }
+        .back-btn { font-size:0.9rem; color:#555; text-decoration:none; }
+        .back-btn:hover { color:#c41e3a; }
+        h1 { font-size:2rem; font-weight:700; margin-bottom:8px; }
+        .last-updated { color:#888; font-size:0.9rem; margin-bottom:32px; }
+        h2 { font-size:1.15rem; font-weight:700; margin-top:36px; margin-bottom:10px; border-bottom:2px solid #f0f0f0; padding-bottom:6px; }
+        h3 { font-size:1rem; font-weight:600; margin-top:20px; margin-bottom:6px; }
+        p, li { font-size:0.97rem; line-height:1.75; color:#333; }
+        ul { padding-left:20px; margin:8px 0; }
+        li { margin-bottom:4px; }
+        .highlight-box { background:#fff8e1; border-left:4px solid #f59e0b; padding:14px 18px; border-radius:6px; margin:16px 0; }
+        .highlight-box.danger { background:#fff5f5; border-left-color:#c41e3a; }
+        .highlight-box p { margin:0; }
+        .fee-table { width:100%; border-collapse:collapse; margin:12px 0; font-size:0.95rem; }
+        .fee-table th { background:#f5f5f5; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid #e0e0e0; }
+        .fee-table td { padding:10px 14px; border-bottom:1px solid #ebebeb; vertical-align:top; }
+        .fee-table tr:last-child td { border-bottom:none; }
+        a { color:#c41e3a; }
+        .toc { background:#fff; border:1px solid #e8e8e8; border-radius:8px; padding:20px 24px; margin-bottom:32px; }
+        .toc h3 { margin-top:0; font-size:0.9rem; color:#555; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px; }
+        .toc ol { margin:0; padding-left:20px; column-count:2; column-gap:20px; }
+        .toc li { margin-bottom:5px; font-size:0.91rem; break-inside:avoid; }
+        .toc a { text-decoration:none; color:#c41e3a; }
+        .toc a:hover { text-decoration:underline; }
+        @media(max-width:600px) { .toc ol { column-count:1; } }
+        .footer { text-align:center; padding:30px 24px; border-top:1px solid #e8e8e8; color:#888; font-size:0.85rem; margin-top:40px; }
+        .footer a { color:#c41e3a; margin:0 8px; }
+    </style>
 </head>
 <body>
     <div class="main-header">
         <div class="header-content">
-            <a href="../index.html" class="logo" aria-label="GrappleTrade home"></a>
+            <a href="../index.html" class="logo" aria-label="GrappleTrade home">GrappleTrade</a>
             <a href="../index.html" class="back-btn">← Back to Home</a>
         </div>
     </div>
 
     <div class="container">
-        <div class="hero">
-            <div class="hero-icon">📋</div>
-            <h1>Terms of Service</h1>
-            <p class="subtitle">Marketplace Platform Agreement</p>
-            <div class="effective-date">Effective Date: 2/16/2026</div>
+        <h1>Terms of Service</h1>
+        <p class="last-updated">Last updated: June 26, 2026</p>
+
+        <div class="highlight-box">
+            <p>Please read these Terms carefully before using GrappleTrade. By creating an account or using the platform, you agree to be bound by these Terms. If you do not agree, do not use GrappleTrade.</p>
         </div>
 
-        <div class="content-section">
-            <div class="highlight-box">
-                <p><strong>Welcome to GrappleTrade!</strong> These Terms of Service ("Terms") govern your use of our website, application, and services. By accessing or using our platform, you agree to be bound by these Terms. If you do not agree, please do not use the Platform.</p>
-                <p style="margin-top:10px;">Sellers are additionally subject to the <a href="seller-agreement.html">Seller Agreement</a>. Our fee structure is detailed on the <a href="fees.html">Fees &amp; Pricing</a> page.</p>
-            </div>
+        <div class="toc">
+            <h3>Contents</h3>
+            <ol>
+                <li><a href="#eligibility">Eligibility</a></li>
+                <li><a href="#platform-role">Platform Role</a></li>
+                <li><a href="#accounts">Accounts</a></li>
+                <li><a href="#seller-obligations">Seller Obligations</a></li>
+                <li><a href="#buyer-obligations">Buyer Obligations</a></li>
+                <li><a href="#fees">Fees and Payments</a></li>
+                <li><a href="#shipping">Shipping</a></li>
+                <li><a href="#cancellations">Cancellations and Refunds</a></li>
+                <li><a href="#escrow">Payment Escrow</a></li>
+                <li><a href="#strikes">Seller Strikes and Suspension</a></li>
+                <li><a href="#prohibited">Prohibited Items and Conduct</a></li>
+                <li><a href="#ip">Intellectual Property</a></li>
+                <li><a href="#liability">Limitation of Liability</a></li>
+                <li><a href="#assumption-of-risk">Assumption of Risk</a></li>
+                <li><a href="#disputes">Dispute Resolution</a></li>
+                <li><a href="#modifications">Changes to Terms</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ol>
         </div>
 
-        <div class="content-section">
-            <h2><span class="section-number">1</span> Platform Role</h2>
-            <p>GrappleTrade is an online marketplace that allows users to list, discover, and purchase wrestling-related equipment and gear from other users.</p>
-            
-            <div class="key-points">
-                <div class="key-point">
-                    <div class="key-point-icon">🤝</div>
-                    <h4>Peer-to-Peer</h4>
-                    <p>All transactions occur directly between users</p>
-                </div>
-                <div class="key-point">
-                    <div class="key-point-icon">🔗</div>
-                    <h4>Connection Platform</h4>
-                    <p>We connect buyers and sellers but don't participate in sales</p>
-                </div>
-                <div class="key-point">
-                    <div class="key-point-icon">🚫</div>
-                    <h4>No Guarantees</h4>
-                    <p>We don't inspect, endorse, or guarantee any items</p>
-                </div>
-            </div>
+        <h2 id="eligibility">1. Eligibility</h2>
+        <p>You must be at least <strong>18 years of age</strong> to use GrappleTrade. By creating an account, you confirm you are 18 or older. GrappleTrade is not intended for users under 18.</p>
+        <p>GrappleTrade currently supports shipping only within the <strong>contiguous 48 United States</strong>. Buyers must provide a valid US shipping address.</p>
 
-            <p><strong>Important:</strong> We do not manufacture, sell, inspect, endorse, or guarantee any items listed on the Platform. We simply provide the marketplace infrastructure.</p>
-        </div>
+        <h2 id="platform-role">2. Platform Role</h2>
+        <p>GrappleTrade is a technology platform connecting buyers and sellers of wrestling gear. We are not a party to any transaction between users. We do not own, inspect, or guarantee any items listed on the platform.</p>
+        <p>GrappleTrade processes payments and holds funds in escrow through Stripe as a convenience to facilitate safe transactions. This does not make GrappleTrade a party to the underlying sale.</p>
 
-        <div class="content-section">
-            <h2><span class="section-number">2</span> Eligibility</h2>
-            <p>To use GrappleTrade, you must meet the following requirements:</p>
-            
-            <h3>Age Requirements</h3>
-            <ul>
-                <li>Be at least 18 years old, OR</li>
-                <li>Have parental or legal guardian consent if under 18</li>
-            </ul>
+        <h2 id="accounts">3. Accounts</h2>
+        <p>Accounts are created automatically on first sign-in via Google. You may have one account per person. You are responsible for all activity under your account. We reserve the right to suspend or terminate accounts that violate these Terms.</p>
 
-            <h3>Account Requirements</h3>
-            <ul>
-                <li>Provide accurate and truthful account information</li>
-                <li>Maintain the security of your account credentials</li>
-                <li>Use the Platform in compliance with all applicable laws</li>
-                <li>Not be prohibited from using the service under applicable law</li>
-            </ul>
+        <h2 id="seller-obligations">4. Seller Obligations</h2>
+        <p>To list and sell on GrappleTrade, you must:</p>
+        <ul>
+            <li><strong>Connect a Stripe Express account</strong> before creating any listings. Payouts cannot be issued without a connected, verified Stripe account.</li>
+            <li><strong>Provide accurate descriptions</strong> — listings must truthfully describe the item's condition, brand, size, and any defects or wear.</li>
+            <li><strong>Ship within 10 days</strong> of receiving an order. Orders not shipped within 10 days are automatically cancelled and fully refunded to the buyer, and a strike is issued.</li>
+            <li><strong>Use platform-generated shipping labels</strong> only — GrappleTrade purchases the label through Shippo on your behalf. Do not use your own label.</li>
+            <li><strong>Sell only wrestling-related gear</strong> — shoes, singlets, jackets, shorts, bags, and accessories. Non-wrestling items may be removed without notice.</li>
+            <li><strong>Do not ship wrestling shoes in their original retail box.</strong></li>
+        </ul>
 
-            <div class="highlight-box warning">
-                <p><strong>Account Enforcement:</strong> We reserve the right to suspend or terminate accounts at our sole discretion, including for violations of these Terms or suspicious activity.</p>
-            </div>
-        </div>
+        <h2 id="buyer-obligations">5. Buyer Obligations</h2>
+        <p>As a buyer, you agree to:</p>
+        <ul>
+            <li>Provide an accurate shipping address at checkout.</li>
+            <li>Complete payment at checkout.</li>
+            <li><strong>Confirm delivery</strong> in My Orders when your item arrives. Funds are held in escrow until you confirm. If you do not confirm, funds may be released after a reasonable holding period.</li>
+            <li>Contact us at <a href="mailto:grappletrade@gmail.com">grappletrade@gmail.com</a> before disputing a charge with your card issuer.</li>
+        </ul>
 
-        <div class="content-section">
-            <h2><span class="section-number">3</span> User Responsibilities</h2>
-            <p>As a user of GrappleTrade, you agree to:</p>
+        <h2 id="fees">6. Fees and Payments</h2>
+        <p>There are no listing fees. GrappleTrade charges the following transaction fees:</p>
 
-            <h3>For Sellers</h3>
-            <ul>
-                <li><strong>Accurately describe</strong> all items listed for sale</li>
-                <li><strong>Disclose condition,</strong> defects, modifications, and wear</li>
-                <li><strong>Provide honest photos</strong> that represent the actual item</li>
-                <li><strong>Honor transactions</strong> and ship items as described</li>
-                <li><strong>Respond promptly</strong> to buyer inquiries and concerns</li>
-            </ul>
+        <table class="fee-table">
+            <thead>
+                <tr>
+                    <th>Fee</th>
+                    <th>Amount</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Platform fee (charged to seller)</strong></td>
+                    <td>10% of product price</td>
+                    <td>$100 item &rarr; seller receives $90</td>
+                </tr>
+                <tr>
+                    <td><strong>Buyer cancellation</strong></td>
+                    <td>Full refund on item price</td>
+                    <td>$100 item cancelled &rarr; buyer receives full $100 item refund. Shipping is refunded in full if a label has not yet been purchased; shipping is non-refundable once a label is purchased.</td>
+                </tr>
+                <tr>
+                    <td><strong>Seller cancellation</strong></td>
+                    <td>Seller forfeits payout; buyer receives full refund</td>
+                    <td>Seller cancels $100 order &rarr; buyer receives full refund; seller receives $0 and receives a strike</td>
+                </tr>
+            </tbody>
+        </table>
 
-            <h3>For Buyers</h3>
-            <ul>
-                <li><strong>Ask questions</strong> before purchasing if anything is unclear</li>
-                <li><strong>Pay promptly</strong> for items you commit to purchase</li>
-                <li><strong>Inspect items</strong> carefully upon receipt</li>
-                <li><strong>Communicate respectfully</strong> with sellers</li>
-            </ul>
+        <p>Shipping costs are paid by the buyer at checkout in addition to the item price.</p>
 
-            <h3>For All Users</h3>
-            <ul>
-                <li>Use the Platform lawfully and respectfully</li>
-                <li>Resolve disputes directly with other users in good faith</li>
-                <li>Not engage in fraudulent, misleading, or abusive behavior</li>
-                <li>Comply with all applicable laws and regulations</li>
-            </ul>
+        <h2 id="shipping">7. Shipping</h2>
+        <p>GrappleTrade purchases shipping labels through Shippo on behalf of buyers. The shipping rate shown at checkout is an estimate based on ZIP codes and item dimensions. The actual label cost may differ from the estimate. GrappleTrade retains any difference between the displayed rate and the actual label cost.</p>
+        <p>Shipping is available only within the contiguous 48 United States. GrappleTrade is not responsible for carrier delays, loss, or damage in transit, but our <a href="money-back.html">Money Back Guarantee</a> covers items not received or significantly not as described.</p>
 
-            <div class="highlight-box">
-                <p><strong>Remember:</strong> You are solely responsible for your interactions and transactions with other users. Choose wisely and communicate clearly.</p>
-            </div>
-        </div>
+        <h2 id="cancellations">8. Cancellations and Refunds</h2>
 
-        <div class="content-section">
-            <h2><span class="section-number">4</span> Prohibited Items & Conduct</h2>
-            <p>The following items and behaviors are strictly prohibited on our platform:</p>
+        <h3>Buyer Cancellations</h3>
+        <p>Buyers may cancel before the seller purchases a shipping label and will receive a <strong>full refund on the item price</strong>. Shipping costs are refunded in full if no label has been purchased; once a label is purchased, shipping is non-refundable. Once shipped, cancellation is not available.</p>
 
-            <h3>Prohibited Items</h3>
-            <ul>
-                <li>Counterfeit, replica, or unauthorized branded goods</li>
-                <li>Stolen property or items obtained illegally</li>
-                <li>Unsafe equipment that fails to meet basic safety standards</li>
-                <li>Items prohibited by law in your jurisdiction</li>
-                <li>Weapons, drugs, or other illegal substances</li>
-            </ul>
+        <h3>Seller Cancellations</h3>
+        <p>If a seller cancels, the buyer receives a full refund. The seller receives no payment and receives a strike.</p>
 
-            <h3>Prohibited Conduct</h3>
-            <ul>
-                <li>Fraudulent listings or misrepresentation of items</li>
-                <li>Harassment, threats, or abusive behavior toward other users</li>
-                <li>Manipulation of reviews, ratings, or feedback</li>
-                <li>Circumventing platform fees or payment systems</li>
-                <li>Creating multiple accounts to evade restrictions</li>
-                <li>Scraping, data mining, or automated use of the platform</li>
-            </ul>
+        <h3>Auto-Cancellation</h3>
+        <p>Orders not shipped within 10 days are automatically cancelled. The buyer receives a full refund including shipping. The seller receives a strike.</p>
 
-            <div class="highlight-box warning">
-                <p><strong>Enforcement:</strong> We may remove listings, suspend accounts, or terminate access without notice for violations of these prohibitions. Serious violations may be reported to law enforcement.</p>
-            </div>
-        </div>
+        <h3>Items Not as Described</h3>
+        <p>Contact us at <a href="mailto:grappletrade@gmail.com">grappletrade@gmail.com</a> if an item arrives significantly different from the listing. Our <a href="money-back.html">Money Back Guarantee</a> covers eligible claims.</p>
 
-        <div class="content-section">
-            <h2><span class="section-number">5</span> Payments & Escrow</h2>
-            <p>GrappleTrade operates an escrow model to protect both buyers and sellers:</p>
+        <h2 id="escrow">9. Payment Escrow</h2>
+        <p>When you complete a purchase, your payment is held securely by Stripe and is not released to the seller until you confirm delivery in My Orders. GrappleTrade is not a bank or money services business; escrow is provided through Stripe, a licensed financial services company.</p>
 
-            <ul>
-                <li><strong>Payment processor:</strong> All payments are processed by Stripe. Card data never touches our servers.</li>
-                <li><strong>Escrow hold:</strong> When a buyer completes a purchase, funds are held by Stripe on behalf of GrappleTrade until the buyer confirms delivery of the item.</li>
-                <li><strong>Seller payout:</strong> Funds are released to the seller's connected Stripe account only after the buyer confirms the item was received as described, or after our dispute resolution process concludes.</li>
-                <li><strong>Platform fee:</strong> GrappleTrade charges a 10% fee on the item sale price. There are no listing fees. See our <a href="fees.html">Fees &amp; Pricing page</a> for full details.</li>
-                <li><strong>Refunds:</strong> Buyers are protected by our <a href="money-back.html">Money Back Guarantee</a>. Refunds are issued by GrappleTrade when a valid claim is approved, not at individual seller discretion.</li>
-                <li><strong>Cancellations:</strong> If a seller cancels an order or fails to ship within 10 days, the buyer receives a full refund automatically.</li>
-            </ul>
+        <h2 id="strikes">10. Seller Strikes and Suspension</h2>
+        <p>Sellers receive a strike for cancelling an order or failing to ship within 10 days (triggering auto-cancellation). After <strong>3 strikes</strong>, selling privileges are automatically suspended.</p>
+        <p>To appeal a suspension, email <a href="mailto:grappletrade@gmail.com">grappletrade@gmail.com</a> with your username and the relevant order details. Appeals are reviewed within 5 business days.</p>
 
-            <div class="highlight-box">
-                <p><strong>Payment Security:</strong> Stripe is a PCI-DSS Level 1 certified payment processor. While we use reputable payment processors, you are responsible for maintaining the security of your account and monitoring for unauthorized activity.</p>
-            </div>
-        </div>
+        <h2 id="prohibited">11. Prohibited Items and Conduct</h2>
+        <p>Prohibited on GrappleTrade:</p>
+        <ul>
+            <li>Counterfeit or replica items.</li>
+            <li>Non-wrestling-related items.</li>
+            <li>Listings with false or materially misleading descriptions.</li>
+            <li>Creating multiple accounts to evade suspensions.</li>
+            <li>Transacting outside the platform to avoid fees.</li>
+            <li>Any conduct that violates applicable law.</li>
+        </ul>
+        <p>We may remove listings and suspend accounts that violate these rules, with or without notice.</p>
 
-        <div class="content-section">
-            <h2><span class="section-number">6</span> Disclaimers</h2>
-            
-            <div class="cta-box">
-                <h3>⚠️ Platform Provided "AS IS"</h3>
-                <p>The Platform is provided "AS IS" and "AS AVAILABLE" without warranties of any kind, either express or implied.</p>
-            </div>
+        <h2 id="ip">12. Intellectual Property</h2>
+        <p>By posting listing content (photos, descriptions, titles), you grant GrappleTrade a non-exclusive, worldwide, royalty-free license to display, reproduce, and distribute that content on the platform and in promotional materials. You represent you own or have the right to use all content you post.</p>
+        <p>GrappleTrade's name, logo, and platform design are our intellectual property. You may not use them without our prior written consent.</p>
 
-            <p>We make no warranties, representations, or guarantees regarding:</p>
-            <ul>
-                <li><strong>Item quality or safety:</strong> Condition, authenticity, or suitability of listed items</li>
-                <li><strong>Seller reliability:</strong> Honesty, competence, or trustworthiness of users</li>
-                <li><strong>Transaction outcomes:</strong> Successful completion, delivery, or satisfaction with purchases</li>
-                <li><strong>Platform availability:</strong> Uninterrupted or error-free service</li>
-                <li><strong>Data accuracy:</strong> Completeness or accuracy of any content or information</li>
-            </ul>
+        <h2 id="liability">13. Limitation of Liability</h2>
+        <p>GrappleTrade provides the platform "as is" without warranties of any kind. To the fullest extent permitted by law, GrappleTrade is not liable for: technical failures or data loss; actions of buyers or sellers; shipping carrier errors or delays; injuries from equipment purchased through the platform; or any indirect, incidental, or consequential damages.</p>
+        <p>In no event shall GrappleTrade's total liability exceed the amount of the transaction giving rise to the claim, or $100, whichever is less.</p>
 
-            <h3>No Professional Advice</h3>
-            <p>Information on the Platform does not constitute professional advice. We are not responsible for any decisions you make based on platform content.</p>
-        </div>
+        <h2 id="assumption-of-risk">14. Assumption of Risk</h2>
+        <p>Wrestling is an inherently high-risk sport. By purchasing wrestling equipment through GrappleTrade, you voluntarily assume all risks associated with using that equipment, including the risk of serious injury or death. You release GrappleTrade from any claims arising from equipment use. Our full <a href="assumption-of-risk.html">Assumption of Risk</a> document is incorporated into these Terms by reference.</p>
 
-        <div class="content-section">
-            <h2><span class="section-number">7</span> Limitation of Liability</h2>
-            <p>To the fullest extent permitted by law, GrappleTrade and its owners, officers, directors, employees, and affiliates shall not be liable for:</p>
+        <h2 id="disputes">15. Dispute Resolution and Arbitration</h2>
+        <p>For order disputes, contact us first at <a href="mailto:grappletrade@gmail.com">grappletrade@gmail.com</a>. We will make a good-faith effort to resolve the issue within 10 business days.</p>
+        <p><strong>Binding Arbitration:</strong> Disputes that cannot be resolved informally shall be settled by binding individual arbitration administered by the American Arbitration Association (AAA) under its Consumer Arbitration Rules. <strong>You and GrappleTrade each waive the right to a jury trial and to participate in any class action or class-wide arbitration.</strong></p>
+        <p>These Terms are governed by the laws of the State of New York.</p>
 
-            <ul>
-                <li><strong>Personal injury or property damage:</strong> Any injuries, damages, or losses arising from purchased equipment or platform use</li>
-                <li><strong>Financial losses:</strong> Lost profits, lost revenue, or lost business opportunities</li>
-                <li><strong>Indirect damages:</strong> Consequential, incidental, special, or punitive damages</li>
-                <li><strong>User disputes:</strong> Disagreements, conflicts, or failed transactions between users</li>
-                <li><strong>Third-party actions:</strong> Actions or omissions of payment processors, shipping carriers, or other third parties</li>
-                <li><strong>Data loss:</strong> Loss or corruption of user data or content</li>
-            </ul>
+        <h2 id="modifications">16. Changes to Terms</h2>
+        <p>We may modify these Terms at any time. For material changes, we will provide at least <strong>14 days' notice by email</strong> before the changes take effect. Continued use of GrappleTrade after the effective date constitutes acceptance of the modified Terms. If you do not agree to the changes, stop using the platform before the effective date.</p>
 
-            <div class="highlight-box warning">
-                <p><strong>Maximum Liability:</strong> In no event shall our total liability to you exceed the greater of (a) $100 or (b) the amount of fees you paid to us in the 12 months preceding the claim.</p>
-            </div>
-        </div>
-
-        <div class="content-section">
-            <h2><span class="section-number">8</span> Indemnification</h2>
-            <p>You agree to indemnify, defend, and hold harmless GrappleTrade, its owners, officers, directors, employees, agents, and affiliates from and against any and all claims, liabilities, damages, losses, costs, expenses, or fees (including reasonable attorneys' fees) arising from:</p>
-
-            <ul>
-                <li>Your use or misuse of the Platform</li>
-                <li>Your violation of these Terms</li>
-                <li>Your violation of any rights of another party</li>
-                <li>Your content or listings on the Platform</li>
-                <li>Your transactions with other users</li>
-                <li>Your use of any equipment purchased through the Platform</li>
-            </ul>
-        </div>
-
-        <div class="content-section">
-            <h2><span class="section-number">9</span> Governing Law & Disputes</h2>
-            
-            <h3>Governing Law</h3>
-            <p>These Terms are governed by and construed in accordance with the laws of the State of New York, without regard to its conflict-of-law principles.</p>
-
-            <h3>Dispute Resolution</h3>
-            <p>Any disputes arising from these Terms or your use of the Platform shall be resolved through:</p>
-            <ul>
-                <li><strong>Informal negotiation:</strong> First, by good-faith informal negotiation between the parties</li>
-                <li><strong>Binding arbitration:</strong> If negotiation fails, through binding arbitration in New York</li>
-                <li><strong>Class action waiver:</strong> You agree to resolve disputes individually, not as part of a class action</li>
-            </ul>
-        </div>
-
-        <div class="content-section">
-            <h2><span class="section-number">10</span> Changes to Terms</h2>
-            <p>We reserve the right to modify or update these Terms at any time. Changes will be effective immediately upon posting to the Platform.</p>
-
-            <div class="highlight-box success">
-                <p><strong>Your continued use of the Platform after changes are posted constitutes your acceptance of the modified Terms.</strong> We encourage you to review these Terms periodically.</p>
-            </div>
-
-            <p>For significant changes, we may provide additional notice through email or a prominent announcement on the Platform.</p>
-        </div>
-
-        <div class="content-section">
-            <h2><span class="section-number">11</span> Contact Information</h2>
-            <p>If you have questions about these Terms or need to contact us regarding the Platform, please reach out:</p>
-            
-            <div class="highlight-box">
-                <p><strong>Email:</strong> grappletrade@gmail.com<br>
-                <strong>Mail:</strong> GrappleTrade, 13 Evans St, Binghamton, NY 13903</p>
-            </div>
-        </div>
-
-        <div class="cta-box">
-            <h3>📝 Agreement Acknowledgment</h3>
-            <p>By using GrappleTrade, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.</p>
-        </div>
+        <h2 id="contact">17. Contact</h2>
+        <p>Questions about these Terms:</p>
+        <ul>
+            <li>Email: <a href="mailto:grappletrade@gmail.com">grappletrade@gmail.com</a></li>
+            <li>Mail: GrappleTrade HQ, 13 Evans Street, Binghamton, NY 13903</li>
+        </ul>
     </div>
 
-    <footer class="footer">
+    <div class="footer">
         <p>&copy; 2026 GrappleTrade. All rights reserved.</p>
-        <p>Last updated: 2/16/2026</p>
-    </footer>
+        <p>
+            <a href="terms-of-service.html">Terms of Service</a> |
+            <a href="privacy-policy.html">Privacy Policy</a> |
+            <a href="../help.html">Contact Us</a>
+        </p>
+    </div>
 </body>
 </html>

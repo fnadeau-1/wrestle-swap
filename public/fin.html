@@ -16,24 +16,21 @@
     <link rel="stylesheet" href="css/layout.css">
 
     <link rel="stylesheet" href="css/fin.css">
-    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>Sentry.onLoad(function(){Sentry.init({dsn:"https://175ba7b56a443dace10ed1bb8ef8e880@o4511618478047232.ingest.us.sentry.io/4511618490761216",environment:"production",tracesSampleRate:0.1});});</script>
+    <script src="https://browser.sentry-cdn.com/8.38.0/bundle.min.js" integrity="sha256-facu3sz9OFAZ/KdtbGpCVb8abQC5VZJ4eSQSY0BGfW4=" crossorigin="anonymous"></script>
+    <script src="js/sentry-init.js"></script>
 </head>
 <body>
 
-    <!-- Auth gate — shown until admin check completes -->
     <div id="auth-gate">
         <div class="gate-spinner"></div>
         <span>Loading...</span>
     </div>
 
-    <!-- User Detail Modal -->
-    <!-- Listing Detail Modal -->
-    <div id="listing-detail-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this){closeListingModal()}">
+    <div id="listing-detail-modal" class="modal-overlay" style="display:none;" data-onclick-overlay="closeListingModal">
         <div class="modal-box" style="max-width:760px;">
             <div class="modal-header">
                 <span class="modal-title" id="listing-modal-title">Listing Details</span>
-                <button class="modal-close" onclick="closeListingModal()">&#x2715;</button>
+                <button class="modal-close" data-onclick="closeListingModal">&#x2715;</button>
             </div>
             <div class="modal-body">
                 <div id="listing-modal-content">
@@ -43,11 +40,11 @@
         </div>
     </div>
 
-    <div id="user-detail-modal" class="modal-overlay" style="display:none;" onclick="closeUserModal(event)">
+    <div id="user-detail-modal" class="modal-overlay" style="display:none;" data-onclick-event="closeUserModal">
         <div class="modal-box">
             <div class="modal-header">
                 <span class="modal-title" id="modal-user-title">User Details</span>
-                <button class="modal-close" onclick="closeUserModalDirect()">&#x2715;</button>
+                <button class="modal-close" data-onclick="closeUserModalDirect">&#x2715;</button>
             </div>
             <div class="modal-body">
                 <div id="modal-content">
@@ -60,22 +57,20 @@
         </div>
     </div>
 
-    <!-- Top Bar -->
     <div class="top-bar bg-gray">
         <div class="top-bar-content">
             <div>
-                <button class="top-bar-btn" onclick="window.location.href='sign-in.html'">Hi! Sign in</button>
-                <button class="top-bar-btn" onclick="window.location.href='help.html'">Help &amp; Contact</button>
-                <button class="top-bar-btn" onclick="window.location.href='chat.html'">Chats</button>
+                <button class="top-bar-btn" data-href="sign-in.html">Hi! Sign in</button>
+                <button class="top-bar-btn" data-href="help.html">Help &amp; Contact</button>
+                <button class="top-bar-btn" data-href="chat.html">Chats</button>
             </div>
             <div>
-                <button class="top-bar-btn" onclick="window.location.href='sell.html'">Sell</button>
-                <button class="top-bar-btn" onclick="window.location.href='settings.html'">Settings</button>
+                <button class="top-bar-btn" data-href="sell.html">Sell</button>
+                <button class="top-bar-btn" data-href="settings.html">Settings</button>
             </div>
         </div>
     </div>
 
-    <!-- Main Header -->
     <div class="main-header">
         <div class="header-content">
             <a class="logo" href="index.html">GrappleTrade</a>
@@ -83,39 +78,33 @@
         </div>
     </div>
 
-    <!-- Warning Banner -->
     <div class="admin-warning-banner">
         Admin Area &mdash; Changes take effect immediately
     </div>
 
-    <!-- Main Content -->
     <div class="admin-page">
         <div class="admin-page-header">
             <h1>Admin Dashboard</h1>
             <p>Manage the GrappleTrade marketplace: users, listings, orders, reports, reviews, and announcements.</p>
         </div>
 
-        <!-- Tab Switcher -->
         <div class="tab-bar" role="tablist">
-            <button class="tab-btn active" role="tab" onclick="switchTab('dashboard', this)">Dashboard</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('users', this)">Users</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('listings', this)">Listings</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('orders', this)">Orders</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('reports', this)">Reports</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('reviews', this)">Reviews</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('announcements', this)">Announcements</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('messages', this)">Messages</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('disputes', this)">Disputes</button>
-            <button class="tab-btn" role="tab" onclick="switchTab('salesmap', this)">Sales Map</button>
+            <button class="tab-btn active" role="tab" data-onclick-with-arg-self="switchTab,dashboard">Dashboard</button>
+            <button class="tab-btn" role="tab" data-onclick-with-arg-self="switchTab,users">Users</button>
+            <button class="tab-btn" role="tab" data-onclick-with-arg-self="switchTab,listings">Listings</button>
+            <button class="tab-btn" role="tab" data-onclick-with-arg-self="switchTab,orders">Orders</button>
+            <button class="tab-btn" role="tab" data-onclick-with-arg-self="switchTab,reports">Reports</button>
+            <button class="tab-btn" role="tab" data-onclick-with-arg-self="switchTab,reviews">Reviews</button>
+            <button class="tab-btn" role="tab" data-onclick-with-arg-self="switchTab,announcements">Announcements</button>
+            <button class="tab-btn" role="tab" data-onclick-with-arg-self="switchTab,messages">Messages</button>
+            <button class="tab-btn" role="tab" data-onclick-with-arg-self="switchTab,disputes">Disputes</button>
+            <button class="tab-btn" role="tab" data-onclick-with-arg-self="switchTab,salesmap">Sales Map</button>
         </div>
 
-        <!-- ==============================
-             TAB 1: DASHBOARD
-             ============================== -->
         <div class="tab-section active" id="tab-dashboard">
             <div class="section-header">
                 <span class="section-title">Overview</span>
-                <button class="refresh-btn" onclick="loadDashboard()">Refresh</button>
+                <button class="refresh-btn" data-onclick="loadDashboard">Refresh</button>
             </div>
 
             <div id="dashboard-loading" class="loading-state">
@@ -145,16 +134,13 @@
             </div>
         </div>
 
-        <!-- ==============================
-             TAB 2: USERS
-             ============================== -->
         <div class="tab-section" id="tab-users">
             <div class="section-header">
                 <span class="section-title">Users</span>
-                <button class="refresh-btn" onclick="loadSellers()">Refresh</button>
+                <button class="refresh-btn" data-onclick="loadSellers">Refresh</button>
             </div>
             <div class="search-bar-wrap">
-                <input type="text" class="admin-search" id="seller-search" placeholder="Search by name, email, or UID…" oninput="filterSellers(this.value)">
+                <input type="text" class="admin-search" id="seller-search" placeholder="Search by name, email, or UID…" data-oninput-value="filterSellers">
             </div>
 
             <div class="loading-state" id="sellers-loading">
@@ -185,18 +171,15 @@
             </div>
         </div>
 
-        <!-- ==============================
-             TAB 3: LISTINGS
-             ============================== -->
         <div class="tab-section" id="tab-listings">
             <div class="section-header">
                 <span class="section-title">All Listings</span>
-                <button class="refresh-btn" onclick="loadListings()">Refresh</button>
+                <button class="refresh-btn" data-onclick="loadListings">Refresh</button>
             </div>
 
             <div class="search-bar-wrap">
-                <input type="text" class="admin-search" id="listings-search" placeholder="Search by title or seller UID…" oninput="filterListings()">
-                <select class="admin-select" id="listings-filter" onchange="filterListings()">
+                <input type="text" class="admin-search" id="listings-search" placeholder="Search by title or seller UID…" data-oninput="filterListings">
+                <select class="admin-select" id="listings-filter" data-onchange="filterListings">
                     <option value="all">All Statuses</option>
                     <option value="active">Active</option>
                     <option value="sold">Sold</option>
@@ -232,18 +215,15 @@
             </div>
         </div>
 
-        <!-- ==============================
-             TAB 4: ORDERS
-             ============================== -->
         <div class="tab-section" id="tab-orders">
             <div class="section-header">
                 <span class="section-title">Orders (sold &amp; cancelled)</span>
-                <button class="refresh-btn" onclick="loadOrders()">Refresh</button>
+                <button class="refresh-btn" data-onclick="loadOrders">Refresh</button>
             </div>
 
             <div class="search-bar-wrap">
-                <input type="text" class="admin-search" id="orders-search" placeholder="Search by title, buyer, or seller…" oninput="filterOrders()">
-                <select class="admin-select" id="orders-filter" onchange="filterOrders()">
+                <input type="text" class="admin-search" id="orders-search" placeholder="Search by title, buyer, or seller…" data-oninput="filterOrders">
+                <select class="admin-select" id="orders-filter" data-onchange="filterOrders">
                     <option value="all">All Orders</option>
                     <option value="active">Active (not shipped)</option>
                     <option value="overdue">Overdue (&gt;7 days)</option>
@@ -280,11 +260,10 @@
                 </table>
             </div>
 
-            <!-- Refund Requests sub-section -->
             <div class="sub-section">
                 <div class="section-header">
                     <span class="sub-section-title">Refund Requests</span>
-                    <button class="refresh-btn" onclick="loadRefunds()">Refresh</button>
+                    <button class="refresh-btn" data-onclick="loadRefunds">Refresh</button>
                 </div>
 
                 <div class="loading-state" id="refunds-loading">
@@ -314,13 +293,10 @@
             </div>
         </div>
 
-        <!-- ==============================
-             TAB 5: REPORTS
-             ============================== -->
         <div class="tab-section" id="tab-reports">
             <div class="section-header">
                 <span class="section-title">Reports</span>
-                <button class="refresh-btn" onclick="loadReports()">Refresh</button>
+                <button class="refresh-btn" data-onclick="loadReports">Refresh</button>
             </div>
 
             <div class="loading-state" id="reports-loading">
@@ -351,13 +327,10 @@
             </div>
         </div>
 
-        <!-- ==============================
-             TAB 6: REVIEWS
-             ============================== -->
         <div class="tab-section" id="tab-reviews">
             <div class="section-header">
                 <span class="section-title">Reviews</span>
-                <button class="refresh-btn" onclick="loadReviews()">Refresh</button>
+                <button class="refresh-btn" data-onclick="loadReviews">Refresh</button>
             </div>
 
             <div class="loading-state" id="reviews-loading">
@@ -387,13 +360,10 @@
             </div>
         </div>
 
-        <!-- ==============================
-             TAB 7: ANNOUNCEMENTS
-             ============================== -->
         <div class="tab-section" id="tab-announcements">
             <div class="section-header">
                 <span class="section-title">Sitewide Announcements</span>
-                <button class="refresh-btn" onclick="loadAnnouncement()">Refresh</button>
+                <button class="refresh-btn" data-onclick="loadAnnouncement">Refresh</button>
             </div>
 
             <div class="announcement-status-box" id="announcement-status-box">
@@ -415,7 +385,7 @@
                         id="announcement-message"
                         maxlength="280"
                         placeholder="Enter the announcement message..."
-                        oninput="updateCharCounter()"
+                        data-oninput="updateCharCounter"
                     ></textarea>
                     <div class="char-counter" id="announcement-char-count">0 / 280</div>
                 </div>
@@ -430,19 +400,16 @@
                 </div>
 
                 <div class="form-btn-row">
-                    <button class="btn-primary" id="post-announcement-btn" onclick="postAnnouncement()">Post Announcement</button>
-                    <button class="btn-secondary" onclick="dismissAnnouncement()">Dismiss Current Announcement</button>
+                    <button class="btn-primary" id="post-announcement-btn" data-onclick="postAnnouncement">Post Announcement</button>
+                    <button class="btn-secondary" data-onclick="dismissAnnouncement">Dismiss Current Announcement</button>
                 </div>
             </div>
         </div>
 
-        <!-- ==============================
-             TAB 8: MESSAGES
-             ============================== -->
         <div class="tab-section" id="tab-messages">
             <div class="section-header">
                 <span class="section-title">Conversations</span>
-                <button class="refresh-btn" onclick="loadConversations()">Refresh</button>
+                <button class="refresh-btn" data-onclick="loadConversations">Refresh</button>
             </div>
 
             <div class="loading-state" id="messages-loading">
@@ -455,9 +422,7 @@
             </div>
 
             <div id="messages-content" style="display:none; gap:0; border:1px solid var(--color-border); border-radius:var(--radius); overflow:hidden; background:#fff;">
-                <!-- Conversations list (left pane) -->
                 <div id="conv-list" style="width:360px;min-width:280px;border-right:1px solid var(--color-border);overflow-y:auto;max-height:640px;flex-shrink:0;display:flex;flex-direction:column;"></div>
-                <!-- Message thread (right pane) -->
                 <div id="conv-thread" style="flex:1;display:flex;flex-direction:column;max-height:640px;">
                     <div id="conv-thread-empty" style="flex:1;display:flex;align-items:center;justify-content:center;color:#999;font-size:14px;">
                         Select a conversation to view messages
@@ -473,13 +438,10 @@
             </div>
         </div>
 
-        <!-- ==============================
-             TAB 9: DISPUTES
-             ============================== -->
         <div class="tab-section" id="tab-disputes">
             <div class="section-header">
                 <span class="section-title">Disputes</span>
-                <button class="refresh-btn" onclick="loadDisputes()">Refresh</button>
+                <button class="refresh-btn" data-onclick="loadDisputes">Refresh</button>
             </div>
 
             <div class="loading-state" id="disputes-loading">
@@ -509,13 +471,10 @@
             </div>
         </div>
 
-        <!-- ==============================
-             TAB 10: SALES MAP
-             ============================== -->
         <div class="tab-section" id="tab-salesmap">
             <div class="section-header">
                 <span class="section-title">Sales Map</span>
-                <button class="refresh-btn" onclick="loadSalesMap()">Refresh</button>
+                <button class="refresh-btn" data-onclick="loadSalesMap">Refresh</button>
             </div>
 
             <div id="salesmap-loading" class="loading-state">
@@ -524,7 +483,6 @@
             </div>
 
             <div id="salesmap-content" style="display:none;">
-                <!-- National summary stats -->
                 <div class="stats-grid" style="margin-bottom:20px;">
                     <div class="stat-card">
                         <div class="stat-number" id="map-stat-total-sales">—</div>
@@ -540,7 +498,6 @@
                     </div>
                 </div>
 
-                <!-- Legend -->
                 <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px;flex-wrap:wrap;font-size:13px;">
                     <span style="font-weight:600;color:#333;">Tax Nexus Risk:</span>
                     <span><span style="display:inline-block;width:14px;height:14px;background:#c8e6c9;border:1px solid #81c784;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Safe (&lt;$50k &amp; &lt;100 sales)</span>
@@ -550,19 +507,16 @@
                     <span><span style="display:inline-block;width:14px;height:14px;background:#f0f0f0;border:1px solid #bdbdbd;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>No sales</span>
                 </div>
 
-                <!-- Map container -->
                 <div id="salesmap-svg-wrap" style="width:100%;background:#e8eef7;border-radius:12px;padding:16px;position:relative;">
                     <svg id="us-salesmap" viewBox="0 0 975 610" style="width:100%;height:auto;display:block;"></svg>
                 </div>
 
-                <!-- Tooltip (fixed-position, shown on hover) -->
                 <div id="map-tooltip" style="position:fixed;background:rgba(20,20,20,0.92);color:#fff;padding:12px 16px;border-radius:8px;font-size:13px;pointer-events:none;display:none;z-index:9999;max-width:240px;line-height:1.7;box-shadow:0 4px 20px rgba(0,0,0,0.3);"></div>
 
-                <!-- State detail panel (shown on click) -->
                 <div id="map-state-panel" style="display:none;margin-top:20px;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:20px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                         <h3 id="map-state-name" style="margin:0;font-size:18px;font-weight:700;color:#1a1a1a;"></h3>
-                        <button onclick="document.getElementById('map-state-panel').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#999;line-height:1;">&times;</button>
+                        <button data-hide-el="map-state-panel" style="background:none;border:none;font-size:22px;cursor:pointer;color:#999;line-height:1;">&times;</button>
                     </div>
                     <div id="map-state-detail" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;"></div>
                     <div id="map-state-nexus-status" style="margin-bottom:14px;"></div>
@@ -571,2077 +525,13 @@
             </div>
         </div>
 
-    </div><!-- /.admin-page -->
+    </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" integrity="sha256-LQOLn5nNwoEZtOXCpO2G1WH8NsBR5RXvNRdrHKvngME=" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js" integrity="sha256-M0FuBDqc2f0eKvdsoNATi+Q/uIFA9Ocn6Xp9QDSTdWI=" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js" integrity="sha256-IzSlf3hes4zhpv367VXswTNXNKX9FfJ2t2vytFdCQG8=" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js" integrity="sha256-FFHhKF0aCe7WyfcbB7oB+wl63WawJNE+JFS6B9UKU8Y=" crossorigin="anonymous"></script>
 
-    <!-- Firebase SDK v9.22.0 (compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
-    <script>
-        // ============================================
-        // FIREBASE CONFIGURATION
-        // ============================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjDNViO7zXGDIT6gN7qP1VLU2H1lZphe0",
-            authDomain: "grappletrade.firebaseapp.com",
-            projectId: "grappletrade",
-            storageBucket: "grappletrade.firebasestorage.app",
-            messagingSenderId: "119683736855",
-            appId: "1:119683736855:web:0d0bc6cea784290ded8352",
-            measurementId: "G-987DNCH23C"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lck5w4tAAAAABZvUgLj4J5zg_CPlK7mQawuk6b6'), true);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-
-        // Current signed-in user reference
-        var currentUser = null;
-
-        // ============================================
-        // AUTH GATE — verify admin before showing page
-        // ============================================
-        auth.onAuthStateChanged(async function(user) {
-            if (!user) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            try {
-                var userDoc = await db.collection('users').doc(user.uid).get();
-                if (!userDoc.exists || userDoc.data().isAdmin !== true) {
-                    window.location.href = 'index.html';
-                    return;
-                }
-            } catch (err) {
-                console.error('Admin check failed:', err);
-                window.location.href = 'index.html';
-                return;
-            }
-
-            // Admin confirmed — reveal the page and load dashboard
-            currentUser = user;
-            var greetName = user.displayName || user.email.split('@')[0] || 'Admin';
-            var greetBtn = document.querySelector('.top-bar-btn[onclick*="sign-in"]');
-            if (greetBtn) {
-                greetBtn.textContent = 'Hi, ' + greetName + '!';
-                greetBtn.onclick = function() { window.location.href = 'profile.html'; };
-            }
-            document.getElementById('auth-gate').style.display = 'none';
-            loadDashboard();
-        });
-
-        // ============================================
-        // TAB SWITCHER
-        // ============================================
-        var tabLoadState = {};
-
-        function switchTab(name, btn) {
-            document.querySelectorAll('.tab-btn').forEach(function(b) {
-                b.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-section').forEach(function(s) {
-                s.classList.remove('active');
-            });
-
-            btn.classList.add('active');
-            document.getElementById('tab-' + name).classList.add('active');
-
-            // Lazy-load data when tab is first opened (or always reload)
-            if (name === 'dashboard') { loadDashboard(); }
-            if (name === 'users') { loadSellers(); }
-            if (name === 'listings') { loadListings(); }
-            if (name === 'orders') { loadOrders(); loadRefunds(); }
-            if (name === 'reports') { loadReports(); }
-            if (name === 'reviews') { loadReviews(); }
-            if (name === 'announcements') { loadAnnouncement(); }
-            if (name === 'messages') { loadConversations(); }
-            if (name === 'disputes') { loadDisputes(); }
-            if (name === 'salesmap') { loadSalesMap(); }
-        }
-
-        // ============================================
-        // HELPERS
-        // ============================================
-        function formatDate(ts) {
-            if (!ts) return '—';
-            var d;
-            if (ts && typeof ts.toDate === 'function') {
-                d = ts.toDate();
-            } else if (ts instanceof Date) {
-                d = ts;
-            } else {
-                d = new Date(ts);
-            }
-            if (isNaN(d)) return '—';
-            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-        }
-
-        function truncate(str, len) {
-            if (!str) return '—';
-            return str.length > len ? str.substring(0, len) + '\u2026' : str;
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
-        }
-
-        function showSection(prefix, state) {
-            // state: 'loading' | 'empty' | 'table'
-            var loading = document.getElementById(prefix + '-loading');
-            var empty   = document.getElementById(prefix + '-empty');
-            var wrap    = document.getElementById(prefix + '-table-wrap');
-
-            if (loading) loading.style.display = state === 'loading' ? 'block' : 'none';
-            if (empty)   empty.style.display   = state === 'empty'   ? 'block' : 'none';
-            if (wrap)    wrap.style.display     = state === 'table'   ? 'block' : 'none';
-        }
-
-        function renderStars(rating) {
-            var r = Math.round(rating) || 0;
-            var stars = '';
-            for (var i = 1; i <= 5; i++) {
-                stars += i <= r ? '\u2605' : '\u2606';
-            }
-            return '<span class="stars">' + stars + '</span>';
-        }
-
-        // ============================================
-        // TAB 1: DASHBOARD
-        // ============================================
-        async function loadDashboard() {
-            document.getElementById('dashboard-loading').style.display = 'block';
-            document.getElementById('dashboard-stats').style.display = 'none';
-
-            try {
-                // Run queries in parallel
-                var usersSnap = await db.collection('users').get();
-                var activeSnap = await db.collection('products')
-                    .where('sold', '==', false)
-                    .get();
-                var soldSnap = await db.collection('products')
-                    .where('sold', '==', true)
-                    .get();
-
-                var totalUsers = usersSnap.size;
-
-                // Active = sold==false AND cancelled!=true
-                var activeCount = 0;
-                activeSnap.forEach(function(doc) {
-                    var d = doc.data();
-                    if (d.cancelled !== true) activeCount++;
-                });
-
-                var totalSales = soldSnap.size;
-
-                // Revenue = sum of price * 0.10 for sold products
-                var revenue = 0;
-                soldSnap.forEach(function(doc) {
-                    var price = parseFloat(doc.data().price) || 0;
-                    revenue += price * 0.10;
-                });
-
-                document.getElementById('stat-total-users').textContent = totalUsers.toLocaleString();
-                document.getElementById('stat-active-listings').textContent = activeCount.toLocaleString();
-                document.getElementById('stat-total-sales').textContent = totalSales.toLocaleString();
-                document.getElementById('stat-revenue').textContent = '$' + revenue.toFixed(2);
-
-                document.getElementById('dashboard-loading').style.display = 'none';
-                document.getElementById('dashboard-stats').style.display = 'block';
-
-            } catch (err) {
-                console.error('Error loading dashboard:', err);
-                document.getElementById('dashboard-loading').innerHTML =
-                    '<p style="color:#dc2626;">Error loading stats: ' + escapeHtml(err.message) + '</p>';
-            }
-        }
-
-        // ============================================
-        // TAB 2: USERS (previously "Sellers")
-        // ============================================
-        async function loadSellers() {
-            showSection('sellers', 'loading');
-
-            try {
-                var snap = await db.collection('users').limit(200).get();
-
-                if (snap.empty) {
-                    showSection('sellers', 'empty');
-                    return;
-                }
-
-                var tbody = document.getElementById('sellers-tbody');
-                tbody.innerHTML = '';
-
-                snap.forEach(function(doc) {
-                    var u = doc.data();
-                    var uid = doc.id;
-                    var suspended = u.sellerSuspended === true;
-                    var verified = u.verifiedSeller === true;
-                    var strikes = u.sellerCancellationCount != null ? u.sellerCancellationCount : 0;
-                    var stripeConnected = u.stripeAccountId ? 'Yes' : 'No';
-
-                    var suspendedBadge = suspended
-                        ? '<span class="badge badge-red">Suspended</span>'
-                        : '<span class="badge badge-green">Active</span>';
-
-                    var verifiedBadge = verified
-                        ? '<span class="badge badge-green">&#10003; Verified</span>'
-                        : '<span class="badge badge-gray">Unverified</span>';
-
-                    var toggleSuspendBtn = suspended
-                        ? '<button class="action-btn btn-unsuspend" onclick="unsuspendUser(\'' + uid + '\', this)">Unsuspend</button>'
-                        : '<button class="action-btn btn-suspend" onclick="suspendUser(\'' + uid + '\', this)">Suspend</button>';
-
-                    var toggleVerifyBtn = verified
-                        ? '<button class="action-btn btn-unverify" onclick="unverifyUser(\'' + uid + '\', this)">Unverify</button>'
-                        : '<button class="action-btn btn-verify" onclick="verifyUser(\'' + uid + '\', this)">Verify Seller</button>';
-
-                    var strikesEditor =
-                        '<div class="strikes-editor">' +
-                            '<input type="number" min="0" max="99" value="' + strikes + '" id="strikes-input-' + uid + '">' +
-                            '<button class="btn-save-strikes" onclick="saveStrikes(\'' + uid + '\')">Save</button>' +
-                        '</div>';
-
-                    var row = document.createElement('tr');
-                    row.id = 'seller-row-' + uid;
-                    row.dataset.search = [
-                        (u.displayName || u.name || ''),
-                        (u.email || ''),
-                        uid,
-                        (u.username || '')
-                    ].join(' ').toLowerCase();
-
-                    row.innerHTML =
-                        '<td><span style="color:#3665f3;cursor:pointer;font-weight:500;" onclick="viewUserDetails(\'' + uid + '\')">' + escapeHtml(u.displayName || u.name || '—') + '</span></td>' +
-                        '<td>' + escapeHtml(u.email || '—') + '</td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(uid) + '">' + escapeHtml(uid) + '</span></td>' +
-                        '<td id="strikes-cell-' + uid + '">' + strikesEditor + '</td>' +
-                        '<td id="suspended-cell-' + uid + '">' + suspendedBadge + '</td>' +
-                        '<td id="verified-cell-' + uid + '">' + verifiedBadge + '</td>' +
-                        '<td>' + stripeConnected + '</td>' +
-                        '<td id="actions-cell-' + uid + '"><div class="action-gap">' +
-                            toggleSuspendBtn +
-                            toggleVerifyBtn +
-                            '<button class="action-btn btn-details" onclick="viewUserDetails(\'' + uid + '\')">View Details</button>' +
-                            '<button class="action-btn btn-delete-account" onclick="deleteAccount(\'' + uid + '\', this)">Delete Account</button>' +
-                        '</div></td>';
-                    tbody.appendChild(row);
-                });
-
-                showSection('sellers', 'table');
-
-            } catch (err) {
-                console.error('Error loading users:', err);
-                showSection('sellers', 'empty');
-                document.getElementById('sellers-empty').textContent = 'Error loading users: ' + err.message;
-            }
-        }
-
-        async function unsuspendUser(uid, btn) {
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            try {
-                await db.collection('users').doc(uid).update({ sellerSuspended: false });
-                document.getElementById('suspended-cell-' + uid).innerHTML = '<span class="badge badge-green">Active</span>';
-                var actionsCell = document.getElementById('actions-cell-' + uid);
-                // Replace suspend btn only, keep others
-                var suspendBtnOld = actionsCell.querySelector('.btn-unsuspend');
-                if (suspendBtnOld) {
-                    var newBtn = document.createElement('button');
-                    newBtn.className = 'action-btn btn-suspend';
-                    newBtn.setAttribute('onclick', 'suspendUser(\'' + uid + '\', this)');
-                    newBtn.textContent = 'Suspend';
-                    suspendBtnOld.replaceWith(newBtn);
-                }
-            } catch (err) {
-                console.error('Error unsuspending user:', err);
-                btn.disabled = false;
-                btn.textContent = 'Unsuspend';
-                alert('Failed to unsuspend: ' + err.message);
-            }
-        }
-
-        async function suspendUser(uid, btn) {
-            if (!confirm('Suspend this user? They will not be able to list or sell items.')) return;
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            try {
-                await db.collection('users').doc(uid).update({ sellerSuspended: true });
-                document.getElementById('suspended-cell-' + uid).innerHTML = '<span class="badge badge-red">Suspended</span>';
-                var actionsCell = document.getElementById('actions-cell-' + uid);
-                var suspendBtnOld = actionsCell.querySelector('.btn-suspend');
-                if (suspendBtnOld) {
-                    var newBtn = document.createElement('button');
-                    newBtn.className = 'action-btn btn-unsuspend';
-                    newBtn.setAttribute('onclick', 'unsuspendUser(\'' + uid + '\', this)');
-                    newBtn.textContent = 'Unsuspend';
-                    suspendBtnOld.replaceWith(newBtn);
-                }
-            } catch (err) {
-                console.error('Error suspending user:', err);
-                btn.disabled = false;
-                btn.textContent = 'Suspend';
-                alert('Failed to suspend: ' + err.message);
-            }
-        }
-
-        async function verifyUser(uid, btn) {
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            try {
-                await db.collection('users').doc(uid).update({ verifiedSeller: true });
-                document.getElementById('verified-cell-' + uid).innerHTML = '<span class="badge badge-green">&#10003; Verified</span>';
-                var newBtn = document.createElement('button');
-                newBtn.className = 'action-btn btn-unverify';
-                newBtn.setAttribute('onclick', 'unverifyUser(\'' + uid + '\', this)');
-                newBtn.textContent = 'Unverify';
-                btn.replaceWith(newBtn);
-            } catch (err) {
-                console.error('Error verifying user:', err);
-                btn.disabled = false;
-                btn.textContent = 'Verify Seller';
-                alert('Failed to verify user: ' + err.message);
-            }
-        }
-
-        async function unverifyUser(uid, btn) {
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            try {
-                await db.collection('users').doc(uid).update({ verifiedSeller: false });
-                document.getElementById('verified-cell-' + uid).innerHTML = '<span class="badge badge-gray">Unverified</span>';
-                var newBtn = document.createElement('button');
-                newBtn.className = 'action-btn btn-verify';
-                newBtn.setAttribute('onclick', 'verifyUser(\'' + uid + '\', this)');
-                newBtn.textContent = 'Verify Seller';
-                btn.replaceWith(newBtn);
-            } catch (err) {
-                console.error('Error unverifying user:', err);
-                btn.disabled = false;
-                btn.textContent = 'Unverify';
-                alert('Failed to unverify user: ' + err.message);
-            }
-        }
-
-        async function saveStrikes(uid) {
-            var input = document.getElementById('strikes-input-' + uid);
-            var val = parseInt(input.value, 10);
-            if (isNaN(val) || val < 0) { alert('Enter a valid number of strikes (0 or more).'); return; }
-            input.disabled = true;
-            try {
-                var update = { sellerCancellationCount: val };
-                if (val >= 3) update.sellerSuspended = true;
-                await db.collection('users').doc(uid).update(update);
-                if (val >= 3) {
-                    document.getElementById('suspended-cell-' + uid).innerHTML = '<span class="badge badge-red">Suspended</span>';
-                    var actionsCell = document.getElementById('actions-cell-' + uid);
-                    var suspendBtn = actionsCell.querySelector('.btn-suspend');
-                    if (suspendBtn) {
-                        var newBtn = document.createElement('button');
-                        newBtn.className = 'action-btn btn-unsuspend';
-                        newBtn.setAttribute('onclick', 'unsuspendUser(\'' + uid + '\', this)');
-                        newBtn.textContent = 'Unsuspend';
-                        suspendBtn.replaceWith(newBtn);
-                    }
-                }
-                input.disabled = false;
-            } catch (err) {
-                console.error('Error saving strikes:', err);
-                input.disabled = false;
-                alert('Failed to save: ' + err.message);
-            }
-        }
-
-        function filterSellers(query) {
-            var q = (query || '').toLowerCase().trim();
-            document.querySelectorAll('#sellers-tbody tr').forEach(function(row) {
-                row.style.display = (!q || row.dataset.search.includes(q)) ? '' : 'none';
-            });
-        }
-
-        async function deleteAccount(uid, btn) {
-            if (!confirm('PERMANENTLY delete this account?\n\nThis removes:\n\u2022 Firebase Auth login\n\u2022 Firestore user document\n\u2022 Username reservation\n\nThis cannot be undone.')) return;
-            if (!confirm('Are you absolutely sure? This is irreversible.')) return;
-
-            btn.disabled = true;
-            btn.textContent = 'Deleting...';
-
-            try {
-                var idToken = await firebase.auth().currentUser.getIdToken();
-                var resp = await fetch('https://us-central1-grappletrade.cloudfunctions.net/adminDeleteUser', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + idToken
-                    },
-                    body: JSON.stringify({ userId: uid })
-                });
-                var data = await resp.json();
-                if (!resp.ok) throw new Error(data.error || 'Deletion failed');
-
-                var row = document.getElementById('seller-row-' + uid);
-                if (row) row.remove();
-
-            } catch (err) {
-                console.error('Error deleting account:', err);
-                btn.disabled = false;
-                btn.textContent = 'Delete Account';
-                alert('Failed to delete account: ' + err.message);
-            }
-        }
-
-        // ---- User Detail Modal ----
-        async function viewUserDetails(uid) {
-            var modal = document.getElementById('user-detail-modal');
-            var titleEl = document.getElementById('modal-user-title');
-            var contentEl = document.getElementById('modal-content');
-
-            titleEl.textContent = 'User Profile';
-            contentEl.innerHTML =
-                '<div class="modal-loading">' +
-                    '<div class="spinner" style="display:inline-block;width:28px;height:28px;border:3px solid #e5e5e5;border-top-color:#f94545;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:10px;"></div>' +
-                    '<p>Loading user data...</p>' +
-                '</div>';
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-
-            try {
-                var userDoc = await db.collection('users').doc(uid).get();
-                var u = userDoc.exists ? userDoc.data() : {};
-                titleEl.textContent = u.displayName || u.name || u.email || uid;
-
-                var listingsSnap = await db.collection('products')
-                    .where('userId', '==', uid)
-                    .limit(30)
-                    .get();
-
-                var purchasesSnap = await db.collection('products')
-                    .where('buyerId', '==', uid)
-                    .limit(30)
-                    .get();
-
-                // Profile header
-                var joinDate = u.createdAt ? formatDate(u.createdAt) : '—';
-                var strikesColor = (u.sellerCancellationCount || 0) >= 3 ? '#dc2626' : (u.sellerCancellationCount || 0) > 0 ? '#d97706' : '#059669';
-                var stripeStatus = u.stripeAccountId
-                    ? (u.stripeChargesEnabled === true
-                        ? '<span style="color:#059669;">&#10003; Connected &amp; Active</span>'
-                        : '<span style="color:#d97706;">&#9888; Connected (charges not enabled)</span>')
-                    : '<span style="color:#dc2626;">Not connected</span>';
-                var suspendedStatus = u.sellerSuspended
-                    ? '<span class="badge badge-red">Suspended</span>'
-                    : '<span class="badge badge-green">Active</span>';
-                var adminBadge = u.isAdmin ? '<span class="badge badge-blue" style="margin-left:6px;">Admin</span>' : '';
-                var verifiedBadge = u.verifiedSeller ? '<span class="badge badge-green" style="margin-left:4px;">&#10003; Verified</span>' : '';
-
-                var profileHtml =
-                    '<div style="background:#fafaf8;border:1px solid #e5e5e5;border-radius:8px;padding:20px;margin-bottom:20px;">' +
-                        '<div style="display:flex;align-items:flex-start;gap:16px;">' +
-                            '<div style="width:64px;height:64px;border-radius:50%;background:#e5e5e5;display:flex;align-items:center;justify-content:center;font-size:26px;color:#999;flex-shrink:0;">' +
-                                (u.displayName ? escapeHtml(u.displayName.charAt(0).toUpperCase()) : '?') +
-                            '</div>' +
-                            '<div style="flex:1;min-width:0;">' +
-                                '<div style="font-size:20px;font-weight:700;color:#1a1a1a;">' + escapeHtml(u.displayName || u.name || '—') + adminBadge + verifiedBadge + '</div>' +
-                                (u.username ? '<div style="font-size:13px;color:#666;margin-top:2px;">@' + escapeHtml(u.username) + '</div>' : '') +
-                                (u.bio ? '<div style="font-size:13px;color:#444;margin-top:8px;line-height:1.5;">' + escapeHtml(u.bio) + '</div>' : '') +
-                            '</div>' +
-                        '</div>' +
-                        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:16px;">' +
-                            infoChip('Email', escapeHtml(u.email || '—')) +
-                            infoChip('Location', escapeHtml(u.location || '—')) +
-                            infoChip('Joined', joinDate) +
-                            infoChip('Status', suspendedStatus) +
-                            infoChip('Strikes', '<span style="color:' + strikesColor + ';font-weight:600;">' + (u.sellerCancellationCount || 0) + ' / 3</span>') +
-                            infoChip('Stripe', stripeStatus) +
-                            infoChip('Listings', listingsSnap.size) +
-                            infoChip('Purchases', purchasesSnap.size) +
-                        '</div>' +
-                    '</div>';
-
-                // Listings
-                var listingsHtml = '';
-                if (listingsSnap.empty) {
-                    listingsHtml = '<p class="modal-empty">No listings found.</p>';
-                } else {
-                    listingsHtml = '<ul class="modal-list">';
-                    listingsSnap.forEach(function(doc) {
-                        var p = doc.data();
-                        listingCache[doc.id] = p;
-                        var title = escapeHtml(truncate(p.title || p.name || 'Untitled', 50));
-                        var price = p.price != null ? '$' + parseFloat(p.price).toFixed(2) : '—';
-                        var status = p.sold ? 'Sold' : (p.cancelled ? 'Cancelled' : 'Active');
-                        var statusColor = p.sold ? '#3665f3' : (p.cancelled ? '#dc2626' : '#059669');
-                        listingsHtml +=
-                            '<li style="display:flex;justify-content:space-between;align-items:center;">' +
-                                '<span style="color:#3665f3;cursor:pointer;" onclick="openListingModal(\'' + doc.id + '\')">' + title + '</span>' +
-                                '<span style="display:flex;gap:12px;align-items:center;flex-shrink:0;margin-left:10px;">' +
-                                    '<span style="font-weight:600;">' + price + '</span>' +
-                                    '<span style="color:' + statusColor + ';font-size:12px;">' + status + '</span>' +
-                                '</span>' +
-                            '</li>';
-                    });
-                    listingsHtml += '</ul>';
-                }
-
-                // Purchases
-                var purchasesHtml = '';
-                if (purchasesSnap.empty) {
-                    purchasesHtml = '<p class="modal-empty">No purchases found.</p>';
-                } else {
-                    purchasesHtml = '<ul class="modal-list">';
-                    purchasesSnap.forEach(function(doc) {
-                        var p = doc.data();
-                        listingCache[doc.id] = p;
-                        var title = escapeHtml(truncate(p.title || p.name || 'Untitled', 50));
-                        var price = p.price != null ? '$' + parseFloat(p.price).toFixed(2) : '—';
-                        purchasesHtml +=
-                            '<li style="display:flex;justify-content:space-between;align-items:center;">' +
-                                '<span style="color:#3665f3;cursor:pointer;" onclick="openListingModal(\'' + doc.id + '\')">' + title + '</span>' +
-                                '<span style="font-weight:600;flex-shrink:0;margin-left:10px;">' + price + '</span>' +
-                            '</li>';
-                    });
-                    purchasesHtml += '</ul>';
-                }
-
-                contentEl.innerHTML =
-                    profileHtml +
-                    '<div class="modal-two-col">' +
-                        '<div>' +
-                            '<div class="modal-section-title">Listings (' + listingsSnap.size + ')</div>' +
-                            listingsHtml +
-                        '</div>' +
-                        '<div>' +
-                            '<div class="modal-section-title">Purchases (' + purchasesSnap.size + ')</div>' +
-                            purchasesHtml +
-                        '</div>' +
-                    '</div>';
-
-            } catch (err) {
-                console.error('Error loading user details:', err);
-                contentEl.innerHTML = '<p style="color:#dc2626;">Error loading user data: ' + escapeHtml(err.message) + '</p>';
-            }
-        }
-
-        // Cache so we can look up product data by ID without passing it inline in onclick
-        var listingCache = {};
-
-        // ---- Listing Detail Modal ----
-        function openListingModal(productId) {
-            var d = listingCache[productId];
-            if (!d) { alert('Listing data not found.'); return; }
-            var modal = document.getElementById('listing-detail-modal');
-            var titleEl = document.getElementById('listing-modal-title');
-            var contentEl = document.getElementById('listing-modal-content');
-
-            titleEl.textContent = truncate(d.title || d.name || 'Listing', 60);
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-
-            var status = d.cancelled ? '<span class="badge badge-red">Cancelled</span>'
-                : d.sold ? '<span class="badge badge-blue">Sold</span>'
-                : '<span class="badge badge-green">Active</span>';
-
-            var conditionMap = { new: 'New', likenew: 'Used – Like New', good: 'Used – Good', fair: 'Used – Fair' };
-            var condition = conditionMap[d.condition] || escapeHtml(d.condition || '—');
-            var price = d.price != null ? '$' + parseFloat(d.price).toFixed(2) : '—';
-            var images = d.images && d.images.length ? d.images : [];
-            var mainImg = images[0] || '';
-            var imgHtml = mainImg
-                ? '<img src="' + escapeHtml(mainImg) + '" style="width:100%;max-height:320px;object-fit:contain;border-radius:6px;background:#f5f5f5;" onerror="this.style.display=\'none\'">'
-                : '<div style="width:100%;height:200px;background:#f5f5f5;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:14px;">No image</div>';
-
-            var thumbsHtml = '';
-            if (images.length > 1) {
-                thumbsHtml = '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">';
-                images.forEach(function(url) {
-                    thumbsHtml += '<img src="' + escapeHtml(url) + '" style="width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid #e5e5e5;cursor:pointer;" onclick="document.getElementById(\'listing-main-img\').src=this.src">';
-                });
-                thumbsHtml += '</div>';
-            }
-
-            var createdDate = d.createdAt ? formatDate(d.createdAt) : '—';
-            var soldDate = d.soldTimestamp ? new Date(d.soldTimestamp).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '—';
-
-            contentEl.innerHTML =
-                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
-                    '<div>' +
-                        '<div id="listing-main-img-wrap">' + imgHtml.replace('<img ', '<img id="listing-main-img" ') + '</div>' +
-                        thumbsHtml +
-                    '</div>' +
-                    '<div style="display:flex;flex-direction:column;gap:12px;">' +
-                        '<div style="display:flex;align-items:center;gap:8px;">' + status + (d.adminFlagged ? '<span class="badge badge-red">Flagged</span>' : '') + '</div>' +
-                        '<div style="font-size:26px;font-weight:700;color:#1a1a1a;">' + price + '</div>' +
-                        '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
-                            row2('Category', escapeHtml(d.category || '—')) +
-                            row2('Condition', condition) +
-                            row2('Brand', escapeHtml(d.brand || '—')) +
-                            row2('Size', escapeHtml(d.size || '—')) +
-                            row2('Gender', escapeHtml(d.gender || '—')) +
-                            row2('Ships From', escapeHtml(d.zipCode || '—')) +
-                            row2('Views', d.views != null ? d.views : '—') +
-                            row2('Listed', createdDate) +
-                            (d.sold ? row2('Sold', soldDate) : '') +
-                            row2('Seller UID', '<span style="font-family:monospace;font-size:11px;">' + escapeHtml(d.userId || '—') + '</span>') +
-                            row2('Seller', escapeHtml(d.sellerName || d.sellerEmail || '—')) +
-                        '</table>' +
-                        '<a href="productdetail.html?id=' + escapeHtml(productId) + '" target="_blank" style="font-size:13px;color:#3665f3;">Open full listing &rarr;</a>' +
-                    '</div>' +
-                '</div>' +
-                (d.description ? '<div style="margin-top:20px;"><div class="modal-section-title">Description</div><p style="font-size:13px;color:#444;line-height:1.6;white-space:pre-wrap;">' + escapeHtml(d.description) + '</p></div>' : '');
-        }
-
-        function infoChip(label, value) {
-            return '<div style="background:#fff;border:1px solid #e5e5e5;border-radius:6px;padding:8px 12px;">' +
-                '<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;">' + label + '</div>' +
-                '<div style="font-size:13px;font-weight:600;color:#1a1a1a;">' + value + '</div>' +
-            '</div>';
-        }
-
-        function row2(label, value) {
-            return '<tr><td style="padding:5px 8px 5px 0;color:#888;width:110px;vertical-align:top;">' + label + '</td><td style="padding:5px 0;color:#1a1a1a;font-weight:500;">' + value + '</td></tr>';
-        }
-
-        function closeListingModal() {
-            document.getElementById('listing-detail-modal').style.display = 'none';
-            document.body.style.overflow = '';
-        }
-
-        function closeUserModal(event) {
-            if (event.target === document.getElementById('user-detail-modal')) {
-                closeUserModalDirect();
-            }
-        }
-
-        function closeUserModalDirect() {
-            document.getElementById('user-detail-modal').style.display = 'none';
-            document.body.style.overflow = '';
-        }
-
-        // ============================================
-        // TAB 3: LISTINGS
-        // ============================================
-        var allListings = [];
-
-        async function loadListings() {
-            showSection('listings', 'loading');
-            allListings = [];
-
-            try {
-                var snap;
-                try {
-                    snap = await db.collection('products')
-                        .orderBy('createdAt', 'desc')
-                        .limit(200)
-                        .get();
-                } catch (e) {
-                    // createdAt index may not exist — fall back to no ordering
-                    snap = await db.collection('products')
-                        .limit(200)
-                        .get();
-                }
-
-                if (snap.empty) {
-                    showSection('listings', 'empty');
-                    return;
-                }
-
-                snap.forEach(function(doc) {
-                    allListings.push({ id: doc.id, data: doc.data() });
-                });
-
-                renderListings(allListings);
-
-            } catch (err) {
-                console.error('Error loading listings:', err);
-                showSection('listings', 'empty');
-                document.getElementById('listings-empty').textContent = 'Error loading listings: ' + err.message;
-            }
-        }
-
-        function getListingStatus(d) {
-            if (d.cancelled === true) return 'cancelled';
-            if (d.sold === true) return 'sold';
-            return 'active';
-        }
-
-        function renderListings(items) {
-            if (items.length === 0) {
-                showSection('listings', 'empty');
-                return;
-            }
-
-            var tbody = document.getElementById('listings-tbody');
-            tbody.innerHTML = '';
-
-            items.forEach(function(item) {
-                var d = item.data;
-                listingCache[item.id] = d;  // cache for modal lookup
-                var statusKey = getListingStatus(d);
-                var statusBadge = statusKey === 'active'
-                    ? '<span class="badge badge-green">Active</span>'
-                    : statusKey === 'sold'
-                        ? '<span class="badge badge-blue">Sold</span>'
-                        : '<span class="badge badge-red">Cancelled</span>';
-
-                var flaggedBadge = d.adminFlagged === true
-                    ? '<span class="badge badge-red">Flagged</span>'
-                    : '';
-
-                var flagBtn = d.adminFlagged === true
-                    ? '<button class="action-btn btn-unflag" onclick="unflagListing(\'' + item.id + '\', this)">Unflag</button>'
-                    : '<button class="action-btn btn-flag" onclick="flagListing(\'' + item.id + '\', this)">Flag</button>';
-
-                var sellerUid = escapeHtml(d.userId || d.sellerUid || '—');
-
-                var row = document.createElement('tr');
-                row.id = 'listing-row-' + item.id;
-                row.dataset.title = (d.title || d.name || '').toLowerCase();
-                row.dataset.seller = (d.userId || d.sellerUid || '').toLowerCase();
-                row.dataset.status = statusKey;
-                row.dataset.flagged = d.adminFlagged === true ? 'true' : 'false';
-
-                row.innerHTML =
-                    '<td><span style="color:#3665f3;cursor:pointer;font-weight:500;" onclick="openListingModal(\'' + escapeHtml(item.id) + '\')">' + escapeHtml(truncate(d.title || d.name, 45)) + '</span></td>' +
-                    '<td>' + (d.price != null ? '$' + parseFloat(d.price).toFixed(2) : '—') + '</td>' +
-                    '<td><span class="uid-cell" title="' + sellerUid + '">' + sellerUid + '</span></td>' +
-                    '<td>' + statusBadge + '</td>' +
-                    '<td id="flagged-cell-' + item.id + '">' + flaggedBadge + '</td>' +
-                    '<td>' + formatDate(d.createdAt) + '</td>' +
-                    '<td><div class="action-gap">' +
-                        '<button class="action-btn btn-view" onclick="window.open(\'productdetail.html?id=' + escapeHtml(item.id) + '\', \'_blank\')">View</button>' +
-                        '<span id="flag-btn-wrap-' + item.id + '">' + flagBtn + '</span>' +
-                        '<button class="action-btn btn-delete" onclick="deleteListingAdmin(\'' + item.id + '\', this)">Delete</button>' +
-                    '</div></td>';
-                tbody.appendChild(row);
-            });
-
-            showSection('listings', 'table');
-        }
-
-        function filterListings() {
-            var query = (document.getElementById('listings-search').value || '').toLowerCase().trim();
-            var filter = document.getElementById('listings-filter').value;
-
-            var filtered = allListings.filter(function(item) {
-                var matchText = !query ||
-                    item.data.title && item.data.title.toLowerCase().includes(query) ||
-                    item.data.name && item.data.name.toLowerCase().includes(query) ||
-                    (item.data.userId || '').toLowerCase().includes(query) ||
-                    (item.data.sellerUid || '').toLowerCase().includes(query);
-
-                var statusKey = getListingStatus(item.data);
-                var matchStatus = filter === 'all' ||
-                    filter === statusKey ||
-                    (filter === 'flagged' && item.data.adminFlagged === true);
-
-                return matchText && matchStatus;
-            });
-
-            renderListings(filtered);
-        }
-
-        async function flagListing(productId, btn) {
-            btn.disabled = true;
-            try {
-                await db.collection('products').doc(productId).update({ adminFlagged: true });
-                document.getElementById('flagged-cell-' + productId).innerHTML = '<span class="badge badge-red">Flagged</span>';
-                var wrap = document.getElementById('flag-btn-wrap-' + productId);
-                if (wrap) wrap.innerHTML = '<button class="action-btn btn-unflag" onclick="unflagListing(\'' + productId + '\', this)">Unflag</button>';
-                // Update local cache
-                var item = allListings.find(function(i) { return i.id === productId; });
-                if (item) item.data.adminFlagged = true;
-            } catch (err) {
-                console.error('Error flagging listing:', err);
-                btn.disabled = false;
-                alert('Failed to flag listing: ' + err.message);
-            }
-        }
-
-        async function unflagListing(productId, btn) {
-            btn.disabled = true;
-            try {
-                await db.collection('products').doc(productId).update({ adminFlagged: false });
-                document.getElementById('flagged-cell-' + productId).innerHTML = '';
-                var wrap = document.getElementById('flag-btn-wrap-' + productId);
-                if (wrap) wrap.innerHTML = '<button class="action-btn btn-flag" onclick="flagListing(\'' + productId + '\', this)">Flag</button>';
-                var item = allListings.find(function(i) { return i.id === productId; });
-                if (item) item.data.adminFlagged = false;
-            } catch (err) {
-                console.error('Error unflagging listing:', err);
-                btn.disabled = false;
-                alert('Failed to unflag listing: ' + err.message);
-            }
-        }
-
-        async function deleteListingAdmin(productId, btn) {
-            if (!confirm('Permanently delete this listing? This cannot be undone.')) return;
-            btn.disabled = true;
-            btn.textContent = 'Deleting...';
-            try {
-                await db.collection('products').doc(productId).delete();
-                var row = document.getElementById('listing-row-' + productId);
-                if (row) row.remove();
-                allListings = allListings.filter(function(i) { return i.id !== productId; });
-            } catch (err) {
-                console.error('Error deleting listing:', err);
-                btn.disabled = false;
-                btn.textContent = 'Delete';
-                alert('Failed to delete: ' + err.message);
-            }
-        }
-
-        // ============================================
-        // TAB 4: ORDERS
-        // ============================================
-        async function loadOrders() {
-            showSection('orders', 'loading');
-
-            try {
-                var soldSnap = await db.collection('products')
-                    .where('sold', '==', true)
-                    .orderBy('soldTimestamp', 'desc')
-                    .limit(100)
-                    .get();
-
-                var cancelledSnap = await db.collection('products')
-                    .where('cancelled', '==', true)
-                    .orderBy('soldTimestamp', 'desc')
-                    .limit(100)
-                    .get();
-
-                var seenIds = {};
-                var orders = [];
-
-                soldSnap.forEach(function(doc) {
-                    if (!seenIds[doc.id]) {
-                        seenIds[doc.id] = true;
-                        orders.push({ id: doc.id, ...doc.data() });
-                    }
-                });
-
-                cancelledSnap.forEach(function(doc) {
-                    if (!seenIds[doc.id]) {
-                        seenIds[doc.id] = true;
-                        orders.push({ id: doc.id, ...doc.data() });
-                    }
-                });
-
-                orders.sort(function(a, b) {
-                    var ta = a.soldTimestamp && a.soldTimestamp.toMillis ? a.soldTimestamp.toMillis() : 0;
-                    var tb = b.soldTimestamp && b.soldTimestamp.toMillis ? b.soldTimestamp.toMillis() : 0;
-                    return tb - ta;
-                });
-
-                if (orders.length === 0) {
-                    showSection('orders', 'empty');
-                    return;
-                }
-
-                var tbody = document.getElementById('orders-tbody');
-                tbody.innerHTML = '';
-
-                orders.forEach(function(order) {
-                    var status = getOrderStatus(order);
-                    var row = document.createElement('tr');
-                    row.id = 'order-row-' + order.id;
-                    row.dataset.status = status.key;
-                    row.dataset.search = [order.title || order.name || '', order.buyerId || '', order.userId || ''].join(' ').toLowerCase();
-                    var buyerId  = order.buyerId  || order.buyerUid  || '—';
-                    var sellerId = order.userId   || order.sellerUid || '—';
-
-                    var issueRefundBtn = (!order.cancelled && order.sold)
-                        ? '<button class="action-btn btn-refund" onclick="issueRefund(\'' + order.id + '\', this)">Issue Refund</button>'
-                        : '';
-
-                    var trackingHtml = '—';
-                    if (order.trackingNumber) {
-                        var tn = escapeHtml(order.trackingNumber);
-                        trackingHtml = order.trackingUrl
-                            ? '<a href="' + escapeHtml(order.trackingUrl) + '" target="_blank" style="font-family:monospace;font-size:11px;">' + tn + '</a>'
-                            : '<span style="font-family:monospace;font-size:11px;">' + tn + '</span>';
-                        if (order.carrier) trackingHtml += '<br><span style="font-size:10px;color:#888;">' + escapeHtml(order.carrier) + '</span>';
-                    }
-
-                    var shipBtn = (!order.cancelled && order.sold && !order.shipped && !order.delivered)
-                        ? '<button class="action-btn btn-verify" onclick="adminMarkShipped(\'' + order.id + '\', this)">Mark Shipped</button>'
-                        : '';
-
-                    row.innerHTML =
-                        '<td>' + escapeHtml(truncate(order.title || order.name, 40)) + '</td>' +
-                        '<td>' + (order.price != null ? '$' + parseFloat(order.price).toFixed(2) : '—') + '</td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(buyerId) + '">' + escapeHtml(buyerId) + '</span></td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(sellerId) + '">' + escapeHtml(sellerId) + '</span></td>' +
-                        '<td id="order-status-' + order.id + '">' + status.badge + '</td>' +
-                        '<td>' + trackingHtml + '</td>' +
-                        '<td>' + formatDate(order.soldTimestamp) + '</td>' +
-                        '<td><div class="action-gap">' +
-                            '<button class="action-btn btn-view" onclick="window.open(\'productdetail.html?id=' + escapeHtml(order.id) + '\', \'_blank\')">View</button>' +
-                            (!order.cancelled && order.sold ? '<button class="action-btn btn-relist" onclick="relistProduct(\'' + order.id + '\', this)">Relist</button>' : '') +
-                            shipBtn +
-                            issueRefundBtn +
-                            '<button class="action-btn btn-delete" onclick="deleteProduct(\'' + order.id + '\', this)">Delete</button>' +
-                        '</div></td>';
-                    tbody.appendChild(row);
-                });
-
-                showSection('orders', 'table');
-
-            } catch (err) {
-                console.error('Error loading orders:', err);
-                showSection('orders', 'empty');
-                document.getElementById('orders-empty').textContent = 'Error loading orders: ' + err.message;
-            }
-        }
-
-        function getOrderStatus(order) {
-            if (order.cancelled === true) {
-                return { badge: '<span class="badge badge-red">Cancelled</span>', key: 'cancelled' };
-            }
-            if (order.sellerPaidOut === true) {
-                return { badge: '<span class="badge badge-blue">Paid Out</span>', key: 'delivered' };
-            }
-            if (order.delivered === true) {
-                return { badge: '<span class="badge badge-blue">Delivered</span>', key: 'delivered' };
-            }
-            if (order.shipped === true || order.trackingNumber) {
-                return { badge: '<span class="badge badge-yellow">Shipped</span>', key: 'shipped' };
-            }
-            var soldMs = order.soldTimestamp && order.soldTimestamp.toMillis ? order.soldTimestamp.toMillis() : 0;
-            if (soldMs && (Date.now() - soldMs) > 7 * 24 * 60 * 60 * 1000) {
-                return { badge: '<span class="badge badge-red">Overdue</span>', key: 'overdue' };
-            }
-            return { badge: '<span class="badge badge-green">Active</span>', key: 'active' };
-        }
-
-        async function relistProduct(productId, btn) {
-            if (!confirm('Relist this product? This will mark it as unsold and available for purchase again.')) return;
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            try {
-                await db.collection('products').doc(productId).update({
-                    sold: false,
-                    soldAt: null,
-                    soldTimestamp: null,
-                    soldOrderId: null,
-                    buyerId: null,
-                    cancelled: false,
-                    cancelledAt: null,
-                    cancelledBy: null,
-                    cancelInitiated: null,
-                    shipped: null,
-                    shippedAt: null,
-                    trackingNumber: null,
-                    trackingUrl: null,
-                    carrier: null,
-                    delivered: null,
-                    deliveredAt: null,
-                    sellerPaidOut: null,
-                    sellerPaidOutAt: null,
-                    refundRequested: null,
-                    disputeOpened: null,
-                    autoReleaseBlocked: null
-                });
-                var row = document.getElementById('order-row-' + productId);
-                if (row) row.cells[4].innerHTML = '<span class="badge badge-gray">Relisted</span>';
-                btn.remove();
-            } catch (err) {
-                console.error('Error relisting product:', err);
-                btn.disabled = false;
-                btn.textContent = 'Relist';
-                alert('Failed to relist: ' + err.message);
-            }
-        }
-
-        async function deleteProduct(productId, btn) {
-            if (!confirm('Permanently delete this listing? This cannot be undone.')) return;
-            btn.disabled = true;
-            btn.textContent = 'Deleting...';
-            try {
-                await db.collection('products').doc(productId).delete();
-                var row = document.getElementById('order-row-' + productId);
-                if (row) row.remove();
-            } catch (err) {
-                console.error('Error deleting product:', err);
-                btn.disabled = false;
-                btn.textContent = 'Delete';
-                alert('Failed to delete: ' + err.message);
-            }
-        }
-
-        async function issueRefund(productId, btn) {
-            var amountStr = prompt('Enter refund amount in dollars (leave blank for full refund):\n\nProduct ID: ' + productId);
-            if (amountStr === null) return; // cancelled
-
-            var amountCents = null;
-            var amountDollars = null;
-            if (amountStr.trim() !== '') {
-                amountDollars = parseFloat(amountStr);
-                if (isNaN(amountDollars) || amountDollars <= 0) {
-                    alert('Please enter a valid dollar amount greater than 0, or leave blank for a full refund.');
-                    return;
-                }
-                amountCents = Math.round(amountDollars * 100);
-            }
-
-            var relistStr = confirm('Re-list this product after refund?\n\nOK = relist product\nCancel = keep as sold (no relist)');
-
-            btn.disabled = true;
-            btn.textContent = 'Processing...';
-
-            try {
-                var idToken = await firebase.auth().currentUser.getIdToken();
-                var body = { productId: productId, relist: relistStr };
-                if (amountCents !== null) body.refundAmount = amountCents;
-
-                var resp = await fetch('https://us-central1-grappletrade.cloudfunctions.net/adminIssueRefund', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + idToken
-                    },
-                    body: JSON.stringify(body)
-                });
-                var data = await resp.json();
-                if (!resp.ok) throw new Error(data.error || 'Refund failed');
-
-                // Show success badge in status column
-                var statusCell = document.getElementById('order-status-' + productId);
-                if (statusCell) {
-                    statusCell.innerHTML += ' <span class="badge badge-blue">Refunded ' + (amountDollars !== null ? '$' + amountDollars.toFixed(2) : '(full)') + '</span>';
-                }
-                btn.textContent = 'Refunded';
-                btn.disabled = true;
-                btn.className = 'action-btn btn-resolved-done';
-
-            } catch (err) {
-                console.error('Error issuing refund:', err);
-                btn.disabled = false;
-                btn.textContent = 'Issue Refund';
-                alert('Failed to issue refund: ' + err.message);
-            }
-        }
-
-        // ---- Refund Requests (sub-section of Orders tab) ----
-        async function loadRefunds() {
-            showSection('refunds', 'loading');
-
-            try {
-                var snap = await db.collection('refundRequests')
-                    .orderBy('createdAt', 'desc')
-                    .limit(50)
-                    .get();
-
-                if (snap.empty) {
-                    showSection('refunds', 'empty');
-                    return;
-                }
-
-                var tbody = document.getElementById('refunds-tbody');
-                tbody.innerHTML = '';
-
-                snap.forEach(function(doc) {
-                    var r = doc.data();
-                    var docId = doc.id;
-                    var isResolved = r.status === 'resolved';
-
-                    var statusBadge = isResolved
-                        ? '<span class="badge badge-gray">Resolved</span>'
-                        : '<span class="badge badge-yellow">Pending</span>';
-
-                    var resolveBtn = isResolved
-                        ? '<button class="action-btn btn-resolved-done" disabled>Resolved</button>'
-                        : '<button class="action-btn btn-resolve" onclick="resolveRefund(\'' + docId + '\', this)">Mark Resolved</button>';
-
-                    var productLink = r.productId
-                        ? '<a href="productdetail.html?id=' + escapeHtml(r.productId) + '" target="_blank" style="font-family:monospace;font-size:11px;color:#3665f3;">' + escapeHtml(truncate(r.productId, 20)) + '</a>'
-                        : '—';
-
-                    var issueRefundFromHereBtn = !isResolved
-                        ? '<button class="action-btn btn-refund" onclick="issueRefund(\'' + escapeHtml(r.productId || '') + '\', this)">Issue Refund</button>'
-                        : '';
-
-                    var row = document.createElement('tr');
-                    row.id = 'refund-row-' + docId;
-                    row.innerHTML =
-                        '<td>' + productLink + '</td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(r.buyerUid || r.buyerId || r.userId || '') + '">' + escapeHtml(r.buyerUid || r.buyerId || r.userId || '—') + '</span></td>' +
-                        '<td>' + escapeHtml(truncate(r.reason, 60)) + '</td>' +
-                        '<td id="refund-status-' + docId + '">' + statusBadge + '</td>' +
-                        '<td>' + formatDate(r.createdAt) + '</td>' +
-                        '<td id="refund-action-' + docId + '"><div class="action-gap">' + resolveBtn + issueRefundFromHereBtn + '</div></td>';
-                    tbody.appendChild(row);
-                });
-
-                showSection('refunds', 'table');
-
-            } catch (err) {
-                console.error('Error loading refund requests:', err);
-                showSection('refunds', 'empty');
-                document.getElementById('refunds-empty').textContent = 'Error loading refund requests: ' + err.message;
-            }
-        }
-
-        async function resolveRefund(docId, btn) {
-            var notes = prompt('Resolution notes (optional — e.g. "refund issued", "dismissed — no evidence"):');
-            if (notes === null) return; // cancelled
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            try {
-                var update = {
-                    status: 'resolved',
-                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    resolvedBy: currentUser ? currentUser.uid : 'admin'
-                };
-                if (notes.trim()) update.resolutionNotes = notes.trim();
-                await db.collection('refundRequests').doc(docId).update(update);
-                var statusCell = document.getElementById('refund-status-' + docId);
-                var actionCell = document.getElementById('refund-action-' + docId);
-                if (statusCell) statusCell.innerHTML = '<span class="badge badge-gray">Resolved</span>';
-                if (actionCell) actionCell.innerHTML = '<button class="action-btn btn-resolved-done" disabled>Resolved</button>';
-            } catch (err) {
-                console.error('Error resolving refund request:', err);
-                btn.disabled = false;
-                btn.textContent = 'Mark Resolved';
-                alert('Failed to update refund request: ' + err.message);
-            }
-        }
-
-        // ============================================
-        // TAB 5: REPORTS
-        // ============================================
-        var allReports = [];
-
-        async function loadReports() {
-            showSection('reports', 'loading');
-            allReports = [];
-
-            try {
-                var snap = await db.collection('reports')
-                    .orderBy('createdAt', 'desc')
-                    .limit(100)
-                    .get();
-
-                if (snap.empty) {
-                    showSection('reports', 'empty');
-                    return;
-                }
-
-                var tbody = document.getElementById('reports-tbody');
-                tbody.innerHTML = '';
-
-                snap.forEach(function(doc) {
-                    var r = doc.data();
-                    var docId = doc.id;
-                    allReports.push({ id: docId, data: r });
-
-                    var statusBadge;
-                    if (r.status === 'dismissed') {
-                        statusBadge = '<span class="badge badge-gray">Dismissed</span>';
-                    } else if (r.status === 'resolved') {
-                        statusBadge = '<span class="badge badge-red">Removed</span>';
-                    } else {
-                        statusBadge = '<span class="badge badge-yellow">Pending</span>';
-                    }
-
-                    var targetCell = '';
-                    if (r.targetType === 'listing' && r.targetId) {
-                        targetCell = '<a href="productdetail.html?id=' + escapeHtml(r.targetId) + '" target="_blank" style="font-family:monospace;font-size:11px;color:#3665f3;">' + escapeHtml(truncate(r.targetId, 16)) + '</a>';
-                    } else if (r.targetId) {
-                        targetCell = '<span class="uid-cell" title="' + escapeHtml(r.targetId) + '">' + escapeHtml(truncate(r.targetId, 16)) + '</span>';
-                    } else {
-                        targetCell = '—';
-                    }
-
-                    var actionsHtml = '';
-                    if (!r.status || r.status === 'pending') {
-                        actionsHtml =
-                            '<div class="action-gap">' +
-                                '<button class="action-btn btn-remove-target" onclick="reportRemoveTarget(\'' + docId + '\', this)">Remove Target</button>' +
-                                '<button class="action-btn btn-dismiss" onclick="reportDismiss(\'' + docId + '\', this)">Dismiss</button>' +
-                                '<button class="action-btn btn-warn" onclick="reportWarnUser(\'' + docId + '\', this)">Warn User</button>' +
-                            '</div>';
-                    }
-
-                    var row = document.createElement('tr');
-                    row.id = 'report-row-' + docId;
-                    row.innerHTML =
-                        '<td><span class="badge badge-gray">' + escapeHtml(r.targetType || 'unknown') + '</span></td>' +
-                        '<td>' + targetCell + '</td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(r.reportedBy || r.reporterUid || '') + '">' + escapeHtml(truncate(r.reportedBy || r.reporterUid, 16) || '—') + '</span></td>' +
-                        '<td>' + escapeHtml(truncate(r.reason, 40)) + '</td>' +
-                        '<td>' + escapeHtml(truncate(r.details || r.description, 50)) + '</td>' +
-                        '<td id="report-status-' + docId + '">' + statusBadge + '</td>' +
-                        '<td>' + formatDate(r.createdAt) + '</td>' +
-                        '<td id="report-actions-' + docId + '">' + actionsHtml + '</td>';
-                    tbody.appendChild(row);
-                });
-
-                showSection('reports', 'table');
-
-            } catch (err) {
-                console.error('Error loading reports:', err);
-                showSection('reports', 'empty');
-                document.getElementById('reports-empty').textContent = 'Error loading reports: ' + err.message;
-            }
-        }
-
-        async function reportRemoveTarget(docId, btn) {
-            var report = allReports.find(function(r) { return r.id === docId; });
-            if (!report) { alert('Report data not found.'); return; }
-
-            var r = report.data;
-
-            if (r.targetType === 'user') {
-                alert('To remove a user account, please use the Users tab.');
-                return;
-            }
-
-            if (!confirm('Remove the target listing (' + (r.targetId || 'unknown') + ')? This will permanently delete the product listing.')) return;
-
-            btn.disabled = true;
-            btn.textContent = 'Removing...';
-
-            try {
-                if (r.targetType === 'listing' && r.targetId) {
-                    await db.collection('products').doc(r.targetId).delete();
-                }
-
-                await db.collection('reports').doc(docId).update({
-                    status: 'resolved',
-                    action: 'removed',
-                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                var statusCell = document.getElementById('report-status-' + docId);
-                var actionsCell = document.getElementById('report-actions-' + docId);
-                if (statusCell) statusCell.innerHTML = '<span class="badge badge-red">Removed</span>';
-                if (actionsCell) actionsCell.innerHTML = '';
-
-            } catch (err) {
-                console.error('Error removing target:', err);
-                btn.disabled = false;
-                btn.textContent = 'Remove Target';
-                alert('Failed to remove target: ' + err.message);
-            }
-        }
-
-        async function reportDismiss(docId, btn) {
-            btn.disabled = true;
-            btn.textContent = 'Dismissing...';
-
-            try {
-                await db.collection('reports').doc(docId).update({
-                    status: 'dismissed',
-                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                var statusCell = document.getElementById('report-status-' + docId);
-                var actionsCell = document.getElementById('report-actions-' + docId);
-                if (statusCell) statusCell.innerHTML = '<span class="badge badge-gray">Dismissed</span>';
-                if (actionsCell) actionsCell.innerHTML = '';
-
-            } catch (err) {
-                console.error('Error dismissing report:', err);
-                btn.disabled = false;
-                btn.textContent = 'Dismiss';
-                alert('Failed to dismiss report: ' + err.message);
-            }
-        }
-
-        async function reportWarnUser(docId, btn) {
-            var report = allReports.find(function(r) { return r.id === docId; });
-            if (!report) { alert('Report data not found.'); return; }
-
-            var r = report.data;
-            // For listing reports, targetId is a product doc ID — look up the seller's userId
-            var reportedUid = r.reportedUserId;
-            if (!reportedUid && r.targetType === 'listing' && r.targetId) {
-                btn.disabled = true;
-                btn.textContent = 'Looking up...';
-                try {
-                    var productDoc = await db.collection('products').doc(r.targetId).get();
-                    if (productDoc.exists) reportedUid = productDoc.data().userId;
-                } catch (e) { /* ignore */ }
-                btn.disabled = false;
-                btn.textContent = 'Warn User';
-            }
-            if (!reportedUid) reportedUid = r.reportedBy || r.reporterUid;
-
-            if (!reportedUid) {
-                alert('No user UID associated with this report to warn.');
-                return;
-            }
-
-            if (!confirm('Send a warning to user ' + reportedUid + ' for reason: "' + (r.reason || 'policy violation') + '"?')) return;
-
-            btn.disabled = true;
-            btn.textContent = 'Warning...';
-
-            try {
-                await db.collection('reports').doc(docId).update({
-                    status: 'resolved',
-                    action: 'warned',
-                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                await db.collection('users').doc(reportedUid).update({
-                    adminWarnings: firebase.firestore.FieldValue.arrayUnion({
-                        reason: r.reason || 'Policy violation',
-                        warnedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    })
-                });
-
-                var statusCell = document.getElementById('report-status-' + docId);
-                var actionsCell = document.getElementById('report-actions-' + docId);
-                if (statusCell) statusCell.innerHTML = '<span class="badge badge-yellow">Warned</span>';
-                if (actionsCell) actionsCell.innerHTML = '';
-
-            } catch (err) {
-                console.error('Error warning user:', err);
-                btn.disabled = false;
-                btn.textContent = 'Warn User';
-                alert('Failed to warn user: ' + err.message);
-            }
-        }
-
-        // ============================================
-        // TAB 6: REVIEWS
-        // ============================================
-        async function loadReviews() {
-            showSection('reviews', 'loading');
-
-            try {
-                var snap = await db.collection('sellerRatings')
-                    .orderBy('createdAt', 'desc')
-                    .limit(100)
-                    .get();
-
-                if (snap.empty) {
-                    showSection('reviews', 'empty');
-                    return;
-                }
-
-                var tbody = document.getElementById('reviews-tbody');
-                tbody.innerHTML = '';
-
-                snap.forEach(function(doc) {
-                    var rv = doc.data();
-                    var docId = doc.id;
-
-                    var flaggedBadge = rv.adminFlagged === true
-                        ? '<span class="badge badge-red">Flagged</span>'
-                        : '';
-
-                    var flagBtn = rv.adminFlagged === true
-                        ? '<button class="action-btn btn-unflag" onclick="unflagReview(\'' + docId + '\', this)">Unflag</button>'
-                        : '<button class="action-btn btn-flag" onclick="flagReview(\'' + docId + '\', this)">Flag</button>';
-
-                    var row = document.createElement('tr');
-                    row.id = 'review-row-' + docId;
-                    row.innerHTML =
-                        '<td><span class="uid-cell" title="' + escapeHtml(rv.reviewerUid || rv.buyerId || '') + '">' + escapeHtml(truncate(rv.reviewerUid || rv.buyerId, 16) || '—') + '</span></td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(rv.sellerUid || rv.userId || '') + '">' + escapeHtml(truncate(rv.sellerUid || rv.userId, 16) || '—') + '</span></td>' +
-                        '<td>' + renderStars(rv.rating) + '</td>' +
-                        '<td>' + escapeHtml(truncate(rv.comment || rv.review, 60)) + '</td>' +
-                        '<td id="review-flagged-' + docId + '">' + flaggedBadge + '</td>' +
-                        '<td>' + formatDate(rv.createdAt) + '</td>' +
-                        '<td><div class="action-gap">' +
-                            '<span id="review-flag-btn-' + docId + '">' + flagBtn + '</span>' +
-                            '<button class="action-btn btn-delete" onclick="deleteReview(\'' + docId + '\', this)">Remove</button>' +
-                        '</div></td>';
-                    tbody.appendChild(row);
-                });
-
-                showSection('reviews', 'table');
-
-            } catch (err) {
-                console.error('Error loading reviews:', err);
-                showSection('reviews', 'empty');
-                document.getElementById('reviews-empty').textContent = 'Error loading reviews: ' + err.message;
-            }
-        }
-
-        async function flagReview(docId, btn) {
-            btn.disabled = true;
-            try {
-                await db.collection('sellerRatings').doc(docId).update({ adminFlagged: true });
-                document.getElementById('review-flagged-' + docId).innerHTML = '<span class="badge badge-red">Flagged</span>';
-                var wrap = document.getElementById('review-flag-btn-' + docId);
-                if (wrap) wrap.innerHTML = '<button class="action-btn btn-unflag" onclick="unflagReview(\'' + docId + '\', this)">Unflag</button>';
-            } catch (err) {
-                console.error('Error flagging review:', err);
-                btn.disabled = false;
-                alert('Failed to flag review: ' + err.message);
-            }
-        }
-
-        async function unflagReview(docId, btn) {
-            btn.disabled = true;
-            try {
-                await db.collection('sellerRatings').doc(docId).update({ adminFlagged: false });
-                document.getElementById('review-flagged-' + docId).innerHTML = '';
-                var wrap = document.getElementById('review-flag-btn-' + docId);
-                if (wrap) wrap.innerHTML = '<button class="action-btn btn-flag" onclick="flagReview(\'' + docId + '\', this)">Flag</button>';
-            } catch (err) {
-                console.error('Error unflagging review:', err);
-                btn.disabled = false;
-                alert('Failed to unflag review: ' + err.message);
-            }
-        }
-
-        async function deleteReview(docId, btn) {
-            if (!confirm('Permanently remove this review? This cannot be undone.')) return;
-            btn.disabled = true;
-            btn.textContent = 'Removing...';
-            try {
-                await db.collection('sellerRatings').doc(docId).delete();
-                var row = document.getElementById('review-row-' + docId);
-                if (row) row.remove();
-            } catch (err) {
-                console.error('Error deleting review:', err);
-                btn.disabled = false;
-                btn.textContent = 'Remove';
-                alert('Failed to remove review: ' + err.message);
-            }
-        }
-
-        // ============================================
-        // TAB 7: ANNOUNCEMENTS
-        // ============================================
-        async function loadAnnouncement() {
-            var contentEl = document.getElementById('announcement-status-content');
-            contentEl.innerHTML =
-                '<div style="padding:8px 0;color:#888;font-size:13px;">Loading...</div>';
-
-            try {
-                var snap = await db.collection('config').doc('announcement').get();
-
-                if (!snap.exists) {
-                    contentEl.innerHTML = '<p style="color:#888;font-size:14px;">No active announcement.</p>';
-                    return;
-                }
-
-                var a = snap.data();
-
-                if (!a.active) {
-                    contentEl.innerHTML = '<p style="color:#888;font-size:14px;">No active announcement.</p>';
-                    return;
-                }
-
-                var typeColors = { info: '#1e40af', warning: '#92400e', critical: '#991b1b' };
-                var typeBg = { info: '#dbeafe', warning: '#fef9c3', critical: '#fee2e2' };
-                var t = a.type || 'info';
-
-                contentEl.innerHTML =
-                    '<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">' +
-                        '<span class="badge badge-green" style="align-self:flex-start;">Active</span>' +
-                        '<div style="background:' + (typeBg[t] || '#f3f4f6') + ';border-radius:6px;padding:10px 16px;flex:1;min-width:200px;">' +
-                            '<span style="font-weight:600;font-size:12px;color:' + (typeColors[t] || '#444') + ';text-transform:uppercase;letter-spacing:.04em;">' + escapeHtml(t) + '</span>' +
-                            '<p style="margin:6px 0 0;font-size:14px;color:#1a1a1a;">' + escapeHtml(a.message || '') + '</p>' +
-                        '</div>' +
-                    '</div>';
-
-            } catch (err) {
-                console.error('Error loading announcement:', err);
-                contentEl.innerHTML = '<p style="color:#dc2626;font-size:13px;">Error loading announcement: ' + escapeHtml(err.message) + '</p>';
-            }
-        }
-
-        function updateCharCounter() {
-            var textarea = document.getElementById('announcement-message');
-            var counter = document.getElementById('announcement-char-count');
-            var len = textarea.value.length;
-            counter.textContent = len + ' / 280';
-            if (len >= 260) {
-                counter.classList.add('over');
-            } else {
-                counter.classList.remove('over');
-            }
-        }
-
-        async function postAnnouncement() {
-            var message = document.getElementById('announcement-message').value.trim();
-            var type = document.getElementById('announcement-type').value;
-            var btn = document.getElementById('post-announcement-btn');
-
-            if (!message) {
-                alert('Please enter a message for the announcement.');
-                return;
-            }
-
-            if (message.length > 280) {
-                alert('Message is too long. Maximum 280 characters.');
-                return;
-            }
-
-            if (!confirm('Post this announcement? It will be visible to all users immediately.')) return;
-
-            btn.disabled = true;
-            btn.textContent = 'Posting...';
-
-            try {
-                await db.collection('config').doc('announcement').set({
-                    active: true,
-                    message: message,
-                    type: type,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    createdBy: currentUser ? currentUser.uid : 'admin'
-                });
-
-                document.getElementById('announcement-message').value = '';
-                updateCharCounter();
-                loadAnnouncement();
-                alert('Announcement posted successfully.');
-
-            } catch (err) {
-                console.error('Error posting announcement:', err);
-                alert('Failed to post announcement: ' + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Post Announcement';
-            }
-        }
-
-        async function dismissAnnouncement() {
-            if (!confirm('Dismiss the current announcement? It will no longer be shown to users.')) return;
-
-            try {
-                await db.collection('config').doc('announcement').update({ active: false });
-                loadAnnouncement();
-                alert('Announcement dismissed.');
-            } catch (err) {
-                console.error('Error dismissing announcement:', err);
-                alert('Failed to dismiss announcement: ' + err.message);
-            }
-        }
-
-        // ============================================
-        // TAB 8: MESSAGES
-        // ============================================
-
-        var allConversations = [];
-
-        async function loadConversations() {
-            document.getElementById('messages-loading').style.display = 'flex';
-            document.getElementById('messages-empty').style.display = 'none';
-            document.getElementById('messages-content').style.display = 'none';
-
-            try {
-                var snap = await db.collection('conversations')
-                    .orderBy('lastMessageAt', 'desc')
-                    .limit(200)
-                    .get();
-
-                allConversations = [];
-                snap.forEach(function(doc) {
-                    allConversations.push({ id: doc.id, ...doc.data() });
-                });
-
-                document.getElementById('messages-loading').style.display = 'none';
-
-                if (allConversations.length === 0) {
-                    document.getElementById('messages-empty').style.display = 'block';
-                    return;
-                }
-
-                document.getElementById('messages-content').style.display = 'flex';
-                renderConversationList(allConversations);
-
-            } catch (e) {
-                console.error('Error loading conversations:', e);
-                document.getElementById('messages-loading').style.display = 'none';
-                document.getElementById('messages-empty').textContent = 'Error loading conversations: ' + e.message;
-                document.getElementById('messages-empty').style.display = 'block';
-            }
-        }
-
-        function renderConversationList(convs) {
-            var list = document.getElementById('conv-list');
-            list.innerHTML = '';
-
-            convs.forEach(function(conv) {
-                var buyer = escHtml(conv.buyerName || conv.buyerId || 'Unknown buyer');
-                var seller = escHtml(conv.sellerName || conv.sellerId || 'Unknown seller');
-                var product = conv.productName ? escHtml(conv.productName) : '';
-                var preview = conv.lastMessage ? escHtml(conv.lastMessage.substring(0, 70)) : '<em style="color:#aaa">No messages</em>';
-                var time = conv.lastMessageAt ? new Date(conv.lastMessageAt.toDate()).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
-
-                var item = document.createElement('div');
-                item.style.cssText = 'padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background 0.15s;';
-                item.onmouseenter = function() { this.style.background = '#f7f7f7'; };
-                item.onmouseleave = function() { this.style.background = ''; };
-                item.innerHTML =
-                    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
-                        '<div style="font-size:13px;font-weight:600;color:#1a1a1a;line-height:1.3;">' + buyer + ' &rarr; ' + seller + '</div>' +
-                        '<div style="font-size:11px;color:#999;white-space:nowrap;flex-shrink:0;">' + time + '</div>' +
-                    '</div>' +
-                    (product ? '<div style="font-size:11px;color:#3665f3;margin-top:2px;font-weight:600;">' + product + '</div>' : '') +
-                    '<div style="font-size:12px;color:#666;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + preview + '</div>';
-
-                item.onclick = function() {
-                    document.querySelectorAll('#conv-list > div').forEach(function(el) {
-                        el.style.background = '';
-                        el.style.borderLeft = '';
-                    });
-                    item.style.background = '#f0f4ff';
-                    item.style.borderLeft = '3px solid #3665f3';
-                    openConversationThread(conv);
-                };
-
-                list.appendChild(item);
-            });
-        }
-
-        async function openConversationThread(conv) {
-            var header = document.getElementById('conv-thread-header');
-            var body = document.getElementById('conv-thread-body');
-            var title = document.getElementById('conv-thread-title');
-            var subtitle = document.getElementById('conv-thread-subtitle');
-
-            document.getElementById('conv-thread-empty').style.display = 'none';
-            document.getElementById('conv-thread-messages').style.display = 'flex';
-            body.innerHTML = '<div style="color:#999;font-size:13px;">Loading messages...</div>';
-
-            var buyer = escHtml(conv.buyerName || conv.buyerId || 'Unknown buyer');
-            var seller = escHtml(conv.sellerName || conv.sellerId || 'Unknown seller');
-            title.innerHTML = buyer + ' &rarr; ' + seller;
-            subtitle.textContent = conv.productName ? 'Re: ' + conv.productName : 'Conversation ID: ' + conv.id;
-
-            try {
-                var snap = await db.collection('conversations').doc(conv.id)
-                    .collection('messages')
-                    .orderBy('timestamp', 'asc')
-                    .get();
-
-                body.innerHTML = '';
-
-                if (snap.empty) {
-                    body.innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:20px;">No messages in this conversation.</div>';
-                    return;
-                }
-
-                snap.forEach(function(doc) {
-                    var msg = doc.data();
-                    var isBuyer = msg.senderId === conv.buyerId;
-                    var senderLabel = escHtml(msg.senderName || (isBuyer ? (conv.buyerName || 'Buyer') : (conv.sellerName || 'Seller')));
-                    var text = escHtml(msg.text || '');
-                    var time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
-                    var bgColor = isBuyer ? '#e8f0fe' : '#f0fdf4';
-                    var align = isBuyer ? 'flex-start' : 'flex-end';
-
-                    var bubble = document.createElement('div');
-                    bubble.style.cssText = 'display:flex;flex-direction:column;align-items:' + align + ';max-width:75%;align-self:' + align + ';';
-                    bubble.innerHTML =
-                        '<div style="font-size:11px;color:#999;margin-bottom:2px;">' + senderLabel + ' &middot; ' + time + '</div>' +
-                        '<div style="background:' + bgColor + ';padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word;">' + text + '</div>';
-                    body.appendChild(bubble);
-                });
-
-                body.scrollTop = body.scrollHeight;
-
-            } catch (e) {
-                console.error('Error loading messages:', e);
-                body.innerHTML = '<div style="color:#dc2626;font-size:13px;">Error loading messages: ' + escHtml(e.message) + '</div>';
-            }
-        }
-
-        function escHtml(str) {
-            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        }
-
-        // ============================================
-        // ORDERS FILTER
-        // ============================================
-        function filterOrders() {
-            var query = (document.getElementById('orders-search').value || '').toLowerCase().trim();
-            var filter = document.getElementById('orders-filter').value;
-            document.querySelectorAll('#orders-tbody tr').forEach(function(row) {
-                var matchText = !query || (row.dataset.search || '').includes(query);
-                var statusKey = row.dataset.status || '';
-                var matchStatus = filter === 'all' || statusKey === filter ||
-                    (filter === 'delivered' && (statusKey === 'delivered'));
-                row.style.display = (matchText && matchStatus) ? '' : 'none';
-            });
-        }
-
-        // ============================================
-        // ADMIN MARK AS SHIPPED OVERRIDE
-        // ============================================
-        async function adminMarkShipped(productId, btn) {
-            var trackingNum = prompt('Enter tracking number:');
-            if (trackingNum === null) return;
-            trackingNum = trackingNum.trim();
-            if (!trackingNum) { alert('Tracking number is required.'); return; }
-
-            var carrier = prompt('Enter carrier (e.g. USPS, UPS, FedEx) — leave blank to skip:') || '';
-
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            try {
-                var update = {
-                    shipped: true,
-                    shippedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    trackingNumber: trackingNum
-                };
-                if (carrier.trim()) update.carrier = carrier.trim();
-
-                await db.collection('products').doc(productId).update(update);
-
-                var statusCell = document.getElementById('order-status-' + productId);
-                if (statusCell) statusCell.innerHTML = '<span class="badge badge-yellow">Shipped</span>';
-                var row = document.getElementById('order-row-' + productId);
-                if (row) row.dataset.status = 'shipped';
-                btn.textContent = 'Shipped ✓';
-                btn.className = 'action-btn btn-resolved-done';
-            } catch (err) {
-                console.error('Error marking as shipped:', err);
-                btn.disabled = false;
-                btn.textContent = 'Mark Shipped';
-                alert('Failed: ' + err.message);
-            }
-        }
-
-        // ============================================
-        // TAB 9: DISPUTES
-        // ============================================
-        async function loadDisputes() {
-            showSection('disputes', 'loading');
-            try {
-                var snap = await db.collection('disputes')
-                    .orderBy('createdAt', 'desc')
-                    .limit(100)
-                    .get();
-
-                if (snap.empty) {
-                    showSection('disputes', 'empty');
-                    return;
-                }
-
-                var tbody = document.getElementById('disputes-tbody');
-                tbody.innerHTML = '';
-
-                snap.forEach(function(doc) {
-                    var d = doc.data();
-                    var docId = doc.id;
-                    var isResolved = d.status === 'resolved' || d.status === 'dismissed';
-
-                    var statusBadge = isResolved
-                        ? '<span class="badge badge-gray">' + escapeHtml(d.status || 'Resolved') + '</span>'
-                        : '<span class="badge badge-red">Open</span>';
-
-                    var productLink = d.productId
-                        ? '<a href="productdetail.html?id=' + escapeHtml(d.productId) + '" target="_blank" style="font-family:monospace;font-size:11px;color:#3665f3;">' + escapeHtml(truncate(d.productId, 20)) + '</a>'
-                        : '—';
-
-                    var actionsHtml = !isResolved
-                        ? '<div class="action-gap">' +
-                              '<button class="action-btn btn-resolve" onclick="resolveDispute(\'' + docId + '\', \'resolved\', this)">Resolve (Buyer)</button>' +
-                              '<button class="action-btn btn-dismiss" onclick="resolveDispute(\'' + docId + '\', \'dismissed\', this)">Dismiss</button>' +
-                          '</div>'
-                        : '<button class="action-btn btn-resolved-done" disabled>Closed</button>';
-
-                    var row = document.createElement('tr');
-                    row.id = 'dispute-row-' + docId;
-                    row.innerHTML =
-                        '<td>' + productLink + '</td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(d.buyerId || '') + '">' + escapeHtml(truncate(d.buyerId, 16) || '—') + '</span></td>' +
-                        '<td><span class="uid-cell" title="' + escapeHtml(d.sellerId || '') + '">' + escapeHtml(truncate(d.sellerId, 16) || '—') + '</span></td>' +
-                        '<td>' + escapeHtml(truncate(d.reason, 50)) + '</td>' +
-                        '<td id="dispute-status-' + docId + '">' + statusBadge + '</td>' +
-                        '<td>' + formatDate(d.createdAt) + '</td>' +
-                        '<td id="dispute-actions-' + docId + '">' + actionsHtml + '</td>';
-                    tbody.appendChild(row);
-                });
-
-                showSection('disputes', 'table');
-            } catch (err) {
-                console.error('Error loading disputes:', err);
-                showSection('disputes', 'empty');
-                document.getElementById('disputes-empty').textContent = 'Error loading disputes: ' + err.message;
-            }
-        }
-
-        // ============================================
-        // TAB 10: SALES MAP
-        // ============================================
-
-        var salesMapData = {};
-
-        var STATE_NAMES = {
-            'AL':'Alabama','AK':'Alaska','AZ':'Arizona','AR':'Arkansas',
-            'CA':'California','CO':'Colorado','CT':'Connecticut','DE':'Delaware',
-            'FL':'Florida','GA':'Georgia','HI':'Hawaii','ID':'Idaho',
-            'IL':'Illinois','IN':'Indiana','IA':'Iowa','KS':'Kansas',
-            'KY':'Kentucky','LA':'Louisiana','ME':'Maine','MD':'Maryland',
-            'MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MS':'Mississippi',
-            'MO':'Missouri','MT':'Montana','NE':'Nebraska','NV':'Nevada',
-            'NH':'New Hampshire','NJ':'New Jersey','NM':'New Mexico','NY':'New York',
-            'NC':'North Carolina','ND':'North Dakota','OH':'Ohio','OK':'Oklahoma',
-            'OR':'Oregon','PA':'Pennsylvania','RI':'Rhode Island','SC':'South Carolina',
-            'SD':'South Dakota','TN':'Tennessee','TX':'Texas','UT':'Utah',
-            'VT':'Vermont','VA':'Virginia','WA':'Washington','WV':'West Virginia',
-            'WI':'Wisconsin','WY':'Wyoming','DC':'District of Columbia'
-        };
-
-        // FIPS code → state abbreviation (for topojson feature IDs)
-        var STATE_FIPS = {
-            '01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT',
-            '10':'DE','11':'DC','12':'FL','13':'GA','15':'HI','16':'ID','17':'IL',
-            '18':'IN','19':'IA','20':'KS','21':'KY','22':'LA','23':'ME','24':'MD',
-            '25':'MA','26':'MI','27':'MN','28':'MS','29':'MO','30':'MT','31':'NE',
-            '32':'NV','33':'NH','34':'NJ','35':'NM','36':'NY','37':'NC','38':'ND',
-            '39':'OH','40':'OK','41':'OR','42':'PA','44':'RI','45':'SC','46':'SD',
-            '47':'TN','48':'TX','49':'UT','50':'VT','51':'VA','53':'WA','54':'WV',
-            '55':'WI','56':'WY'
-        };
-
-        function getNexusLevel(sd) {
-            if (!sd || sd.count === 0) return 'none';
-            if (sd.revenue >= 100000 || sd.count >= 200) return 'register';
-            if (sd.revenue >= 80000  || sd.count >= 160) return 'warning';
-            if (sd.revenue >= 50000  || sd.count >= 100) return 'approaching';
-            return 'safe';
-        }
-
-        function getNexusColor(level) {
-            return { register:'#ffcdd2', warning:'#ffe0b2', approaching:'#fff9c4', safe:'#c8e6c9', none:'#f0f0f0' }[level] || '#f0f0f0';
-        }
-
-        function getNexusStroke(level) {
-            return { register:'#c62828', warning:'#e65100', approaching:'#f9a825', safe:'#2e7d32', none:'#bdbdbd' }[level] || '#bdbdbd';
-        }
-
-        function fmtMoney(n) {
-            return '$' + Number(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        }
-
-        function loadScriptTag(src, checkFn) {
-            return new Promise(function(resolve, reject) {
-                if (checkFn && checkFn()) { resolve(); return; }
-                var s = document.createElement('script');
-                s.src = src;
-                s.onload = resolve;
-                s.onerror = function() { reject(new Error('Failed to load ' + src)); };
-                document.head.appendChild(s);
-            });
-        }
-
-        async function loadSalesMap() {
-            document.getElementById('salesmap-loading').style.display = 'block';
-            document.getElementById('salesmap-content').style.display = 'none';
-            document.getElementById('map-state-panel').style.display = 'none';
-
-            try {
-                var snap = await db.collection('products').where('sold', '==', true).get();
-
-                salesMapData = {};
-                var totalRevenue = 0;
-                var totalSales = 0;
-
-                snap.forEach(function(doc) {
-                    var d = doc.data();
-                    var addr = d.buyerShippingAddress;
-                    if (!addr) return;
-                    var state = ((addr.state || addr.province || '')).trim().toUpperCase();
-                    if (!state || state.length !== 2 || !STATE_NAMES[state]) return;
-
-                    var price = parseFloat(d.price) || 0;
-                    var year = null;
-                    if (d.soldTimestamp && typeof d.soldTimestamp.toDate === 'function') {
-                        year = d.soldTimestamp.toDate().getFullYear();
-                    }
-
-                    if (!salesMapData[state]) salesMapData[state] = { count: 0, revenue: 0, byYear: {} };
-                    salesMapData[state].count++;
-                    salesMapData[state].revenue += price;
-                    if (year) {
-                        if (!salesMapData[state].byYear[year]) salesMapData[state].byYear[year] = { count: 0, revenue: 0 };
-                        salesMapData[state].byYear[year].count++;
-                        salesMapData[state].byYear[year].revenue += price;
-                    }
-                    totalRevenue += price;
-                    totalSales++;
-                });
-
-                document.getElementById('map-stat-total-sales').textContent = totalSales.toLocaleString();
-                document.getElementById('map-stat-total-revenue').textContent = fmtMoney(totalRevenue);
-                var atRisk = Object.keys(salesMapData).filter(function(s) { return getNexusLevel(salesMapData[s]) === 'register'; }).length;
-                document.getElementById('map-stat-states-at-risk').textContent = atRisk;
-
-                document.getElementById('salesmap-loading').style.display = 'none';
-                document.getElementById('salesmap-content').style.display = 'block';
-
-                await renderUSMap();
-
-            } catch (err) {
-                console.error('Sales map error:', err);
-                document.getElementById('salesmap-loading').style.display = 'none';
-                document.getElementById('salesmap-content').style.display = 'block';
-                document.getElementById('salesmap-svg-wrap').innerHTML = '<p style="color:#c62828;padding:20px;">Error loading map: ' + escapeHtml(err.message) + '</p>';
-            }
-        }
-
-        async function renderUSMap() {
-            await loadScriptTag('https://unpkg.com/d3@7/dist/d3.min.js', function() { return typeof d3 !== 'undefined'; });
-            await loadScriptTag('https://unpkg.com/topojson-client@3/dist/topojson-client.min.js', function() { return typeof topojson !== 'undefined'; });
-
-            var usData = await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json').then(function(r) { return r.json(); });
-
-            var svgEl = document.getElementById('us-salesmap');
-            svgEl.innerHTML = '';
-
-            var svg = d3.select('#us-salesmap');
-            var path = d3.geoPath();
-            var states = topojson.feature(usData, usData.objects.states);
-            var borders = topojson.mesh(usData, usData.objects.states, function(a, b) { return a !== b; });
-
-            var tooltip = document.getElementById('map-tooltip');
-
-            svg.selectAll('.map-state')
-                .data(states.features)
-                .enter().append('path')
-                .attr('class', 'map-state')
-                .attr('d', path)
-                .each(function(d) {
-                    var abbrev = STATE_FIPS[String(d.id).padStart(2, '0')];
-                    var level = getNexusLevel(salesMapData[abbrev]);
-                    d3.select(this)
-                        .attr('fill', getNexusColor(level))
-                        .attr('stroke', getNexusStroke(level))
-                        .attr('stroke-width', '0.8')
-                        .style('cursor', 'pointer');
-                })
-                .on('mouseover', function(event, d) {
-                    var abbrev = STATE_FIPS[String(d.id).padStart(2, '0')];
-                    if (!abbrev) return;
-                    var sd = salesMapData[abbrev] || { count: 0, revenue: 0, byYear: {} };
-                    var yr = new Date().getFullYear();
-                    var yd = sd.byYear[yr] || { count: 0, revenue: 0 };
-                    var level = getNexusLevel(sd);
-                    var warn = level === 'register'
-                        ? '<br><span style="color:#ff8a80;font-weight:700;">Register for sales tax!</span>'
-                        : level === 'warning'
-                        ? '<br><span style="color:#ffcc80;font-weight:600;">Approaching nexus threshold</span>'
-                        : '';
-                    tooltip.innerHTML =
-                        '<strong>' + (STATE_NAMES[abbrev] || abbrev) + ' (' + abbrev + ')</strong><br>' +
-                        'All-time: ' + sd.count + ' sales | ' + fmtMoney(sd.revenue) + '<br>' +
-                        '<span style="color:#aaa;font-size:11px;">' + yr + ': ' + yd.count + ' sales | ' + fmtMoney(yd.revenue) + '</span>' +
-                        warn;
-                    tooltip.style.display = 'block';
-                    d3.select(this).attr('stroke-width', '2.5').attr('stroke', '#333');
-                })
-                .on('mousemove', function(event) {
-                    tooltip.style.left = (event.clientX + 14) + 'px';
-                    tooltip.style.top  = (event.clientY - 14) + 'px';
-                })
-                .on('mouseout', function(event, d) {
-                    tooltip.style.display = 'none';
-                    var abbrev = STATE_FIPS[String(d.id).padStart(2, '0')];
-                    var level = getNexusLevel(salesMapData[abbrev]);
-                    d3.select(this).attr('stroke-width', '0.8').attr('stroke', getNexusStroke(level));
-                })
-                .on('click', function(event, d) {
-                    var abbrev = STATE_FIPS[String(d.id).padStart(2, '0')];
-                    if (abbrev) showStateDetail(abbrev);
-                });
-
-            // State border lines (white, on top)
-            svg.append('path')
-                .datum(borders)
-                .attr('fill', 'none')
-                .attr('stroke', '#fff')
-                .attr('stroke-width', '0.5')
-                .attr('d', path);
-        }
-
-        function showStateDetail(abbrev) {
-            var sd = salesMapData[abbrev] || { count: 0, revenue: 0, byYear: {} };
-            var level = getNexusLevel(sd);
-            var pct200 = Math.min(Math.round((sd.count / 200) * 100), 999);
-            var pct100k = Math.min(Math.round((sd.revenue / 100000) * 100), 999);
-
-            document.getElementById('map-state-name').textContent = (STATE_NAMES[abbrev] || abbrev) + ' (' + abbrev + ')';
-
-            document.getElementById('map-state-detail').innerHTML =
-                '<div class="stat-card"><div class="stat-number">' + sd.count.toLocaleString() + '</div><div class="stat-label">Total Sales</div></div>' +
-                '<div class="stat-card"><div class="stat-number">' + fmtMoney(sd.revenue) + '</div><div class="stat-label">Total Revenue</div></div>' +
-                '<div class="stat-card"><div class="stat-number">' + pct200 + '%</div><div class="stat-label">Transaction Threshold (200)</div></div>' +
-                '<div class="stat-card"><div class="stat-number">' + pct100k + '%</div><div class="stat-label">Revenue Threshold ($100k)</div></div>';
-
-            var statusColors = { register:'#c62828', warning:'#e65100', approaching:'#f9a825', safe:'#2e7d32', none:'#999' };
-            var statusLabels = {
-                register:    '⚠ Register for sales tax NOW — economic nexus threshold reached',
-                warning:     '⚠ Approaching threshold — monitor closely',
-                approaching: 'Getting closer to economic nexus threshold',
-                safe:        '✓ Safe — well below threshold',
-                none:        'No sales recorded in this state'
-            };
-            document.getElementById('map-state-nexus-status').innerHTML =
-                '<span style="font-weight:600;color:' + (statusColors[level] || '#999') + ';">' +
-                escapeHtml(statusLabels[level] || '') + '</span>';
-
-            var years = Object.keys(sd.byYear).sort().reverse();
-            var yearlyHtml = '';
-            if (years.length > 0) {
-                yearlyHtml += '<h4 style="margin:0 0 10px;font-size:14px;color:#555;font-weight:600;">Year-by-Year Breakdown</h4>';
-                yearlyHtml += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-                yearlyHtml += '<thead><tr style="background:#f5f5f5;"><th style="padding:8px 12px;text-align:left;">Year</th><th style="padding:8px 12px;text-align:right;">Sales</th><th style="padding:8px 12px;text-align:right;">Revenue</th></tr></thead><tbody>';
-                years.forEach(function(yr) {
-                    var yd = sd.byYear[yr];
-                    yearlyHtml += '<tr style="border-bottom:1px solid #f0f0f0;">' +
-                        '<td style="padding:8px 12px;">' + escapeHtml(yr) + '</td>' +
-                        '<td style="padding:8px 12px;text-align:right;">' + yd.count.toLocaleString() + '</td>' +
-                        '<td style="padding:8px 12px;text-align:right;">' + fmtMoney(yd.revenue) + '</td>' +
-                    '</tr>';
-                });
-                yearlyHtml += '</tbody></table>';
-            } else {
-                yearlyHtml = '<p style="color:#999;font-size:13px;margin:0;">No yearly data available (soldTimestamp missing).</p>';
-            }
-            document.getElementById('map-state-yearly').innerHTML = yearlyHtml;
-
-            document.getElementById('map-state-panel').style.display = 'block';
-            document.getElementById('map-state-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        async function resolveDispute(docId, resolution, btn) {
-            var label = resolution === 'resolved' ? "Resolve in buyer's favor" : 'Dismiss dispute';
-            var notes = prompt(label + ' — resolution notes (optional):');
-            if (notes === null) return;
-
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            try {
-                var update = {
-                    status: resolution,
-                    resolvedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    resolvedBy: currentUser ? currentUser.uid : 'admin'
-                };
-                if (notes.trim()) update.resolutionNotes = notes.trim();
-                await db.collection('disputes').doc(docId).update(update);
-
-                var statusCell = document.getElementById('dispute-status-' + docId);
-                var actionsCell = document.getElementById('dispute-actions-' + docId);
-                if (statusCell) statusCell.innerHTML = '<span class="badge badge-gray">' + escapeHtml(resolution) + '</span>';
-                if (actionsCell) actionsCell.innerHTML = '<button class="action-btn btn-resolved-done" disabled>Closed</button>';
-            } catch (err) {
-                console.error('Error resolving dispute:', err);
-                btn.disabled = false;
-                btn.textContent = 'Resolve';
-                alert('Failed to resolve dispute: ' + err.message);
-            }
-        }
-    </script>
+    <script src="js/fin.js"></script>
 </body>
 </html>
