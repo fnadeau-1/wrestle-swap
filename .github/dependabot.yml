@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Cloud Functions dependencies (wrestleswap/)
+  - package-ecosystem: "npm"
+    directory: "/wrestleswap"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "cloud-functions"
+
+  # Root package.json
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
